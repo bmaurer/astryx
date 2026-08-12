@@ -218,6 +218,56 @@ const myTheme = defineTheme({
       ],
     },
     {
+      title: 'Conditional Theming',
+  category: 'guide',
+      content: [
+        {
+          type: 'prose',
+          text: 'A theme can vary by named condition. `mobile` means narrow AND touch — it compiles to `@media (max-width: 756px) and (pointer: coarse)`, so a desktop user dragging their window narrow does not get mobile values. Set `breakpoints.mobile` to move the width; the coarse-pointer requirement always applies.',
+        },
+        {
+          type: 'code',
+          lang: 'tsx',
+          label: 'A mobile condition',
+          code: `import {defineTheme} from '@astryxdesign/core/theme';
+
+const myTheme = defineTheme({
+  name: 'my-theme',
+  typography: { scale: { base: 14, ratio: 1.2 } },
+  breakpoints: { mobile: 640 },   // optional; defaults to 756
+  mobile: {
+    // A partial theme: same axes as the top level, each one independent.
+    typography: { scale: { base: 16, ratio: 1.2 } },
+    tokens: { '--spacing-4': '12px' },
+    components: { button: { base: { minHeight: '44px' } } },
+  },
+});`,
+        },
+        {
+          type: 'table',
+          headers: ['Rule', 'Behavior'],
+          rows: [
+            [
+              'Opt-in',
+              'Omit `mobile` (or pass null) and no conditional CSS is emitted at all — no empty media block, no default mobile treatment.',
+            ],
+            [
+              'Axes are independent',
+              'Only the axes you set generate CSS. Setting just `tokens` emits token declarations and nothing else.',
+            ],
+            [
+              'Precedence',
+              'Where the condition matches, its values win over the base theme; where it does not, the base theme is untouched. Inside the block, explicit `tokens` beat scale-generated values.',
+            ],
+            [
+              'Both modes',
+              'Runtime `<Theme>` injection and `astryx theme build` emit the same conditional CSS.',
+            ],
+          ],
+        },
+      ],
+    },
+    {
       title: 'Extending a Theme',
   category: 'guide',
       content: [

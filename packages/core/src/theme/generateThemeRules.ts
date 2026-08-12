@@ -767,9 +767,7 @@ export function generateConditionalCSS(theme: DefinedTheme): ThemeCSSOutput {
       const val = (key: string): string => merged[key] || `var(${key})`;
       const proseParts: string[] = [];
       generateProseRules(val, proseParts);
-      proseBlocks.push(
-        wrapConditional(layer.query, scopeSelector, proseParts),
-      );
+      proseBlocks.push(wrapConditional(layer.query, scopeSelector, proseParts));
     }
   }
 

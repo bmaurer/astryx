@@ -117,7 +117,8 @@ export function buildFontFamilyTokens(
 
   const bodyFamily = buildFontFamily(typo.body?.family, typo.body?.fallbacks);
   const headingFamily =
-    buildFontFamily(typo.heading?.family, typo.heading?.fallbacks) ?? bodyFamily;
+    buildFontFamily(typo.heading?.family, typo.heading?.fallbacks) ??
+    bodyFamily;
   const codeFamily = buildFontFamily(typo.code?.family, typo.code?.fallbacks);
 
   if (bodyFamily) {

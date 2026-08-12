@@ -94,9 +94,7 @@ describe('conditional theme — the mobile condition', () => {
 
   it('defaults the breakpoint to 756px', () => {
     expect(DEFAULT_MOBILE_BREAKPOINT).toBe(756);
-    expect(mobileMediaQuery()).toBe(
-      '(max-width: 756px) and (pointer: coarse)',
-    );
+    expect(mobileMediaQuery()).toBe('(max-width: 756px) and (pointer: coarse)');
 
     const theme = defineTheme({
       name: 'default-bp',
