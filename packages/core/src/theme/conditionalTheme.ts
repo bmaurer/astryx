@@ -59,8 +59,15 @@ import {
  */
 export const DEFAULT_MOBILE_BREAKPOINT = 756;
 
-/** Names of the conditions a theme can define values for. */
-export type ThemeConditionName = 'mobile';
+/**
+ * Names of the conditions a theme can define values for.
+ *
+ * Spelled inline at each use rather than exported as a named union: the
+ * repo's doc guard (`docPropLiterals`) requires a documented type to reveal
+ * its legal values, and `DefinedTheme` is documented as `<Theme>`'s `theme`
+ * prop. A named alias would hide `'mobile'` from anyone reading the docs
+ * without an IDE.
+ */
 
 /**
  * Breakpoint configuration for named conditions.
@@ -107,7 +114,7 @@ export interface ConditionalThemeOverrides {
  */
 export interface ResolvedConditionalTheme {
   /** The condition this layer belongs to. */
-  condition: ThemeConditionName;
+  condition: 'mobile';
   /** The media query the condition compiles to, without the `@media` keyword. */
   query: string;
   /** Resolved token CSS values — only the tokens this layer sets. */

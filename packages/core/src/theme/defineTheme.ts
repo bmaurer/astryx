@@ -630,7 +630,6 @@ export {
   type ConditionalThemeOverrides,
   type ResolvedConditionalTheme,
   type ThemeBreakpoints,
-  type ThemeConditionName,
 } from './conditionalTheme';
 
 // =============================================================================

@@ -52,7 +52,6 @@ export type {
   ConditionalThemeOverrides,
   ResolvedConditionalTheme,
   ThemeBreakpoints,
-  ThemeConditionName,
 } from './conditionalTheme';
 
 export type {
