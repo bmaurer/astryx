@@ -681,8 +681,12 @@ export function generateOnMediaCSS(theme: DefinedTheme): string {
 }
 
 /**
- * Tokens whose values prose rules inline (rather than referencing with
- * `var()`), so a conditional layer that changes one has to re-emit prose.
+ * Prefix of the tokens whose values prose rules bake in (`--text-*`).
+ *
+ * Prose rules resolve these at generation time — a type scale's line-heights
+ * land as literals — so a conditional layer that moves one has to re-emit
+ * prose. Tokens they reference with `var()` (`--font-size-*`,
+ * `--font-family-*`, `--color-*`) resolve at use time and need no re-emission.
  */
 const PROSE_INLINED_TOKEN_PREFIX = '--text-';
 
@@ -715,9 +719,9 @@ function wrapConditional(
  * outside it the base theme is untouched.
  *
  * Prose element defaults are re-emitted for a layer only when it changes a
- * token those rules inline (`--text-*`); they carry resolved values rather
- * than `var()` references, so they would otherwise keep the base sizes while
- * every themed component moved.
+ * token those rules bake in (`--text-*`) — a type scale's line-heights land as
+ * literals, so prose would otherwise keep the base rhythm while every themed
+ * component moved.
  */
 export function generateConditionalCSS(theme: DefinedTheme): ThemeCSSOutput {
   const layers = theme.__conditional;
