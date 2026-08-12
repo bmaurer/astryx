@@ -32,12 +32,23 @@
 
 import type {IconRegistry} from '../Icon/globalIconRegistry';
 import type {IndicatorRegistry} from '../Indicator/types';
-import type {TypographyConfig, FontWeight} from './types';
+import type {TypographyConfig} from './types';
 import {
   resolveOnMedia,
   type OnMediaOverrides,
   type ResolvedOnMedia,
 } from './onMediaTokens';
+import {
+  resolveConditionalThemes,
+  type ConditionalThemeOverrides,
+  type ResolvedConditionalTheme,
+  type ThemeBreakpoints,
+} from './conditionalTheme';
+import {
+  buildFontFamilyTokens,
+  buildTypeScaleConfig,
+  deepMergeComponents,
+} from './themeAxes';
 import {
   colorDefaults,
   spacingDefaults,
@@ -333,6 +344,54 @@ export interface DefineThemeInput {
    * but for the inverse case (e.g. dark-mode page with a light popover).
    */
   onLight?: OnMediaOverrides;
+  /**
+   * Breakpoints for the named conditions (see `mobile`).
+   *
+   * `mobile` defaults to **756px**; set it here to move the cutoff. The width
+   * is only half of the `mobile` condition — a coarse pointer is always
+   * required as well, so a narrow desktop window never matches regardless of
+   * the number.
+   *
+   * @example
+   * ```
+   * defineTheme({
+   *   name: 'acme',
+   *   breakpoints: {mobile: 640},
+   *   mobile: {tokens: {'--spacing-4': '12px'}},
+   * });
+   * ```
+   */
+  breakpoints?: ThemeBreakpoints;
+  /**
+   * Overrides that apply only on **mobile** — narrow *and* touch. Compiles to
+   * `@media (max-width: <breakpoints.mobile ?? 756>px) and (pointer: coarse)`,
+   * so a desktop user dragging their window narrow does not get them.
+   *
+   * The value is a partial theme: the same axes as the top-level input
+   * (`typography`, `color`, `radius`, `motion`, `tokens`, `components`). Each
+   * axis is independent — only the axes you set generate CSS.
+   *
+   * **Opt-in.** Omit it (or pass `null`) and no mobile CSS is generated at
+   * all: no empty media block, no default mobile treatment.
+   *
+   * **Precedence.** Where the condition matches, its values win over the base
+   * theme's for the same token or component rule; where it does not match, the
+   * base theme is untouched. Within the block the same order as the base theme
+   * applies: explicit `tokens` beat values generated from a scale.
+   *
+   * @example
+   * ```
+   * defineTheme({
+   *   name: 'acme',
+   *   typography: {scale: {base: 14, ratio: 1.2}},
+   *   mobile: {
+   *     typography: {scale: {base: 16, ratio: 1.2}},
+   *     tokens: {'--spacing-4': '12px'},
+   *   },
+   * });
+   * ```
+   */
+  mobile?: ConditionalThemeOverrides | null;
 }
 
 /** A defined theme — ready to pass to <Theme> */
@@ -368,6 +427,14 @@ export interface DefinedTheme {
    * @internal
    */
   __onLight?: ResolvedOnMedia;
+  /**
+   * Resolved conditional theme layers (currently `mobile`), each carrying the
+   * media query it compiles to plus the tokens and component overrides that
+   * apply inside it. Absent when the theme declares no conditions — that
+   * absence is what keeps the feature opt-in.
+   * @internal
+   */
+  __conditional?: ResolvedConditionalTheme[];
 }
 
 // =============================================================================
@@ -408,79 +475,9 @@ function resolveTokenValue(value: TokenValue): string {
 }
 
 /**
- * Deep-merge two component style maps.
- * Properties in `overrides` take precedence over `base`.
- * This allows typeScale-generated rules to be overridden by explicit components.
+ * Deep-merge helpers, font resolution, and type-scale config construction are
+ * shared with the conditional theme layer — see ./themeAxes.ts.
  */
-function deepMergeComponents(
-  base?: ComponentStyleMap,
-  overrides?: ComponentStyleMap,
-): ComponentStyleMap | undefined {
-  if (!base && !overrides) {
-    return undefined;
-  }
-  if (!base) {
-    return overrides;
-  }
-  if (!overrides) {
-    return base;
-  }
-
-  const result: ComponentStyleMap = {};
-
-  // Start with all base entries
-  for (const [component, rules] of Object.entries(base)) {
-    result[component] = {...rules};
-  }
-
-  // Merge overrides on top
-  for (const [component, rules] of Object.entries(overrides)) {
-    if (!result[component]) {
-      result[component] = {...rules};
-    } else {
-      for (const [key, styles] of Object.entries(rules)) {
-        result[component][key] = {
-          ...result[component][key],
-          ...styles,
-        };
-      }
-    }
-  }
-
-  return result;
-}
-
-/**
- * Resolve a FontWeight name to a var() reference.
- * Named weights map to var(--font-weight-*); raw values pass through.
- */
-function resolveFontWeight(weight: FontWeight): string {
-  const named: Record<string, string> = {
-    normal: 'var(--font-weight-normal)',
-    medium: 'var(--font-weight-medium)',
-    semibold: 'var(--font-weight-semibold)',
-    bold: 'var(--font-weight-bold)',
-  };
-  return named[weight] ?? weight;
-}
-
-/**
- * Build the full CSS font-family value from family + fallbacks.
- * Quotes the family name if it contains spaces.
- */
-function buildFontFamily(
-  family?: string,
-  fallbacks?: string,
-): string | undefined {
-  if (!family) {
-    return undefined;
-  }
-  const quoted = family.includes(' ') ? `"${family}"` : family;
-  if (fallbacks) {
-    return `${quoted}, ${fallbacks}`;
-  }
-  return quoted;
-}
 
 /**
  * Create an Astryx theme.
@@ -505,51 +502,9 @@ export function defineTheme(input: DefineThemeInput): DefinedTheme {
 
   // Build typeScale config from typography if present
   const typo = input.typography;
-  let typeScaleConfig: TypeScaleConfig | undefined;
-  if (typo?.scale) {
-    // Collect weight overrides from typography roles
-    const headingWeights: Partial<Record<1 | 2 | 3 | 4 | 5 | 6, string>> = {};
-    const headingRole = typo.heading;
-    if (headingRole?.weights) {
-      for (const [level, w] of Object.entries(headingRole.weights)) {
-        if (w) {
-          headingWeights[Number(level) as 1 | 2 | 3 | 4 | 5 | 6] =
-            resolveFontWeight(w);
-        }
-      }
-    }
-    // Default heading weight from role
-    const defaultHeadingWeight = headingRole?.weight
-      ? resolveFontWeight(headingRole.weight)
-      : undefined;
-    if (defaultHeadingWeight) {
-      for (let i = 1; i <= 6; i++) {
-        if (!(i in headingWeights)) {
-          headingWeights[i as 1 | 2 | 3 | 4 | 5 | 6] = defaultHeadingWeight;
-        }
-      }
-    }
-
-    // Text weight overrides from roles
-    const textWeights: Partial<Record<string, string>> = {};
-    if (typo.body?.weight) {
-      textWeights.body = resolveFontWeight(typo.body.weight);
-    }
-    if (typo.code?.weight) {
-      textWeights.code = resolveFontWeight(typo.code.weight);
-    }
-
-    typeScaleConfig = {
-      base: typo.scale.base,
-      ratio: typo.scale.ratio,
-      weights: {
-        ...(Object.keys(headingWeights).length > 0
-          ? {heading: headingWeights}
-          : {}),
-        ...(Object.keys(textWeights).length > 0 ? {text: textWeights} : {}),
-      },
-    };
-  }
+  const typeScaleConfig: TypeScaleConfig | undefined = typo
+    ? buildTypeScaleConfig(typo)
+    : undefined;
 
   // 1. Apply color-generated tokens (lowest precedence for colors)
   if (input.color) {
@@ -585,22 +540,7 @@ export function defineTheme(input: DefineThemeInput): DefinedTheme {
 
   // 1d. Apply typography font family tokens
   if (typo) {
-    // Heading inherits from body if not specified
-    const bodyFamily = buildFontFamily(typo.body?.family, typo.body?.fallbacks);
-    const headingFamily =
-      buildFontFamily(typo.heading?.family, typo.heading?.fallbacks) ??
-      bodyFamily;
-    const codeFamily = buildFontFamily(typo.code?.family, typo.code?.fallbacks);
-
-    if (bodyFamily) {
-      tokens['--font-family-body'] = bodyFamily;
-    }
-    if (headingFamily) {
-      tokens['--font-family-heading'] = headingFamily;
-    }
-    if (codeFamily) {
-      tokens['--font-family-code'] = codeFamily;
-    }
+    Object.assign(tokens, buildFontFamilyTokens(typo));
   }
 
   // 1e. Apply syntax theme tokens (before explicit overrides)
@@ -635,6 +575,10 @@ export function defineTheme(input: DefineThemeInput): DefinedTheme {
   const __onDark = resolveOnMedia('dark', input.onDark);
   const __onLight = resolveOnMedia('light', input.onLight);
 
+  // 4a. Resolve conditional layers (mobile). Undefined when none are declared,
+  // so a theme that does not opt in carries no conditional data at all.
+  const __conditional = resolveConditionalThemes(input);
+
   // 5. Merge icons — input icons override base icons
   const icons =
     input.icons && base?.icons
@@ -657,6 +601,9 @@ export function defineTheme(input: DefineThemeInput): DefinedTheme {
     __inputTokens: input.tokens,
     __onDark,
     __onLight,
+    // Spread rather than assign so a theme without conditions has no
+    // `__conditional` key at all, not a key holding undefined.
+    ...(__conditional ? {__conditional} : {}),
   };
 
   registerTheme(theme);
@@ -671,10 +618,20 @@ export {
   generateThemeRules,
   generateThemeRulesSplit,
   generateOnMediaCSS,
+  generateConditionalCSS,
   generateThemeCSS,
   type ThemeRulesSplit,
   type ThemeCSSOutput,
 } from './generateThemeRules';
+
+export {
+  DEFAULT_MOBILE_BREAKPOINT,
+  mobileMediaQuery,
+  type ConditionalThemeOverrides,
+  type ResolvedConditionalTheme,
+  type ThemeBreakpoints,
+  type ThemeConditionName,
+} from './conditionalTheme';
 
 // =============================================================================
 // Type guard

@@ -22,6 +22,7 @@ export {
   defineTheme,
   generateThemeCSS,
   generateOnMediaCSS,
+  generateConditionalCSS,
   generateThemeRules,
   generateThemeRulesSplit,
   type ThemeCSSOutput,
@@ -44,6 +45,15 @@ export type {
   ComponentStyleMap,
   StyleOverrides,
 } from './defineTheme';
+
+// Conditional theme layers (mobile)
+export {DEFAULT_MOBILE_BREAKPOINT, mobileMediaQuery} from './conditionalTheme';
+export type {
+  ConditionalThemeOverrides,
+  ResolvedConditionalTheme,
+  ThemeBreakpoints,
+  ThemeConditionName,
+} from './conditionalTheme';
 
 export type {
   SyntaxTokenName,

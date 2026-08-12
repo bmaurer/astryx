@@ -52,12 +52,14 @@ import {loadComponentDoc} from '../../../foundation/discovery/component-loader.m
 /** @type {any} */ let _defineTheme = null;
 /** @type {any} */ let _generateThemeRulesSplit = null;
 /** @type {any} */ let _generateOnMediaCSS = null;
+/** @type {any} */ let _generateConditionalCSS = null;
 /** @type {any} */ let _coreImportError = null;
 try {
   const coreTheme = await import('@astryxdesign/core/theme');
   _defineTheme = coreTheme.defineTheme;
   _generateThemeRulesSplit = coreTheme.generateThemeRulesSplit;
   _generateOnMediaCSS = coreTheme.generateOnMediaCSS;
+  _generateConditionalCSS = coreTheme.generateConditionalCSS;
 } catch (e) {
   // Capture the reason so the theme action can surface a precise, actionable
   // error. We don't throw here: this module is imported eagerly by the CLI
@@ -1088,8 +1090,13 @@ export async function themeBuild(
   let resolvedTheme;
   {
     // jiti returns an already-resolved theme; legacy eval returns raw input.
+    // `mobile` is an input-only key (defineTheme resolves it into
+    // `__conditional`), so its presence means this is still raw input.
     const isAlreadyResolved =
-      !themeDef.typography && !themeDef.motion && !themeDef.radius;
+      !themeDef.typography &&
+      !themeDef.motion &&
+      !themeDef.radius &&
+      !themeDef.mobile;
     if (isAlreadyResolved) {
       resolvedTheme = themeDef;
     } else {
@@ -1100,6 +1107,8 @@ export async function themeBuild(
         radius: themeDef.radius,
         tokens: themeDef.tokens,
         components: themeDef.components,
+        breakpoints: themeDef.breakpoints,
+        mobile: themeDef.mobile,
       });
     }
     const scopeSelector = themeScopeStart(themeDef.name);
@@ -1133,6 +1142,18 @@ export async function themeBuild(
       const onMediaCss = _generateOnMediaCSS(resolvedTheme);
       if (onMediaCss) {
         cssParts.push(`@layer astryx-theme {\n${onMediaCss}\n}`);
+      }
+    }
+    // Conditional layers (mobile). Emitted last within each layer so a
+    // matching condition wins on source order — a media query adds no
+    // specificity. Nothing is emitted when the theme declares no conditions.
+    if (_generateConditionalCSS) {
+      const conditional = _generateConditionalCSS(resolvedTheme);
+      if (conditional.prose) {
+        cssParts.push(`@layer reset {\n${conditional.prose}\n}`);
+      }
+      if (conditional.component) {
+        cssParts.push(`@layer astryx-theme {\n${conditional.component}\n}`);
       }
     }
     if (cssParts.length === 0) {
