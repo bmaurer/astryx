@@ -58,9 +58,10 @@ import {
 } from '../Calendar';
 import {useCalendarConstraints} from '../Calendar/hooks';
 import {useInputStatusIcon} from '../hooks/useInputStatusIcon';
+import {useResolvedRequired} from '../hooks/useResolvedRequired';
 import {usePopover} from '../Popover';
 import {useTooltip} from '../Tooltip';
-import {getInputARIA, parseDateInput} from '../utils';
+import {getInputARIA, isImeKeyEvent, parseDateInput} from '../utils';
 import {
   plainDateFromISO,
   plainDateToISO,
@@ -399,6 +400,7 @@ export function DateInput({
   ...rest
 }: DateInputProps) {
   const t = useTranslator();
+  const isEffectivelyRequired = useResolvedRequired({isRequired, isOptional});
   const placeholder =
     placeholderFromProps ?? t('@astryx.dateInput.placeholder');
   const size = useSize(sizeProp, 'md');
@@ -627,6 +629,14 @@ export function DateInput({
   // Handle keyboard events on input
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      // An in-progress IME composition uses Enter to commit the candidate and
+      // Escape to cancel it; that composing keydown fires before
+      // compositionend, so without this guard a Korean/Japanese/Chinese user
+      // committing a syllable with Enter would instead commit the pending date
+      // (or Escape would close the calendar mid-composition). See utils/ime.ts.
+      if (isImeKeyEvent(e.nativeEvent)) {
+        return;
+      }
       if (e.key === 'Escape' && popover.isOpen) {
         e.preventDefault();
         popover.hide();
@@ -729,7 +739,7 @@ export function DateInput({
         readOnly={showsDisabledMessage || undefined}
         aria-labelledby={ariaLabelledBy}
         aria-describedby={ariaDescribedBy}
-        aria-required={isRequired === true ? 'true' : undefined}
+        aria-required={isEffectivelyRequired ? 'true' : undefined}
         aria-invalid={
           status?.type === 'error' || !isInputValid ? 'true' : undefined
         }
