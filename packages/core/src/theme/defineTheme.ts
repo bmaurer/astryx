@@ -399,6 +399,12 @@ export interface DefineThemeInput {
    * (`typography`, `color`, `radius`, `motion`, `tokens`, `components`). Each
    * axis is independent — only the axes you set generate CSS.
    *
+   * **The type scale inherits.** A condition's `scale` fields are all
+   * optional: an omitted `base` or `ratio` follows the theme's own scale, so a
+   * condition states only what differs. `scale.pin` holds one role at its
+   * desktop size and re-derives the ratio around it, instead of lifting the
+   * whole ladder with the base.
+   *
    * **Opt-in.** Omit it (or pass `null`) and no mobile CSS is generated at
    * all: no empty media block, no default mobile treatment.
    *
@@ -413,7 +419,8 @@ export interface DefineThemeInput {
    *   name: 'acme',
    *   typography: {scale: {base: 14, ratio: 1.2}},
    *   mobile: {
-   *     typography: {scale: {base: 16, ratio: 1.2}},
+   *     // Body floors to 16px; Display 1 holds its desktop 42px.
+   *     typography: {scale: {base: 16, pin: 'display-1'}},
    *     tokens: {'--spacing-4': '12px'},
    *   },
    * });

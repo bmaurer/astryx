@@ -306,3 +306,198 @@ describe('conditional theme — precedence', () => {
     expect(withMobile.prose).toBe(withoutMobile.prose);
   });
 });
+
+describe('conditional theme — the type scale', () => {
+  /** Read a semantic role's px size out of a resolved token map. */
+  function roleSize(tokens: Record<string, string>, role: string): number {
+    const ref = tokens[`--text-${role}-size`];
+    const raw = /var\((--font-size-[^)]+)\)/.exec(ref);
+    return Math.round(parseFloat(raw ? tokens[raw[1]] : ref) * 16);
+  }
+  function ladder(
+    theme: ReturnType<typeof defineTheme>,
+    tokens: Record<string, string>,
+  ): Record<string, number> {
+    const merged = {...theme.tokens, ...tokens};
+    return Object.fromEntries(
+      ['display-1', 'heading-1', 'heading-2', 'heading-3', 'body'].map(r => [
+        r,
+        roleSize(merged, r),
+      ]),
+    );
+  }
+  const desktop = {scale: {base: 14, ratio: 1.2}} as const;
+
+  it('inherits base and ratio from the theme when the condition omits them', () => {
+    const theme = defineTheme({
+      name: 'inherit-scale',
+      typography: desktop,
+      mobile: {typography: {scale: {}}},
+    });
+    // Nothing stated, nothing moves — same ladder as the desktop scale.
+    expect(ladder(theme, theme.__conditional![0].tokens)).toEqual(
+      ladder(theme, theme.tokens),
+    );
+  });
+
+  it('lifts the whole ladder when a base is floored with no pin', () => {
+    const theme = defineTheme({
+      name: 'lift',
+      typography: desktop,
+      mobile: {typography: {scale: {base: 16}}},
+    });
+    // The desktop ratio is kept, so every role grows by the same factor —
+    // including Display 1, on the device with the least room for it.
+    expect(ladder(theme, theme.__conditional![0].tokens)).toEqual({
+      'display-1': 48,
+      'heading-1': 28,
+      'heading-2': 23,
+      'heading-3': 19,
+      body: 16,
+    });
+  });
+
+  it('an omitted ratio lifts exactly as an explicit desktop ratio does', () => {
+    const inherited = defineTheme({
+      name: 'lift-inherited',
+      typography: desktop,
+      mobile: {typography: {scale: {base: 16}}},
+    });
+    const spelled = defineTheme({
+      name: 'lift-spelled',
+      typography: desktop,
+      mobile: {typography: {scale: {base: 16, ratio: 1.2}}},
+    });
+    expect(inherited.__conditional![0].tokens).toEqual(
+      spelled.__conditional![0].tokens,
+    );
+  });
+
+  it('holds the pinned role at its desktop size and re-derives the rest', () => {
+    const theme = defineTheme({
+      name: 'pin-display-1',
+      typography: desktop,
+      mobile: {typography: {scale: {base: 16, pin: 'display-1'}}},
+    });
+    const mobile = ladder(theme, theme.__conditional![0].tokens);
+
+    // Display 1 lands exactly on its desktop size — the point of the pin.
+    expect(mobile['display-1']).toBe(ladder(theme, theme.tokens)['display-1']);
+    expect(mobile).toEqual({
+      'display-1': 42,
+      'heading-1': 26,
+      'heading-2': 22,
+      'heading-3': 19,
+      body: 16,
+    });
+  });
+
+  it('pins any anchor, not just the top of the ramp', () => {
+    const theme = defineTheme({
+      name: 'pin-heading-2',
+      typography: desktop,
+      mobile: {typography: {scale: {base: 16, pin: 'heading-2'}}},
+    });
+    const desktopLadder = ladder(theme, theme.tokens);
+    const mobile = ladder(theme, theme.__conditional![0].tokens);
+
+    expect(mobile['heading-2']).toBe(desktopLadder['heading-2']);
+    // Pinning lower tames the display tier harder than pinning the top does.
+    expect(mobile['display-1']).toBeLessThan(desktopLadder['display-1']);
+  });
+
+  it('pin wins over an explicitly stated ratio', () => {
+    const pinned = defineTheme({
+      name: 'pin-beats-ratio',
+      typography: desktop,
+      mobile: {typography: {scale: {base: 16, ratio: 1.9, pin: 'display-1'}}},
+    });
+    const pinnedOnly = defineTheme({
+      name: 'pin-alone',
+      typography: desktop,
+      mobile: {typography: {scale: {base: 16, pin: 'display-1'}}},
+    });
+    expect(pinned.__conditional![0].tokens).toEqual(
+      pinnedOnly.__conditional![0].tokens,
+    );
+  });
+
+  it("'auto' picks the anchor from the theme's ratio", () => {
+    // A gentle ramp can afford to pin the top: same result as display-1.
+    const gentle = defineTheme({
+      name: 'auto-gentle',
+      typography: {scale: {base: 14, ratio: 1.2}},
+      mobile: {typography: {scale: {base: 16, pin: 'auto'}}},
+    });
+    const gentleExplicit = defineTheme({
+      name: 'auto-gentle-explicit',
+      typography: {scale: {base: 14, ratio: 1.2}},
+      mobile: {typography: {scale: {base: 16, pin: 'display-1'}}},
+    });
+    expect(gentle.__conditional![0].tokens).toEqual(
+      gentleExplicit.__conditional![0].tokens,
+    );
+
+    // A dramatic ramp pins low instead, so the display tier does not tower
+    // over 16px body text on a phone.
+    const dramatic = defineTheme({
+      name: 'auto-dramatic',
+      typography: {scale: {base: 14, ratio: 1.5}},
+      mobile: {typography: {scale: {base: 16, pin: 'auto'}}},
+    });
+    const dramaticExplicit = defineTheme({
+      name: 'auto-dramatic-explicit',
+      typography: {scale: {base: 14, ratio: 1.5}},
+      mobile: {typography: {scale: {base: 16, pin: 'heading-3'}}},
+    });
+    expect(dramatic.__conditional![0].tokens).toEqual(
+      dramaticExplicit.__conditional![0].tokens,
+    );
+  });
+
+  it('pins against the built-in scale when the theme declares none', () => {
+    const theme = defineTheme({
+      name: 'pin-default-scale',
+      mobile: {typography: {scale: {base: 16, pin: 'display-1'}}},
+    });
+    // The built-in scale is 14/1.2, so Display 1 holds at its 42px default.
+    expect(
+      roleSize(
+        {...theme.tokens, ...theme.__conditional![0].tokens},
+        'display-1',
+      ),
+    ).toBe(42);
+  });
+
+  it('is a no-op for a theme whose base already clears the floor', () => {
+    const theme = defineTheme({
+      name: 'already-16',
+      typography: {scale: {base: 16, ratio: 1.25}},
+      mobile: {typography: {scale: {base: 16, pin: 'display-1'}}},
+    });
+    // Nothing to re-derive: the conditional ladder equals the desktop one,
+    // rounding included.
+    const conditional = theme.__conditional![0].tokens;
+    for (const [key, value] of Object.entries(conditional)) {
+      if (key.startsWith('--font-size-')) {
+        expect(value).toBe(theme.tokens[key]);
+      }
+    }
+  });
+
+  it('carries weight overrides through a pinned scale', () => {
+    const theme = defineTheme({
+      name: 'pin-weights',
+      typography: desktop,
+      mobile: {
+        typography: {
+          scale: {base: 16, pin: 'display-1'},
+          heading: {weight: 'bold'},
+        },
+      },
+    });
+    expect(theme.__conditional![0].tokens['--text-heading-1-weight']).toBe(
+      'var(--font-weight-bold)',
+    );
+  });
+});

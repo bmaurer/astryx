@@ -36,8 +36,14 @@ import type {
   DefineThemeInput,
 } from './defineTheme';
 import type {TypographyConfig} from './types';
-import type {TypeScaleConfig} from './expandTypeScale';
-import {expandTypeScale, generateTypeScaleComponents} from './expandTypeScale';
+import type {TypeScaleConfig, TypeScalePinAnchor} from './expandTypeScale';
+import {
+  expandTypeScale,
+  generateTypeScaleComponents,
+  derivePinnedRatio,
+  recommendedPinAnchor,
+  DEFAULT_TYPE_SCALE,
+} from './expandTypeScale';
 import {expandMotionScale, type MotionScaleConfig} from './expandMotionScale';
 import {expandRadiusScale, type RadiusScaleConfig} from './expandRadiusScale';
 import {expandColorScale, type ColorScaleConfig} from './expandColorScale';
@@ -84,6 +90,65 @@ export interface ThemeBreakpoints {
 }
 
 /**
+ * A conditional type scale.
+ *
+ * Every field is optional, and each one that is omitted is inherited from the
+ * theme's own (desktop) scale — so a condition states only what differs.
+ *
+ * @example
+ * ```
+ * // Floor body to 16 and keep the desktop ratio: the whole ladder lifts.
+ * scale: {base: 16}
+ *
+ * // Floor body to 16 and hold Display 1 at its desktop size: the ratio is
+ * // re-derived so the top of the scale does not grow.
+ * scale: {base: 16, pin: 'display-1'}
+ * ```
+ */
+export interface ConditionalTypeScale {
+  /**
+   * Base font size in px, anchored to body text.
+   * Defaults to the theme's own base — set 16 for the touch readability floor.
+   */
+  base?: number;
+  /**
+   * Scaling ratio for the geometric progression.
+   * Defaults to the theme's own ratio. Ignored when `pin` is set, which
+   * derives the ratio instead.
+   */
+  ratio?: number;
+  /**
+   * Hold one role at the size it has in the theme's own scale, and re-derive
+   * the ratio so the rest of the ladder falls around it.
+   *
+   * Without this, raising `base` raises every role by the same factor — a
+   * Display 1 that reads well at 42px on a desktop becomes 48px on the device
+   * with the least room for it. Pinning trades some of that growth away: the
+   * pinned role holds, the roles below it still rise to meet the new base.
+   *
+   * `'auto'` picks the anchor from the theme's ratio: Display 1 up to 1.25,
+   * Heading 2 below 1.414, Heading 3 at 1.414 and above — pinning lower the
+   * more dramatic the scale. Unset means no pin: the desktop ratio is kept and
+   * the whole ladder lifts with the base.
+   *
+   * Takes precedence over `ratio`.
+   */
+  pin?: TypeScalePinAnchor | 'auto';
+}
+
+/**
+ * Typography overrides for a condition — the theme's typography config, with a
+ * scale whose fields are all optional and can pin to the desktop scale.
+ */
+export interface ConditionalTypographyConfig extends Omit<
+  TypographyConfig,
+  'scale'
+> {
+  /** Type scale for this condition. Omitted fields follow the theme's own. */
+  scale?: ConditionalTypeScale;
+}
+
+/**
  * Overrides that apply only where a condition matches — a partial theme with
  * the same shape as the top-level input.
  *
@@ -92,7 +157,7 @@ export interface ThemeBreakpoints {
  */
 export interface ConditionalThemeOverrides {
   /** Typography overrides — scale, families, weights. */
-  typography?: TypographyConfig;
+  typography?: ConditionalTypographyConfig;
   /** Color scale overrides. */
   color?: ColorScaleConfig;
   /** Radius scale overrides. */
@@ -149,20 +214,56 @@ function resolveTokenValue(value: TokenValue): string {
 }
 
 /**
+ * Resolve a condition's type scale against the desktop scale it overrides.
+ *
+ * `base` and `ratio` fall back to the desktop scale's, so a condition states
+ * only what differs. A `pin` derives the ratio instead of taking it, holding
+ * the named role at its desktop size.
+ */
+function resolveConditionalScale(
+  scale: ConditionalTypeScale,
+  desktop: {base: number; ratio: number},
+): {base: number; ratio: number} {
+  const base = scale.base ?? desktop.base;
+
+  if (scale.pin) {
+    const anchor: TypeScalePinAnchor =
+      scale.pin === 'auto' ? recommendedPinAnchor(desktop.ratio) : scale.pin;
+    return {
+      base,
+      ratio: derivePinnedRatio({
+        desktopBase: desktop.base,
+        desktopRatio: desktop.ratio,
+        base,
+        anchor,
+      }),
+    };
+  }
+
+  return {base, ratio: scale.ratio ?? desktop.ratio};
+}
+
+/**
  * Resolve one condition's partial theme into tokens + component overrides.
  *
  * Mirrors the base theme's axis precedence exactly: generated values first
  * (color, type scale, radius, motion, font families), explicit `tokens` last.
  */
-function resolveOverrides(input: ConditionalThemeOverrides): {
+function resolveOverrides(
+  input: ConditionalThemeOverrides,
+  desktopScale: {base: number; ratio: number},
+): {
   tokens: Record<string, string>;
   components?: ComponentStyleMap;
 } {
   const tokens: Record<string, string> = {};
 
-  const typo: TypographyConfig | undefined = input.typography;
+  const typo = input.typography;
+  const resolvedScale = typo?.scale
+    ? resolveConditionalScale(typo.scale, desktopScale)
+    : undefined;
   const typeScaleConfig: TypeScaleConfig | undefined = typo
-    ? buildTypeScaleConfig(typo)
+    ? buildTypeScaleConfig(typo, resolvedScale)
     : undefined;
 
   if (input.color) {
@@ -206,16 +307,25 @@ function resolveOverrides(input: ConditionalThemeOverrides): {
  * Returns `undefined` when the input declares none — the opt-in guarantee:
  * a theme that never mentions a condition carries no conditional data and
  * generates no conditional CSS.
+ *
+ * A condition's type scale resolves against the theme's own scale (or the
+ * built-in one, when the theme declares none), so an omitted `base`/`ratio` is
+ * inherited and a `pin` has a desktop size to hold its anchor at.
  */
 export function resolveConditionalThemes(
-  input: Pick<DefineThemeInput, 'mobile' | 'breakpoints'>,
+  input: Pick<DefineThemeInput, 'mobile' | 'breakpoints' | 'typography'>,
 ): ResolvedConditionalTheme[] | undefined {
   const layers: ResolvedConditionalTheme[] = [];
+
+  const desktopScale = {
+    base: input.typography?.scale?.base ?? DEFAULT_TYPE_SCALE.base,
+    ratio: input.typography?.scale?.ratio ?? DEFAULT_TYPE_SCALE.ratio,
+  };
 
   // Read the key only when it is set — absent or null means "no mobile layer".
   const mobile = input.mobile;
   if (mobile != null) {
-    const {tokens, components} = resolveOverrides(mobile);
+    const {tokens, components} = resolveOverrides(mobile, desktopScale);
     layers.push({
       condition: 'mobile',
       query: mobileMediaQuery(input.breakpoints?.mobile),

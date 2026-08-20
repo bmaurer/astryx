@@ -49,15 +49,37 @@ export function buildFontFamily(
 }
 
 /**
+ * A typography config a type scale can be built from.
+ *
+ * The scale's own fields are optional so the conditional theme layer, whose
+ * scale inherits anything it does not state, shares this one builder — it
+ * passes the values it resolved as `resolvedScale`.
+ */
+export type TypeScaleSource = Omit<TypographyConfig, 'scale'> & {
+  scale?: {base?: number; ratio?: number};
+};
+
+/**
  * Build the type-scale config from a typography config.
  *
  * Returns undefined when the typography config has no `scale` — font families
  * and weights alone do not produce a scale.
  */
 export function buildTypeScaleConfig(
-  typo: TypographyConfig,
+  typo: TypeScaleSource,
+  /**
+   * Base and ratio to use instead of `typo.scale`'s own. The conditional theme
+   * layer resolves its scale first (a pin re-derives the ratio, and either
+   * field may be inherited from the desktop scale) and hands the result in, so
+   * weight collection stays in one place.
+   */
+  resolvedScale?: {base: number; ratio: number},
 ): TypeScaleConfig | undefined {
-  if (!typo.scale) {
+  // The resolved scale wins when the caller supplies one; otherwise the
+  // config's own fields must both be present for there to be a scale at all.
+  const base = resolvedScale?.base ?? typo.scale?.base;
+  const ratio = resolvedScale?.ratio ?? typo.scale?.ratio;
+  if (base === undefined || ratio === undefined) {
     return undefined;
   }
 
@@ -94,8 +116,8 @@ export function buildTypeScaleConfig(
   }
 
   return {
-    base: typo.scale.base,
-    ratio: typo.scale.ratio,
+    base,
+    ratio,
     weights: {
       ...(Object.keys(headingWeights).length > 0
         ? {heading: headingWeights}
@@ -110,7 +132,7 @@ export function buildTypeScaleConfig(
  * Heading inherits from body when it declares no family of its own.
  */
 export function buildFontFamilyTokens(
-  typo: TypographyConfig,
+  typo: Omit<TypographyConfig, 'scale'>,
 ): Record<string, string> {
   const tokens: Record<string, string> = {};
 
