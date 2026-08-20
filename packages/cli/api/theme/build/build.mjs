@@ -1196,16 +1196,37 @@ export async function themeBuild(
         `@layer reset {\n@scope (${scopeSelector}) to (${scopeTo}) {\n${proseInner}\n}\n}`,
       );
     }
-    if (component.length > 0) {
-      const componentInner = component.join('\n\n');
-      const componentScope = `@scope (${scopeSelector}) to (${scopeTo}) {\n${componentInner}\n}`;
-      // #3658: also emit attribute-specific rules so <Theme mode> can override color-scheme
-      const colorSchemeDecl = componentScope.includes('light-dark(')
-        ? '  :root { color-scheme: light dark; }\n  html[data-theme="light"] { color-scheme: light; }\n  html[data-theme="dark"] { color-scheme: dark; }\n\n'
+    // Conditional layers (mobile) are generated up front but emitted last:
+    // their text also decides whether the color-scheme guard is needed, since
+    // a theme may use light-dark() only inside a condition.
+    const conditional = _generateConditionalCSS
+      ? _generateConditionalCSS(resolvedTheme)
+      : {prose: '', component: ''};
+
+    const componentInner = component.join('\n\n');
+    const componentScope =
+      component.length > 0
+        ? `@scope (${scopeSelector}) to (${scopeTo}) {\n${componentInner}\n}`
         : '';
+    // #3658: also emit attribute-specific rules so <Theme mode> can override
+    // color-scheme. light-dark() resolves against color-scheme wherever it is
+    // written, so a theme that only uses it inside a conditional block needs
+    // the guard just as much as one that uses it in the base rules — check
+    // both, or the built CSS silently loses light-dark() on that path.
+    const usesLightDark =
+      componentScope.includes('light-dark(') ||
+      conditional.component.includes('light-dark(') ||
+      conditional.prose.includes('light-dark(');
+    const colorSchemeDecl = usesLightDark
+      ? '  :root { color-scheme: light dark; }\n  html[data-theme="light"] { color-scheme: light; }\n  html[data-theme="dark"] { color-scheme: dark; }\n\n'
+      : '';
+    if (componentScope) {
       cssParts.push(
         `@layer astryx-theme {\n${colorSchemeDecl}${componentScope}\n}`,
       );
+    } else if (colorSchemeDecl) {
+      // No base component rules, but a condition needs the guard.
+      cssParts.push(`@layer astryx-theme {\n${colorSchemeDecl.trimEnd()}\n}`);
     }
     // On-media rules (MediaTheme dark/light surface overrides)
     if (_generateOnMediaCSS) {
@@ -1217,14 +1238,11 @@ export async function themeBuild(
     // Conditional layers (mobile). Emitted last within each layer so a
     // matching condition wins on source order — a media query adds no
     // specificity. Nothing is emitted when the theme declares no conditions.
-    if (_generateConditionalCSS) {
-      const conditional = _generateConditionalCSS(resolvedTheme);
-      if (conditional.prose) {
-        cssParts.push(`@layer reset {\n${conditional.prose}\n}`);
-      }
-      if (conditional.component) {
-        cssParts.push(`@layer astryx-theme {\n${conditional.component}\n}`);
-      }
+    if (conditional.prose) {
+      cssParts.push(`@layer reset {\n${conditional.prose}\n}`);
+    }
+    if (conditional.component) {
+      cssParts.push(`@layer astryx-theme {\n${conditional.component}\n}`);
     }
     if (cssParts.length === 0) {
       logger.log('No overrides found — nothing to build.');

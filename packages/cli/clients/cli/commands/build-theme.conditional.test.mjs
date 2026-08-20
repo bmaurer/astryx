@@ -118,4 +118,62 @@ describe('theme build — conditional layer', () => {
     expect(css).not.toContain('pointer: coarse');
     expect(css).not.toContain('@media');
   }, 120_000);
+  it('emits the color-scheme guard when only the condition uses light-dark()', async () => {
+    const css = await buildTheme(
+      tmpDir,
+      'cond-light-dark',
+      `{
+        name: 'cond-light-dark',
+        tokens: {'--spacing-4': '16px'},
+        mobile: {tokens: {'--color-text-primary': ['#111', '#eee']}},
+      }`,
+    );
+
+    // light-dark() only resolves where color-scheme is declared. The base
+    // path emits the guard whenever it writes a light-dark() value; a theme
+    // that writes one ONLY inside a condition needs it just as much, or the
+    // built CSS silently drops the dark half on that path.
+    expect(css).toContain('light-dark(#111, #eee)');
+    expect(css).toContain(':root { color-scheme: light dark; }');
+    expect(css).toContain('html[data-theme="dark"] { color-scheme: dark; }');
+    // The guard is declared before the block that needs it.
+    expect(css.indexOf(':root { color-scheme: light dark; }')).toBeLessThan(
+      css.indexOf('light-dark(#111, #eee)'),
+    );
+  }, 120_000);
+
+  it('leaves the color-scheme guard out when nothing uses light-dark()', async () => {
+    const css = await buildTheme(
+      tmpDir,
+      'cond-no-light-dark',
+      `{
+        name: 'cond-no-light-dark',
+        tokens: {'--spacing-4': '16px'},
+        mobile: {tokens: {'--spacing-4': '12px'}},
+      }`,
+    );
+
+    // The `:root` guard is what light-dark() needs; the on-media surface
+    // rules carry their own color-scheme and always ship.
+    expect(css).not.toContain(':root { color-scheme: light dark; }');
+    expect(css).not.toContain('light-dark(');
+  }, 120_000);
+
+  it('builds a pinned mobile type scale', async () => {
+    const css = await buildTheme(
+      tmpDir,
+      'cond-pin',
+      `{
+        name: 'cond-pin',
+        typography: {scale: {base: 14, ratio: 1.2}},
+        mobile: {typography: {scale: {base: 16, pin: 'display-1'}}},
+      }`,
+    );
+
+    const conditional = css.slice(css.indexOf(MOBILE_QUERY));
+    // Body meets the 16px floor (1rem) and Display 1 holds its desktop
+    // 42px (2.625rem) — the pin, end to end through the built path.
+    expect(conditional).toContain('--font-size-base: 1rem;');
+    expect(conditional).toContain('--font-size-5xl: 2.625rem;');
+  }, 120_000);
 });
