@@ -203,7 +203,12 @@ export function recommendedPinAnchor(ratio: number): TypeScalePinAnchor {
  *
  * Returns `desktopRatio` unchanged when the base does not move — a theme whose
  * base already clears the floor has nothing to re-derive, and returning the
- * ratio untouched keeps its output byte-identical.
+ * ratio untouched keeps its output byte-identical — and when the solve would
+ * produce a ratio at or below 1, which happens once `base` reaches the
+ * anchor's own desktop size. A ratio of 1 flattens the ladder and anything
+ * below it inverts the hierarchy outright (Display 1 smaller than body), so
+ * the pin is refused rather than honoured into nonsense. The condition is on
+ * the numbers, not the anchor, so no type can catch it.
  */
 export function derivePinnedRatio(params: {
   /** Base of the desktop scale being pinned against. */
@@ -224,7 +229,20 @@ export function derivePinnedRatio(params: {
   if (!(anchorSize > 0) || !(base > 0)) {
     return desktopRatio;
   }
-  return Math.pow(anchorSize / base, 1 / step);
+  const derived = Math.pow(anchorSize / base, 1 / step);
+  if (!(derived > 1)) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        `[astryx] A conditional type scale pins '${anchor}' at ${anchorSize}px ` +
+          `but sets base ${base}px, which is not smaller — the ratio that ` +
+          `satisfies both is ${derived.toFixed(3)}, flattening or inverting the ` +
+          `scale. Keeping the base ratio (${desktopRatio}) instead. Pin a role ` +
+          `above the new base, or lower the base.`,
+      );
+    }
+    return desktopRatio;
+  }
+  return derived;
 }
 
 // =============================================================================

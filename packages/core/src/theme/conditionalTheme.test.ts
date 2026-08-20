@@ -13,7 +13,7 @@
  *     the base theme is untouched.
  */
 
-import {describe, it, expect} from 'vitest';
+import {describe, it, expect, vi} from 'vitest';
 import {
   defineTheme,
   generateThemeCSS,
@@ -499,5 +499,248 @@ describe('conditional theme — the type scale', () => {
     expect(theme.__conditional![0].tokens['--text-heading-1-weight']).toBe(
       'var(--font-weight-bold)',
     );
+  });
+});
+
+describe('conditional theme — inheritance through extends', () => {
+  /** Read a semantic role's px size from a theme's effective token map. */
+  function roleSize(tokens: Record<string, string>, role: string): number {
+    const ref = tokens[`--text-${role}-size`];
+    const raw = /var\((--font-size-[^)]+)\)/.exec(ref);
+    return Math.round(parseFloat(raw ? tokens[raw[1]] : ref) * 16);
+  }
+  /** The tokens in force inside a theme's mobile block. */
+  function mobileTokens(
+    theme: ReturnType<typeof defineTheme>,
+  ): Record<string, string> {
+    return {...theme.tokens, ...theme.__conditional![0].tokens};
+  }
+
+  it('carries the parent layer into a child that declares none', () => {
+    const parent = defineTheme({
+      name: 'ext-parent',
+      mobile: {tokens: {'--spacing-4': '12px'}},
+    });
+    const child = defineTheme({
+      name: 'ext-child',
+      extends: parent,
+      tokens: {'--color-accent': 'red'},
+    });
+
+    // A child that changes one colour must not silently lose its mobile
+    // styling — every other axis is inherited, and so is this one.
+    expect(child.__conditional).toBeDefined();
+    expect(child.__conditional![0].tokens['--spacing-4']).toBe('12px');
+    expect(generateThemeCSS(child).component).toContain(MOBILE_QUERY);
+  });
+
+  it("merges a child's layer over the parent's, per token", () => {
+    const parent = defineTheme({
+      name: 'ext-merge-parent',
+      mobile: {
+        tokens: {'--spacing-4': '12px', '--spacing-6': '20px'},
+        components: {button: {base: {minBlockSize: '44px'}}},
+      },
+    });
+    const child = defineTheme({
+      name: 'ext-merge-child',
+      extends: parent,
+      mobile: {
+        tokens: {'--spacing-4': '10px'},
+        components: {button: {base: {fontWeight: '600'}}},
+      },
+    });
+
+    const layer = child.__conditional![0];
+    expect(layer.tokens['--spacing-4']).toBe('10px'); // child wins
+    expect(layer.tokens['--spacing-6']).toBe('20px'); // parent survives
+    expect(layer.components?.button?.base).toEqual({
+      minBlockSize: '44px',
+      fontWeight: '600',
+    });
+  });
+
+  it('resolves a pin against the inherited scale, not the built-in one', () => {
+    const parent = defineTheme({
+      name: 'ext-scale-parent',
+      typography: {scale: {base: 18, ratio: 1.5}},
+    });
+    const child = defineTheme({
+      name: 'ext-scale-child',
+      extends: parent,
+      mobile: {typography: {scale: {base: 16, pin: 'display-1'}}},
+    });
+
+    // `pin` means "hold this role where it already is". Resolving against the
+    // default 14/1.2 instead would move Display 1 from 205px to 42px.
+    const desktop = roleSize(parent.tokens, 'display-1');
+    expect(desktop).toBe(205);
+    expect(roleSize(mobileTokens(child), 'display-1')).toBe(desktop);
+  });
+
+  it('inherits an omitted ratio from the parent scale', () => {
+    const parent = defineTheme({
+      name: 'ext-ratio-parent',
+      typography: {scale: {base: 18, ratio: 1.5}},
+    });
+    const child = defineTheme({
+      name: 'ext-ratio-child',
+      extends: parent,
+      mobile: {typography: {scale: {base: 16}}},
+    });
+    // 16 × 1.5³ = 54, not 16 × 1.2³ = 28.
+    expect(roleSize(mobileTokens(child), 'heading-1')).toBe(54);
+  });
+
+  it('inherits the breakpoint, so a theme family agrees on where mobile begins', () => {
+    const parent = defineTheme({
+      name: 'ext-bp-parent',
+      breakpoints: {mobile: 640},
+      mobile: {tokens: {'--spacing-4': '12px'}},
+    });
+    const child = defineTheme({
+      name: 'ext-bp-child',
+      extends: parent,
+      mobile: {tokens: {'--spacing-4': '11px'}},
+    });
+    expect(child.__conditional![0].query).toBe(
+      '(max-width: 640px) and (pointer: coarse)',
+    );
+
+    // And a child may still override it.
+    const override = defineTheme({
+      name: 'ext-bp-override',
+      extends: parent,
+      breakpoints: {mobile: 500},
+      mobile: {tokens: {'--spacing-4': '11px'}},
+    });
+    expect(override.__conditional![0].query).toBe(
+      '(max-width: 500px) and (pointer: coarse)',
+    );
+  });
+
+  it('leaves a parentless theme exactly as it was', () => {
+    const theme = defineTheme({
+      name: 'ext-none',
+      typography: {scale: {base: 14, ratio: 1.2}},
+      mobile: {typography: {scale: {base: 16, pin: 'display-1'}}},
+    });
+    expect(roleSize(mobileTokens(theme), 'display-1')).toBe(42);
+  });
+});
+
+describe('conditional theme — axis configs merge over the theme’s own', () => {
+  it('keeps the brand accent when a condition sets only contrast', () => {
+    const conditional = defineTheme({
+      name: 'axis-color',
+      color: {accent: '#aa00aa'},
+      mobile: {color: {contrast: 'high'}},
+    });
+    const equivalent = defineTheme({
+      name: 'axis-color-flat',
+      color: {accent: '#aa00aa', contrast: 'high'},
+    });
+
+    // Re-expanding from the DEFAULT accent would tint every neutral with the
+    // wrong hue — the same failure the type scale's inheritance avoids.
+    for (const [key, value] of Object.entries(
+      conditional.__conditional![0].tokens,
+    )) {
+      expect([key, value]).toEqual([key, equivalent.tokens[key]]);
+    }
+  });
+
+  it('lets a condition change one field of the radius or motion scale', () => {
+    const theme = defineTheme({
+      name: 'axis-radius',
+      radius: {base: 4, multiplier: 2},
+      motion: {fast: 100, medium: 200, ratio: 0.5},
+      mobile: {radius: {base: 3}, motion: {fast: 80}},
+    });
+    const equivalent = defineTheme({
+      name: 'axis-radius-flat',
+      radius: {base: 3, multiplier: 2},
+      motion: {fast: 80, medium: 200, ratio: 0.5},
+    });
+
+    for (const [key, value] of Object.entries(
+      theme.__conditional![0].tokens,
+    )) {
+      expect([key, value]).toEqual([key, equivalent.tokens[key]]);
+    }
+  });
+});
+
+describe('conditional theme — refusing nonsense', () => {
+  it('keeps the base ratio when a pin would flatten or invert the ladder', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const theme = defineTheme({
+      name: 'pin-inverted',
+      typography: {scale: {base: 14, ratio: 1.2}},
+      // Heading 3 is 17px on the desktop scale, so a 24px base cannot hold it
+      // AND stay a ladder: the ratio that satisfies both is 0.85.
+      mobile: {typography: {scale: {base: 24, pin: 'heading-3'}}},
+    });
+    const tokens = {...theme.tokens, ...theme.__conditional![0].tokens};
+    const size = (role: string): number => {
+      const ref = tokens[`--text-${role}-size`];
+      const raw = /var\((--font-size-[^)]+)\)/.exec(ref);
+      return Math.round(parseFloat(raw ? tokens[raw[1]] : ref) * 16);
+    };
+
+    expect(size('display-1')).toBeGreaterThan(size('heading-1'));
+    expect(size('heading-1')).toBeGreaterThan(size('body'));
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('inverting the scale'),
+    );
+    warn.mockRestore();
+  });
+
+  it('falls back to the default breakpoint for a value that is not a width', () => {
+    for (const bad of [Number.NaN, Infinity, -5, 0]) {
+      const theme = defineTheme({
+        name: `bp-${String(bad)}`,
+        breakpoints: {mobile: bad},
+        mobile: {tokens: {'--spacing-4': '12px'}},
+      });
+      // `max-width: NaNpx` is invalid, so the block would never match and the
+      // whole layer would vanish with no signal.
+      expect(theme.__conditional![0].query).toBe(
+        `(max-width: ${DEFAULT_MOBILE_BREAKPOINT}px) and (pointer: coarse)`,
+      );
+    }
+  });
+});
+
+describe('conditional theme — emits only what can differ', () => {
+  it('skips the var-only prop rules the base theme already covers', () => {
+    const {component} = generateConditionalCSS(
+      defineTheme({
+        name: 'no-dead-rules',
+        typography: {scale: {base: 14, ratio: 1.2}},
+        mobile: {typography: {scale: {base: 16}}},
+      }),
+    );
+    // `.astryx-text.size:2xl {font-size: var(--font-size-2xl)}` resolves to
+    // the conditional value through the token block, so a copy inside the
+    // media query is byte-identical to the rule it shadows.
+    expect(component).not.toContain('font-size: var(--font-size-2xl);');
+    expect(component).not.toContain('color: var(--color-text-primary);');
+    // The rules that carry a baked value are still emitted.
+    expect(component).toContain('--font-size-base: 1rem;');
+  });
+
+  it('emits only the prose rules whose text actually changed', () => {
+    const {prose} = generateConditionalCSS(
+      defineTheme({
+        name: 'prose-diff-only',
+        typography: {scale: {base: 14, ratio: 1.2}},
+        mobile: {typography: {scale: {base: 16}}},
+      }),
+    );
+    // Heading font-family/color is pure var() — identical either side.
+    expect(prose).not.toContain('font-family: var(--font-family-heading);');
+    // Line heights are baked literals, so those rules do move.
+    expect(prose).toContain('line-height: 1.5;');
   });
 });

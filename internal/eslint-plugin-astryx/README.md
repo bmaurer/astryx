@@ -270,7 +270,7 @@ Use `:focus-visible`, or `:has(:focus-visible)` when the ring is drawn on a wrap
 
 **Bad:**
 
-````ts
+```ts
 const styles = stylex.create({
   base: {
     outline: {
@@ -291,7 +291,7 @@ import {focusOutlineStyles} from '../utils/focusOutline.stylex';
 // Preferred — the shared ring: .focusVisible on the focusable element,
 // .focusWithin (`:has(:focus-visible)`) on a wrapper around it.
 stylex.props(focusOutlineStyles.focusVisible);
-````
+```
 
 **Scope:** `outline` and its longhands only, and only where the ring is drawn — suppressing one on a broader selector (`outline: {':focus': 'none'}`) is legitimate and is not flagged. A field's `:focus-within` border and inset box-shadow (`Field/inputStyles.stylex.ts`) are a different treatment — "you are typing here" — and are deliberately not policed by this rule.
 

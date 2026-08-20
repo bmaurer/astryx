@@ -158,12 +158,12 @@ export interface ConditionalTypographyConfig extends Omit<
 export interface ConditionalThemeOverrides {
   /** Typography overrides — scale, families, weights. */
   typography?: ConditionalTypographyConfig;
-  /** Color scale overrides. */
-  color?: ColorScaleConfig;
-  /** Radius scale overrides. */
-  radius?: RadiusScaleConfig;
-  /** Motion scale overrides. */
-  motion?: MotionScaleConfig;
+  /** Color scale overrides. Merged over the theme's own color config. */
+  color?: Partial<ColorScaleConfig>;
+  /** Radius scale overrides. Merged over the theme's own radius config. */
+  radius?: Partial<RadiusScaleConfig>;
+  /** Motion scale overrides. Merged over the theme's own motion config. */
+  motion?: Partial<MotionScaleConfig>;
   /** Explicit token overrides — highest precedence within the condition. */
   tokens?: Partial<Record<TokenName, TokenValue>>;
   /** Component style overrides. */
@@ -194,11 +194,19 @@ export interface ResolvedConditionalTheme {
  *
  * Both halves are load-bearing: the width bound keeps it off large touch
  * screens, and `pointer: coarse` keeps it off a narrowed desktop window.
+ *
+ * A breakpoint that is not a positive finite number falls back to the default
+ * rather than reaching the CSS: `NaN` compiles to `max-width: NaNpx`, which no
+ * browser matches, so the whole layer would vanish with no signal.
  */
-export function mobileMediaQuery(
-  breakpoint: number = DEFAULT_MOBILE_BREAKPOINT,
-): string {
-  return `(max-width: ${breakpoint}px) and (pointer: coarse)`;
+export function mobileMediaQuery(breakpoint?: number): string {
+  const width =
+    typeof breakpoint === 'number' &&
+    Number.isFinite(breakpoint) &&
+    breakpoint > 0
+      ? breakpoint
+      : DEFAULT_MOBILE_BREAKPOINT;
+  return `(max-width: ${width}px) and (pointer: coarse)`;
 }
 
 /**
@@ -248,10 +256,16 @@ function resolveConditionalScale(
  *
  * Mirrors the base theme's axis precedence exactly: generated values first
  * (color, type scale, radius, motion, font families), explicit `tokens` last.
+ *
+ * Every scale axis is merged over the theme's own config before expanding, so
+ * a condition states only the fields that differ. Without that, an override
+ * like `{color: {contrast: 'high'}}` would re-expand the palette from the
+ * DEFAULT accent and silently drop the theme's brand hue — the same failure
+ * the type scale's inheritance avoids, in the other axes.
  */
 function resolveOverrides(
   input: ConditionalThemeOverrides,
-  desktopScale: {base: number; ratio: number},
+  theme: ThemeAxisConfigs,
 ): {
   tokens: Record<string, string>;
   components?: ComponentStyleMap;
@@ -259,6 +273,7 @@ function resolveOverrides(
   const tokens: Record<string, string> = {};
 
   const typo = input.typography;
+  const desktopScale = theme.scale ?? DEFAULT_TYPE_SCALE;
   const resolvedScale = typo?.scale
     ? resolveConditionalScale(typo.scale, desktopScale)
     : undefined;
@@ -267,16 +282,29 @@ function resolveOverrides(
     : undefined;
 
   if (input.color) {
-    Object.assign(tokens, expandColorScale(input.color));
+    const color: ColorScaleConfig = {...theme.color, ...input.color};
+    Object.assign(tokens, expandColorScale(color));
   }
   if (typeScaleConfig) {
     Object.assign(tokens, expandTypeScale(typeScaleConfig));
   }
+  // The expanders require a full config; a condition supplies a partial one
+  // and the theme's own fills the rest. Both are cast because the merge is
+  // only provably complete at runtime — a theme that sets neither the axis nor
+  // the condition's missing fields falls back to the expander's own defaults.
   if (input.radius) {
-    Object.assign(tokens, expandRadiusScale(input.radius));
+    const radius: RadiusScaleConfig = {
+      ...(theme.radius as RadiusScaleConfig),
+      ...input.radius,
+    };
+    Object.assign(tokens, expandRadiusScale(radius));
   }
   if (input.motion) {
-    Object.assign(tokens, expandMotionScale(input.motion));
+    const motion: MotionScaleConfig = {
+      ...(theme.motion as MotionScaleConfig),
+      ...input.motion,
+    };
+    Object.assign(tokens, expandMotionScale(motion));
   }
   if (typo) {
     Object.assign(tokens, buildFontFamilyTokens(typo));
@@ -302,37 +330,103 @@ function resolveOverrides(
 }
 
 /**
- * Resolve every conditional layer a theme input declares.
+ * The axis configs a condition resolves against — the theme's own, already
+ * merged with anything it inherited through `extends`.
+ * @internal
+ */
+export interface ThemeAxisConfigs {
+  scale?: {base: number; ratio: number};
+  color?: Partial<ColorScaleConfig>;
+  radius?: Partial<RadiusScaleConfig>;
+  motion?: Partial<MotionScaleConfig>;
+}
+
+/**
+ * Merge a parent's resolved conditional layers with a child's.
  *
- * Returns `undefined` when the input declares none — the opt-in guarantee:
- * a theme that never mentions a condition carries no conditional data and
+ * Same rule as every other inherited axis: matched by condition, the child's
+ * tokens spread over the parent's and component maps deep-merge, and a
+ * condition only the parent declares carries through untouched. A child that
+ * declares nothing inherits the parent's layers whole — the alternative is a
+ * theme that changes one colour and silently loses all its mobile styling.
+ */
+function mergeConditionalLayers(
+  base: ResolvedConditionalTheme[] | undefined,
+  own: ResolvedConditionalTheme[],
+): ResolvedConditionalTheme[] {
+  if (!base || base.length === 0) {
+    return own;
+  }
+  const byCondition = new Map(base.map(layer => [layer.condition, layer]));
+  for (const layer of own) {
+    const parent = byCondition.get(layer.condition);
+    byCondition.set(
+      layer.condition,
+      parent
+        ? {
+            condition: layer.condition,
+            // The child's query wins: it already reflects the effective
+            // breakpoint, inherited or overridden.
+            query: layer.query,
+            tokens: {...parent.tokens, ...layer.tokens},
+            components: deepMergeComponents(
+              parent.components,
+              layer.components,
+            ),
+          }
+        : layer,
+    );
+  }
+  return [...byCondition.values()];
+}
+
+/**
+ * Resolve every conditional layer a theme declares, merged with any it
+ * inherits from the theme it extends.
+ *
+ * Returns `undefined` when neither declares one — the opt-in guarantee: a
+ * theme that never mentions a condition carries no conditional data and
  * generates no conditional CSS.
  *
- * A condition's type scale resolves against the theme's own scale (or the
- * built-in one, when the theme declares none), so an omitted `base`/`ratio` is
- * inherited and a `pin` has a desktop size to hold its anchor at.
+ * `base` mirrors the third argument of `resolveOnMedia`: a conditional layer
+ * is inherited like every other axis, and a condition's scale, breakpoint and
+ * pin anchor all resolve against the EFFECTIVE theme, so a child that inherits
+ * its type scale pins against the scale it actually has.
  */
 export function resolveConditionalThemes(
-  input: Pick<DefineThemeInput, 'mobile' | 'breakpoints' | 'typography'>,
+  input: Pick<
+    DefineThemeInput,
+    'mobile' | 'breakpoints' | 'typography' | 'color' | 'radius' | 'motion'
+  >,
+  base?: {
+    __conditional?: ResolvedConditionalTheme[];
+    __typeScale?: {base: number; ratio: number};
+    __breakpoints?: ThemeBreakpoints;
+    __axisConfigs?: ThemeAxisConfigs;
+  },
 ): ResolvedConditionalTheme[] | undefined {
   const layers: ResolvedConditionalTheme[] = [];
 
-  const desktopScale = {
-    base: input.typography?.scale?.base ?? DEFAULT_TYPE_SCALE.base,
-    ratio: input.typography?.scale?.ratio ?? DEFAULT_TYPE_SCALE.ratio,
+  const theme: ThemeAxisConfigs = {
+    scale: input.typography?.scale ?? base?.__typeScale,
+    color: input.color ?? base?.__axisConfigs?.color,
+    radius: input.radius ?? base?.__axisConfigs?.radius,
+    motion: input.motion ?? base?.__axisConfigs?.motion,
   };
+  const breakpoint = input.breakpoints?.mobile ?? base?.__breakpoints?.mobile;
 
   // Read the key only when it is set — absent or null means "no mobile layer".
   const mobile = input.mobile;
   if (mobile != null) {
-    const {tokens, components} = resolveOverrides(mobile, desktopScale);
+    const {tokens, components} = resolveOverrides(mobile, theme);
     layers.push({
       condition: 'mobile',
-      query: mobileMediaQuery(input.breakpoints?.mobile),
+      query: mobileMediaQuery(breakpoint),
       tokens,
       components,
     });
   }
 
-  return layers.length > 0 ? layers : undefined;
+  const merged = mergeConditionalLayers(base?.__conditional, layers);
+  return merged.length > 0 ? merged : undefined;
 }

@@ -509,7 +509,9 @@ describe('Banner', () => {
           <p>Detail</p>
         </Banner>,
       );
-      expect(screen.getByRole('button', {name: 'Expand'})).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', {name: 'Expand'}),
+      ).toBeInTheDocument();
     });
 
     it('renders no description node for a description that renders nothing', () => {

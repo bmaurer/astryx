@@ -7,4 +7,6 @@
 
 A condition's type scale inherits: `base` and `ratio` are both optional and fall back to the theme's own scale, so a condition states only what differs. `scale.pin` holds one role (`'display-1'`…`'heading-3'`, or `'auto'` to pick by ratio) at the size it has in the desktop scale and re-derives the ratio around it — so flooring body to 16px on touch does not also grow the display tier. Unset means no pin: the desktop ratio is kept and the whole ladder lifts with the base.
 
+A conditional layer is inherited through `extends` like every other axis: a child that declares none keeps its parent's, and one that declares its own merges over it per token. The scale, the breakpoint and a pin anchor all resolve against the effective (post-`extends`) theme, and each scale axis is merged over the theme's own config before expanding — so `mobile: {color: {contrast: 'high'}}` keeps the theme's accent instead of re-tinting the palette from the default.
+
 @cixzhang

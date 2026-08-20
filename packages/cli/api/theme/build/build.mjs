@@ -824,10 +824,19 @@ function generateBuiltModule(themeDef, iconInfo, iconsSpecifier) {
     return `  ${field}: ${body},\n`;
   };
 
+  // Everything a theme that `extends` this artifact has to be able to read
+  // back. The conditional layer and the axis configs behind it belong here for
+  // the same reason `__onDark` does: without them a child of a built theme
+  // silently loses its mobile block, and a conditional scale re-derives
+  // against the built-in defaults instead of this theme's.
   const inheritableFields =
     serializeField('components', themeDef.components) +
     serializeField('__onDark', themeDef.__onDark) +
-    serializeField('__onLight', themeDef.__onLight);
+    serializeField('__onLight', themeDef.__onLight) +
+    serializeField('__conditional', themeDef.__conditional) +
+    serializeField('__typeScale', themeDef.__typeScale) +
+    serializeField('__breakpoints', themeDef.__breakpoints) +
+    serializeField('__axisConfigs', themeDef.__axisConfigs);
 
   return `${iconImport}/**
  * ${themeDef.name} theme — built by \`${getCliInvocation()} theme build\`
@@ -1172,6 +1181,7 @@ export async function themeBuild(
       'onDark',
       'onLight',
       'mobile',
+      'breakpoints',
     ];
     const needsResolution = INPUT_ONLY_FIELDS.some(
       field => themeDef[field] !== undefined,

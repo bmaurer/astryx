@@ -176,4 +176,35 @@ describe('theme build — conditional layer', () => {
     expect(conditional).toContain('--font-size-base: 1rem;');
     expect(conditional).toContain('--font-size-5xl: 2.625rem;');
   }, 120_000);
+  it('carries the conditional layer into the built artifact', async () => {
+    const project = path.join(tmpDir, 'project');
+    const themesDir = path.join(project, 'themes');
+    const themeFile = writeTheme(
+      themesDir,
+      'cond-artifact',
+      `{
+        name: 'cond-artifact',
+        typography: {scale: {base: 18, ratio: 1.5}},
+        breakpoints: {mobile: 640},
+        mobile: {tokens: {'--spacing-4': '12px'}},
+      }`,
+    );
+    const result = await runCli(
+      ['theme', 'build', path.relative(project, themeFile)],
+      project,
+    );
+    expect(result.code).toBe(0);
+
+    const js = fs.readFileSync(
+      path.join(themesDir, 'cond-artifact.js'),
+      'utf-8',
+    );
+    // A theme that `extends` a built artifact reads these back. Without them
+    // the child silently loses its mobile block, and a conditional scale
+    // re-derives against the built-in defaults instead of this theme's.
+    expect(js).toContain('__conditional');
+    expect(js).toContain('(max-width: 640px) and (pointer: coarse)');
+    expect(js).toContain('__typeScale');
+    expect(js).toContain('__breakpoints');
+  }, 120_000);
 });

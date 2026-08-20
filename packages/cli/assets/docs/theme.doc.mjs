@@ -293,6 +293,14 @@ mobile: {
               "A condition's `scale` fields are all optional: an omitted `base` or `ratio` follows the theme's own scale, so a condition states only what differs.",
             ],
             [
+              'Inheritance',
+              "A conditional layer is inherited through `extends` like every other axis: a child that declares no `mobile` keeps its parent's, and one that declares its own merges over it per token. The scale, the breakpoint and a `pin` anchor all resolve against the EFFECTIVE theme, so a child that inherits its type scale pins against the scale it actually has.",
+            ],
+            [
+              'Axis merging',
+              "Each scale axis inside a condition is merged over the theme's own config before it is expanded, so `mobile: {color: {contrast: 'high'}}` keeps your accent and `mobile: {radius: {base: 3}}` keeps your multiplier.",
+            ],
+            [
               'Pinning',
               "`pin: 'display-1' | 'display-2' | 'display-3' | 'heading-1' | 'heading-2' | 'heading-3' | 'auto'` holds that role at its desktop size and derives the ratio from it. Takes precedence over `ratio`. Unset means no pin — the desktop ratio is kept and the whole ladder lifts with the base.",
             ],

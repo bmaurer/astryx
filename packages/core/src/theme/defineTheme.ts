@@ -48,6 +48,7 @@ import {
   resolveConditionalThemes,
   type ConditionalThemeOverrides,
   type ResolvedConditionalTheme,
+  type ThemeAxisConfigs,
   type ThemeBreakpoints,
 } from './conditionalTheme';
 import {buildFontFamilyTokens, buildTypeScaleConfig} from './themeAxes';
@@ -470,6 +471,30 @@ export interface DefinedTheme {
    * @internal
    */
   __conditional?: ResolvedConditionalTheme[];
+  /**
+   * The type scale this theme resolved to — its own, or the one it inherited
+   * through `extends`, or the built-in default.
+   *
+   * A resolved theme otherwise stores only *results* (a flat token map), which
+   * a child cannot read a base and ratio back out of. A conditional layer
+   * needs those instructions: its scale inherits, and `pin` has to know what
+   * size the anchor holds at.
+   * @internal
+   */
+  __typeScale?: {base: number; ratio: number};
+  /**
+   * The breakpoints this theme resolved to, inherited through `extends` like
+   * every other axis, so a theme family agrees on where mobile begins.
+   * @internal
+   */
+  __breakpoints?: ThemeBreakpoints;
+  /**
+   * The color/radius/motion configs this theme resolved to, kept for the same
+   * reason as `__typeScale`: a conditional layer merges over them so it can
+   * state one field of an axis without re-expanding the rest from defaults.
+   * @internal
+   */
+  __axisConfigs?: ThemeAxisConfigs;
 }
 
 // =============================================================================
@@ -642,9 +667,29 @@ export function defineTheme(input: DefineThemeInput): DefinedTheme {
   const __onDark = resolveOnMedia('dark', input.onDark, base?.__onDark);
   const __onLight = resolveOnMedia('light', input.onLight, base?.__onLight);
 
-  // 4a. Resolve conditional layers (mobile). Undefined when none are declared,
-  // so a theme that does not opt in carries no conditional data at all.
-  const __conditional = resolveConditionalThemes(input);
+  // 4a. Resolve conditional layers (mobile), inherited from the base like
+  // every other axis. Undefined when neither declares one, so a theme that
+  // does not opt in carries no conditional data at all.
+  const __conditional = resolveConditionalThemes(input, base);
+
+  // The axis CONFIGS a conditional layer resolves against — a resolved theme
+  // otherwise keeps only the flat token map its scales produced, which a child
+  // cannot read a base, ratio or accent back out of.
+  const __typeScale = typeScaleConfig
+    ? {base: typeScaleConfig.base, ratio: typeScaleConfig.ratio}
+    : base?.__typeScale;
+  const __breakpoints =
+    input.breakpoints || base?.__breakpoints
+      ? {...base?.__breakpoints, ...input.breakpoints}
+      : undefined;
+  const __axisConfigs =
+    input.color || input.radius || input.motion || base?.__axisConfigs
+      ? {
+          color: input.color ?? base?.__axisConfigs?.color,
+          radius: input.radius ?? base?.__axisConfigs?.radius,
+          motion: input.motion ?? base?.__axisConfigs?.motion,
+        }
+      : undefined;
 
   // 5. Merge icons — input icons override base icons
   const icons =
@@ -674,6 +719,9 @@ export function defineTheme(input: DefineThemeInput): DefinedTheme {
     // Spread rather than assign so a theme without conditions has no
     // `__conditional` key at all, not a key holding undefined.
     ...(__conditional ? {__conditional} : {}),
+    ...(__typeScale ? {__typeScale} : {}),
+    ...(__breakpoints ? {__breakpoints} : {}),
+    ...(__axisConfigs ? {__axisConfigs} : {}),
   };
 
   registerTheme(theme);
@@ -699,6 +747,7 @@ export {
   mobileMediaQuery,
   type ConditionalThemeOverrides,
   type ResolvedConditionalTheme,
+  type ThemeAxisConfigs,
   type ThemeBreakpoints,
 } from './conditionalTheme';
 

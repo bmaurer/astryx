@@ -176,9 +176,7 @@ export function ReferenceDocView({
                       [];
                     for (let j = blockIndex; j < section.content.length; j++) {
                       const run = section.content[j];
-                      if (!isGuidanceList(run)) {
-                        break;
-                      }
+                      if (!isGuidanceList(run)) {break;}
                       for (const item of run.items ?? []) {
                         items.push({
                           guidance: run.style === 'do',

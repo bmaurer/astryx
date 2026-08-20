@@ -745,14 +745,15 @@ export function generateConditionalCSS(theme: DefinedTheme): ThemeCSSOutput {
       parts.push(`  :scope {\n${declarations}\n  }`);
     }
 
-    // Component overrides, plus the prop-level rules the base theme emits
-    // alongside them (both are no-ops unless the condition touches those
-    // components).
+    // Component overrides. The prop-level colour and size rules the base
+    // theme emits alongside them are deliberately NOT re-emitted here: they
+    // are `var()` references only (`font-size: var(--font-size-2xl)`), so they
+    // resolve to the conditional value through the token block above and a
+    // copy inside the media query is byte-identical to the base rule it
+    // shadows — dead weight in every built stylesheet.
     if (layer.components) {
       generateComponentRules(layer.components, parts);
     }
-    generateColorOverrides(layer.components ?? {}, parts);
-    generateSizeOverrides(layer.components ?? {}, parts);
 
     if (parts.length > 0) {
       componentBlocks.push(wrapConditional(layer.query, scopeSelector, parts));
@@ -764,10 +765,20 @@ export function generateConditionalCSS(theme: DefinedTheme): ThemeCSSOutput {
     );
     if (touchesProse) {
       const merged = {...theme.tokens, ...layer.tokens};
+      const baseVal = (key: string): string =>
+        theme.tokens[key] || `var(${key})`;
       const val = (key: string): string => merged[key] || `var(${key})`;
+      // Only the rules whose text actually changed: prose bakes line-heights
+      // in as literals, but most of each block is `var()` references that
+      // resolve to the conditional value on their own.
+      const baseParts: string[] = [];
+      generateProseRules(baseVal, baseParts);
       const proseParts: string[] = [];
       generateProseRules(val, proseParts);
-      proseBlocks.push(wrapConditional(layer.query, scopeSelector, proseParts));
+      const changed = proseParts.filter((rule, i) => rule !== baseParts[i]);
+      if (changed.length > 0) {
+        proseBlocks.push(wrapConditional(layer.query, scopeSelector, changed));
+      }
     }
   }
 
