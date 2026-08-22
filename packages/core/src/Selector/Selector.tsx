@@ -631,6 +631,27 @@ interface SelectorPropsBase<
   hasSearch?: boolean;
 
   /**
+   * Whether to show the chevron at the end of the trigger. Set false to let
+   * the clear button stand alone in that slot instead of sitting beside a
+   * second glyph — with `hasClear`, a selector that has a value otherwise
+   * shows both.
+   *
+   * This is about the chevron only. A status glyph takes the same slot and is
+   * unaffected: an errored selector still shows its status icon.
+   *
+   * The chevron is decorative (`aria-hidden`) and sits outside the trigger
+   * button, so dropping it leaves the accessible name, the focus order, and
+   * the keyboard behaviour untouched.
+   *
+   * @default true
+   * @example
+   * ```
+   * <Selector hasClear hasChevron={false} value={value} onChange={setValue} />
+   * ```
+   */
+  hasChevron?: boolean;
+
+  /**
    * Placeholder text for the search input.
    * @default 'Search...'
    */
@@ -781,6 +802,7 @@ export function Selector<T extends SelectorOptionType>(
     renderValue,
     indicatorPosition = 'end',
     hasSearch = false,
+    hasChevron = true,
     searchPlaceholder: searchPlaceholderFromProps,
     placement,
     isDefaultOpen = false,
@@ -1528,6 +1550,10 @@ export function Selector<T extends SelectorOptionType>(
           and the icon color, so the status glyph and the chevron are each
           directly targetable instead of sharing one untargetable parent — and
           the two affordances stop sharing a node.
+
+          `hasChevron` gates only the chevron arm. A status glyph is a report
+          about the value, not an expand affordance, so it keeps the slot even
+          when the chevron is off.
         */}
         {showStatusIcon ? (
           showStatusTooltip ? (
@@ -1556,7 +1582,7 @@ export function Selector<T extends SelectorOptionType>(
               xstyle={styles.triggerIcon}
             />
           )
-        ) : (
+        ) : hasChevron ? (
           <Icon
             icon="chevronDown"
             size="sm"
@@ -1578,7 +1604,7 @@ export function Selector<T extends SelectorOptionType>(
               state: popover.isOpen ? 'expanded' : 'collapsed',
             })}
           />
-        )}
+        ) : null}
       </div>
 
       {popover.render(
