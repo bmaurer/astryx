@@ -1,6 +1,7 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
 import type {Meta, StoryObj} from '@storybook/react';
+import * as stylex from '@stylexjs/stylex';
 import {
   Breadcrumbs,
   BreadcrumbItem,
@@ -8,6 +9,8 @@ import {
 } from '@astryxdesign/core/Breadcrumbs';
 import type {BreadcrumbMenuOption} from '@astryxdesign/core/Breadcrumbs';
 import {Icon} from '@astryxdesign/core/Icon';
+import {VStack} from '@astryxdesign/core/Layout';
+import {Text} from '@astryxdesign/core/Text';
 import {rtlStyles} from '@astryxdesign/core/utils';
 import {HomeIcon, Cog6ToothIcon, FolderIcon} from '@heroicons/react/24/outline';
 
@@ -45,6 +48,24 @@ export const Default: Story = {
   ),
 };
 
+/**
+ * D6 should find only the two decorative Breadcrumb separators. The three
+ * ordinary-text slashes are content, so they must remain unchanged in RTL.
+ */
+export const SlashDetectionControl: Story = {
+  name: 'RTL Slash Detection Control',
+  render: () => (
+    <VStack gap={3}>
+      <Breadcrumbs>
+        <BreadcrumbItem href="/">Home</BreadcrumbItem>
+        <BreadcrumbItem href="/projects">Projects</BreadcrumbItem>
+        <BreadcrumbItem isCurrent>My Project</BreadcrumbItem>
+      </Breadcrumbs>
+      <Text type="supporting">Control: and/or · 08/24 · /settings</Text>
+    </VStack>
+  ),
+};
+
 export const TwoLevels: Story = {
   render: () => (
     <Breadcrumbs>
@@ -70,6 +91,19 @@ export const CustomSeparator: Story = {
     // No rtlStyles.mirror here: U+203A has Unicode Bidi_Mirrored=Yes, so the
     // browser flips it under RTL already and an explicit mirror would undo that.
     <Breadcrumbs separator={'›'}>
+      <BreadcrumbItem href="/">Home</BreadcrumbItem>
+      <BreadcrumbItem href="/docs">Docs</BreadcrumbItem>
+      <BreadcrumbItem isCurrent>API Reference</BreadcrumbItem>
+    </Breadcrumbs>
+  ),
+};
+
+export const MirroredArrowSeparator: Story = {
+  name: 'Mirrored Arrow Separator',
+  render: () => (
+    // U+2192 has Bidi_Mirrored=No, so this contextual decoration needs one
+    // explicit mirror. D6 verifies the full LTR-to-RTL relationship.
+    <Breadcrumbs separator={<span {...stylex.props(rtlStyles.mirror)}>→</span>}>
       <BreadcrumbItem href="/">Home</BreadcrumbItem>
       <BreadcrumbItem href="/docs">Docs</BreadcrumbItem>
       <BreadcrumbItem isCurrent>API Reference</BreadcrumbItem>
