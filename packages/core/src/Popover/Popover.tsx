@@ -4,8 +4,8 @@
 
 /**
  * @file Popover.tsx
- * @input Uses React, usePopover hook
- * @output Exports Popover component for click-triggered popovers
+ * @input Uses React layout measurement and the usePopover hook
+ * @output Exports Popover with viewport fitting and conditional overflow
  * @position Layer component; declarative wrapper around usePopover hook
  *
  * For hover-triggered overlays, use HoverCard instead.
@@ -20,6 +20,7 @@
 import React, {
   useCallback,
   useRef,
+  useState,
   type ReactElement,
   type ReactNode,
 } from 'react';
@@ -68,8 +69,8 @@ export interface PopoverTriggerRenderProps {
   ref: (el: HTMLElement | null) => void;
   /** Toggle the popover open/closed. */
   onClick: () => void;
-  /** ARIA attribute: indicates the popup type exposed by the trigger. */
-  'aria-haspopup': 'dialog' | 'true';
+  /** ARIA attribute: indicates the trigger opens a dialog-style popover. */
+  'aria-haspopup': 'dialog';
   /** ARIA attribute: whether the popover is currently open. */
   'aria-expanded': boolean;
   /** ARIA attribute: ID of the controlled popover element. */
@@ -261,6 +262,8 @@ const styles = stylex.create({
     boxSizing: 'border-box',
     maxInlineSize: 'inherit',
     maxBlockSize: 'inherit',
+  },
+  surfaceScrollable: {
     overflow: 'auto',
     overscrollBehavior: 'contain',
   },
@@ -347,6 +350,7 @@ export function Popover({
   'data-testid': testId,
 }: PopoverProps): ReactElement {
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const [hasOverflow, setHasOverflow] = useState(false);
   const isControlled = isOpen !== undefined;
 
   const handlePopoverShow = useCallback(() => {
@@ -370,12 +374,67 @@ export function Popover({
     // it is the element the `popover` theme target has to sit on — a target on
     // the content div inside it styles a box that paints nothing.
     surfaceTarget: 'popover',
-    xstyle: [styles.contentPadding, styles.surfaceViewportFit, xstyle],
+    xstyle: [
+      styles.contentPadding,
+      styles.surfaceViewportFit,
+      hasOverflow && styles.surfaceScrollable,
+      xstyle,
+    ],
     className,
     style,
     onShow: handlePopoverShow,
     onHide: handlePopoverHide,
   });
+
+  const measureOverflow = useCallback(() => {
+    const surface = popover.contentRef.current;
+    if (!surface) {
+      return;
+    }
+    const nextHasOverflow =
+      surface.scrollHeight > surface.clientHeight + 1 ||
+      surface.scrollWidth > surface.clientWidth + 1;
+    // eslint-disable-next-line @eslint-react/set-state-in-effect -- DOM overflow measurement controls whether this surface becomes a scroll container
+    setHasOverflow(current =>
+      current === nextHasOverflow ? current : nextHasOverflow,
+    );
+  }, [popover.contentRef]);
+
+  useIsomorphicLayoutEffect(() => {
+    const surface = popover.contentRef.current;
+    if (!surface) {
+      return;
+    }
+    measureOverflow();
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(measureOverflow);
+    const mutationObserver =
+      typeof MutationObserver === 'undefined'
+        ? null
+        : new MutationObserver(measureOverflow);
+    resizeObserver?.observe(surface);
+    mutationObserver?.observe(surface, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+    surface.addEventListener('load', measureOverflow, true);
+    window.addEventListener('resize', measureOverflow);
+    window.visualViewport?.addEventListener('resize', measureOverflow);
+    return () => {
+      resizeObserver?.disconnect();
+      mutationObserver?.disconnect();
+      surface.removeEventListener('load', measureOverflow, true);
+      window.removeEventListener('resize', measureOverflow);
+      window.visualViewport?.removeEventListener('resize', measureOverflow);
+    };
+  }, [measureOverflow]);
+
+  useIsomorphicLayoutEffect(() => {
+    measureOverflow();
+  }, [content, measureOverflow, popover.isOpen]);
 
   // Shared handler for click events on the trigger button.
   const handleTriggerClick = useCallback(() => {
@@ -562,7 +621,7 @@ export function Popover({
     const triggerProps: PopoverTriggerRenderProps = {
       ref: popover.triggerRef,
       onClick: handleTriggerClick,
-      'aria-haspopup': popover.triggerProps['aria-haspopup'],
+      'aria-haspopup': 'dialog',
       'aria-expanded': popover.isOpen,
       'aria-controls': popover.id,
     };

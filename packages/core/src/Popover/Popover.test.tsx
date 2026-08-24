@@ -206,7 +206,7 @@ describe('Popover', () => {
     expect(screen.getByTestId('my-popover')).toBeInTheDocument();
   });
 
-  it('constrains the layer to viewport and safe-area gutters', () => {
+  it('constrains the layer without clipping content that already fits', () => {
     render(
       <Popover
         content={<span>Content</span>}
@@ -222,9 +222,49 @@ describe('Popover', () => {
     const layer = document.querySelector('[popover]');
     expect(layer).toHaveStyle({boxSizing: 'border-box'});
     expect(layer?.className).toContain('Popover__styles.viewportFit');
-    const content = screen.getByTestId('popover-content');
-    expect(content.className).toContain('Popover__styles.surfaceViewportFit');
-    expect(content).toHaveStyle({overflow: 'auto'});
+    const surface = screen.getByTestId('popover-content').parentElement;
+    expect(surface?.className).toContain('Popover__styles.surfaceViewportFit');
+    expect(surface?.className).not.toContain(
+      'Popover__styles.surfaceScrollable',
+    );
+  });
+
+  it('enables internal scrolling only when content exceeds the available space', () => {
+    const clientHeight = vi
+      .spyOn(HTMLElement.prototype, 'clientHeight', 'get')
+      .mockReturnValue(100);
+    const scrollHeight = vi
+      .spyOn(HTMLElement.prototype, 'scrollHeight', 'get')
+      .mockReturnValue(200);
+    const clientWidth = vi
+      .spyOn(HTMLElement.prototype, 'clientWidth', 'get')
+      .mockReturnValue(200);
+    const scrollWidth = vi
+      .spyOn(HTMLElement.prototype, 'scrollWidth', 'get')
+      .mockReturnValue(200);
+
+    try {
+      render(
+        <Popover
+          content={<span>Long content</span>}
+          label="Test"
+          data-testid="popover-content">
+          <button type="button">Open</button>
+        </Popover>,
+      );
+      fireEvent.click(screen.getByRole('button', {name: 'Open'}));
+
+      expect(
+        screen.getByTestId('popover-content').parentElement?.className,
+      ).toContain(
+        'Popover__styles.surfaceScrollable',
+      );
+    } finally {
+      clientHeight.mockRestore();
+      scrollHeight.mockRestore();
+      clientWidth.mockRestore();
+      scrollWidth.mockRestore();
+    }
   });
 
   it('caps match-trigger sizing to the available inline viewport', () => {
@@ -241,7 +281,7 @@ describe('Popover', () => {
     );
   });
 
-  it('sets render-prop aria-haspopup from the configured popup role', () => {
+  it('preserves the dialog aria-haspopup contract for render-prop triggers', () => {
     render(
       <Popover
         role="none"
@@ -267,7 +307,7 @@ describe('Popover', () => {
 
     expect(screen.getByRole('button', {name: 'Open menu'})).toHaveAttribute(
       'aria-haspopup',
-      'true',
+      'dialog',
     );
   });
 
