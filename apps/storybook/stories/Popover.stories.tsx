@@ -796,7 +796,7 @@ export const TallContentOverflow: Story = {
     docs: {
       description: {
         story:
-          'Uses the actual Storybook viewport and a realistic project picker. The product-level 360px/50dvh cap keeps this lightweight anchored surface compact, while Popover detects the overflow and makes its content scrollable. Content needing a near-full-screen surface should use BottomSheet or Dialog instead.',
+          'Uses the actual Storybook viewport and a realistic project picker. The product-level 360px/50dvh cap keeps this lightweight anchored surface compact, while Popover detects the overflow and makes its content scrollable. Scrolling demonstrates bounded overflow handling; it does not by itself determine whether another presentation is more appropriate.',
       },
     },
   },
@@ -874,7 +874,7 @@ export const BottomSheetPresentationOption: Story = {
       story: {inline: false, height: '560px'},
       description: {
         story:
-          'BottomSheet is an explicit alternative for lightweight action-list or picker/filter content. It changes the contract: bottom-edge placement, dialog focus ownership, scrim behavior, Escape handling, swipe-to-dismiss, and sheet body scrolling differ from Popover.',
+          'This story shows BottomSheet as an explicit alternative for the same focused task when a product wants a bottom-edge modal touch surface. It changes the contract: dialog focus ownership, scrim behavior, Escape handling, swipe-to-dismiss, and sheet body scrolling differ from Popover.',
       },
     },
   },
