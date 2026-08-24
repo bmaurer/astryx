@@ -5,7 +5,8 @@
 /**
  * @file DropdownMenuSubMenu.tsx
  * @input React, stylex, useLayer (context mode), useListFocus, useMenuHover,
- *   useTypeahead, Item, Icon, Spinner, DropdownMenu context + item roles.
+ *   useTypeahead, viewport-safe menu geometry, Item, Icon, Spinner, and
+ *   DropdownMenu context + item roles
  * @output Exports DropdownMenuSubMenu — a single menu row that reveals a nested
  *   flyout menu of its own children/items.
  * @position Sub-component; place inside a DropdownMenu (or ContextMenu)
@@ -56,6 +57,7 @@ import {layerAnimations} from '../Layer/layerAnimations.stylex';
 import {useListFocus} from '../hooks/useListFocus';
 import {useMenuHover} from '../hooks/useMenuHover';
 import {useTypeahead} from '../hooks/useTypeahead';
+import {useMenuOverflow} from './useMenuOverflow';
 import {
   colorVars,
   spacingVars,
@@ -80,6 +82,12 @@ import {
   type DropdownMenuContextValue,
 } from './DropdownMenuContext';
 import {focusMenuItemOnHover} from './menuItemHover';
+
+const MENU_VIEWPORT_GUTTER = spacingVars['--spacing-4'];
+const MENU_MAX_INLINE_SIZE = `calc(100vi - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px)) - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px)))`;
+const MENU_MAX_INLINE_SIZE_FALLBACK = `calc(100vw - ${MENU_VIEWPORT_GUTTER} - ${MENU_VIEWPORT_GUTTER})`;
+const MENU_MAX_BLOCK_SIZE = `min(300px, calc(100dvb - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-top, 0px)) - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-bottom, 0px))))`;
+const MENU_MAX_BLOCK_SIZE_FALLBACK = `min(300px, calc(100vh - ${MENU_VIEWPORT_GUTTER} - ${MENU_VIEWPORT_GUTTER}))`;
 
 const triggerStyles = stylex.create({
   root: {
@@ -135,8 +143,14 @@ const flyoutStyles = stylex.create({
     display: 'flex',
     flexDirection: 'column',
     gap: spacingVars['--spacing-0-5'],
-    maxHeight: '300px',
-    overflowY: 'auto',
+    maxInlineSize: stylex.firstThatWorks(
+      MENU_MAX_INLINE_SIZE,
+      MENU_MAX_INLINE_SIZE_FALLBACK,
+    ),
+    maxHeight: stylex.firstThatWorks(
+      MENU_MAX_BLOCK_SIZE,
+      MENU_MAX_BLOCK_SIZE_FALLBACK,
+    ),
     '--_dropdown-menu-radius': radiusVars['--radius-container'],
     '--_dropdown-menu-padding': spacingVars['--spacing-1'],
     padding: spacingVars['--spacing-1'],
@@ -148,11 +162,39 @@ const flyoutStyles = stylex.create({
     transitionDuration: durationVars['--duration-fast'],
     transitionTimingFunction: easeVars['--ease-standard'],
   },
-  popover: {
-    minWidth: '160px',
+  scrollable: {
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    overscrollBehavior: 'contain',
   },
-  popoverCustomWidth: (width: string | number) => ({
-    minWidth: typeof width === 'number' ? `${width}px` : width,
+  popoverViewport: {
+    boxSizing: 'border-box',
+    marginInlineStart: {
+      default: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px))`,
+      ':is([dir="rtl"] *)': `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px))`,
+    },
+    marginInlineEnd: {
+      default: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px))`,
+      ':is([dir="rtl"] *)': `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px))`,
+    },
+    maxInlineSize: stylex.firstThatWorks(
+      MENU_MAX_INLINE_SIZE,
+      MENU_MAX_INLINE_SIZE_FALLBACK,
+    ),
+    maxBlockSize: stylex.firstThatWorks(
+      MENU_MAX_BLOCK_SIZE,
+      MENU_MAX_BLOCK_SIZE_FALLBACK,
+    ),
+  },
+  popover: {
+    minWidth: stylex.firstThatWorks(
+      `min(160px, ${MENU_MAX_INLINE_SIZE})`,
+      `min(160px, ${MENU_MAX_INLINE_SIZE_FALLBACK})`,
+      '160px',
+    ),
+  },
+  popoverCustomWidth: (width: string) => ({
+    minWidth: width,
   }),
 });
 
@@ -178,7 +220,10 @@ interface DropdownMenuSubMenuBaseProps extends Pick<
    * @default false
    */
   hasSpinner?: boolean;
-  /** Fixed flyout width. Defaults to sizing to its content (min 160px). */
+  /**
+   * Minimum flyout width. The flyout may grow for its content but is capped to
+   * the available viewport space. Defaults to intrinsic sizing (min 160px).
+   */
   menuWidth?: number | string;
   /** Called when the flyout opens or closes. */
   onOpenChange?: (isOpen: boolean) => void;
@@ -289,6 +334,7 @@ export function DropdownMenuSubMenu(
     wrap: false,
     onEscape: () => close({focusTrigger: true}),
   });
+  const hasOverflow = useMenuOverflow(menuRef, children, isOpen);
 
   const typeahead = useTypeahead({
     getItemLabels: () => getItems().map(el => el.textContent),
@@ -491,7 +537,9 @@ export function DropdownMenuSubMenu(
   );
 
   const popoverXstyle = menuWidth
-    ? flyoutStyles.popoverCustomWidth(menuWidth)
+    ? flyoutStyles.popoverCustomWidth(
+        `min(${typeof menuWidth === 'number' ? `${menuWidth}px` : menuWidth}, ${MENU_MAX_INLINE_SIZE_FALLBACK})`,
+      )
     : flyoutStyles.popover;
 
   return (
@@ -549,7 +597,10 @@ export function DropdownMenuSubMenu(
           data-testid={menuDataTestId}
           {...mergeProps(
             themeProps('dropdown-menu'),
-            stylex.props(flyoutStyles.menu),
+            stylex.props(
+              flyoutStyles.menu,
+              hasOverflow && flyoutStyles.scrollable,
+            ),
           )}>
           <DropdownMenuContext value={nestedMenuContext}>
             {children}
@@ -559,7 +610,11 @@ export function DropdownMenuSubMenu(
           placement: 'end',
           alignment: 'start',
           offset: spacingVars['--spacing-1'],
-          xstyle: [popoverXstyle, layerAnimations.end],
+          xstyle: [
+            flyoutStyles.popoverViewport,
+            popoverXstyle,
+            layerAnimations.end,
+          ],
         },
       )}
     </>

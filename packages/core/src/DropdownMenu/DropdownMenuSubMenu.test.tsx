@@ -81,6 +81,45 @@ describe('DropdownMenuSubMenu', () => {
     ).toBeInTheDocument();
   });
 
+  it('caps the flyout width and height to the available viewport', async () => {
+    const user = userEvent.setup();
+    render(
+      <DropdownMenu button={{label: 'Actions'}}>
+        <DropdownMenuSubMenu label="Move to" menuWidth={640}>
+          <DropdownMenuItem label="Folder A" onClick={() => {}} />
+        </DropdownMenuSubMenu>
+      </DropdownMenu>,
+    );
+    await user.click(screen.getByRole('button', {name: /Actions/}));
+    const trigger = screen.getByRole('menuitem', {
+      name: /Move to/,
+      hidden: true,
+    });
+    await user.click(trigger);
+
+    const flyout = screen.getByRole('menu', {name: /Move to/, hidden: true});
+    const popover = flyout.closest('[popover]');
+    expect(popover?.className).toContain(
+      'DropdownMenuSubMenu__flyoutStyles.popoverViewport',
+    );
+    expect(popover).toHaveStyle({minWidth: 'var(--x-minWidth)'});
+    expect(popover?.getAttribute('style')).toContain('min(640px, calc(100vw');
+    expect(flyout).toHaveStyle(
+      'max-height: min(300px,calc(100dvb - max(var(--spacing-4),env(safe-area-inset-top,0px)) - max(var(--spacing-4),env(safe-area-inset-bottom,0px))))',
+    );
+    expect(flyout).not.toHaveStyle({overflowY: 'auto'});
+
+    Object.defineProperties(flyout, {
+      clientHeight: {configurable: true, value: 300},
+      scrollHeight: {configurable: true, value: 480},
+    });
+    fireEvent(window, new Event('resize'));
+
+    await waitFor(() => {
+      expect(flyout).toHaveStyle({overflowY: 'auto'});
+    });
+  });
+
   it('opens on ArrowRight and returns focus to the trigger on ArrowLeft', async () => {
     const user = userEvent.setup();
     render(<MoveMenu />);

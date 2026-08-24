@@ -4,8 +4,9 @@
 
 /**
  * @file DropdownMenu.tsx
- * @input Uses React, StyleX, usePopover, Button, Icon, useListFocus
- * @output Exports DropdownMenu component
+ * @input Uses React, StyleX, usePopover, Button, Icon, useListFocus, and
+ *   viewport-safe menu geometry
+ * @output Exports DropdownMenu with anchored responsive sizing and menu behavior
  * @position Core implementation; consumed by index.ts
  *
  * Supports two modes with a single keyboard/focus path:
@@ -54,6 +55,7 @@ import {
 } from './DropdownMenuContext';
 import {useListFocus} from '../hooks/useListFocus';
 import {useTypeahead} from '../hooks/useTypeahead';
+import {useMenuOverflow} from './useMenuOverflow';
 import {layerAnimations} from '../Layer/layerAnimations.stylex';
 import type {LayerAlignment, LayerPlacement} from '../Layer/useLayer';
 import {
@@ -67,14 +69,26 @@ import type {BaseProps} from '../BaseProps';
 import {themeProps} from '../utils/themeProps';
 import {useTranslator} from '../i18n';
 
+const MENU_VIEWPORT_GUTTER = spacingVars['--spacing-4'];
+const MENU_MAX_INLINE_SIZE = `calc(100vi - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px)) - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px)))`;
+const MENU_MAX_INLINE_SIZE_FALLBACK = `calc(100vw - ${MENU_VIEWPORT_GUTTER} - ${MENU_VIEWPORT_GUTTER})`;
+const MENU_MAX_BLOCK_SIZE = `min(300px, calc(100dvb - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-top, 0px)) - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-bottom, 0px))))`;
+const MENU_MAX_BLOCK_SIZE_FALLBACK = `min(300px, calc(100vh - ${MENU_VIEWPORT_GUTTER} - ${MENU_VIEWPORT_GUTTER}))`;
+
 const styles = stylex.create({
   dropdown: {
     boxSizing: 'border-box',
     display: 'flex',
     flexDirection: 'column',
     gap: spacingVars['--spacing-0-5'],
-    maxHeight: '300px',
-    overflowY: 'auto',
+    maxInlineSize: stylex.firstThatWorks(
+      MENU_MAX_INLINE_SIZE,
+      MENU_MAX_INLINE_SIZE_FALLBACK,
+    ),
+    maxHeight: stylex.firstThatWorks(
+      MENU_MAX_BLOCK_SIZE,
+      MENU_MAX_BLOCK_SIZE_FALLBACK,
+    ),
     '--_dropdown-menu-radius': radiusVars['--radius-container'],
     '--_dropdown-menu-padding': spacingVars['--spacing-1'],
     padding: spacingVars['--spacing-1'],
@@ -84,11 +98,39 @@ const styles = stylex.create({
     transitionDuration: durationVars['--duration-fast'],
     transitionTimingFunction: easeVars['--ease-standard'],
   },
-  popover: {
-    minWidth: 'anchor-size(width)',
+  scrollable: {
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    overscrollBehavior: 'contain',
   },
-  popoverCustomWidth: (width: string | number) => ({
-    minWidth: typeof width === 'number' ? `${width}px` : width,
+  popoverViewport: {
+    boxSizing: 'border-box',
+    marginInlineStart: {
+      default: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px))`,
+      ':is([dir="rtl"] *)': `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px))`,
+    },
+    marginInlineEnd: {
+      default: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px))`,
+      ':is([dir="rtl"] *)': `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px))`,
+    },
+    maxInlineSize: stylex.firstThatWorks(
+      MENU_MAX_INLINE_SIZE,
+      MENU_MAX_INLINE_SIZE_FALLBACK,
+    ),
+    maxBlockSize: stylex.firstThatWorks(
+      MENU_MAX_BLOCK_SIZE,
+      MENU_MAX_BLOCK_SIZE_FALLBACK,
+    ),
+  },
+  popover: {
+    minWidth: stylex.firstThatWorks(
+      `min(anchor-size(width), ${MENU_MAX_INLINE_SIZE})`,
+      `min(anchor-size(width), ${MENU_MAX_INLINE_SIZE_FALLBACK})`,
+      'anchor-size(width)',
+    ),
+  },
+  popoverCustomWidth: (width: string) => ({
+    minWidth: width,
   }),
 });
 
@@ -161,6 +203,10 @@ interface DropdownMenuBaseProps extends BaseProps {
   button?: DropdownMenuButtonProps;
   isMenuOpen?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
+  /**
+   * Minimum menu width. The menu may grow for its content but is capped to the
+   * available viewport space. Defaults to the trigger width.
+   */
   menuWidth?: number | string;
   onClick?: () => void;
   hasChevron?: boolean;
@@ -470,7 +516,9 @@ export function DropdownMenu({
     ) : undefined);
 
   const popoverXstyle = menuWidth
-    ? styles.popoverCustomWidth(menuWidth)
+    ? styles.popoverCustomWidth(
+        `min(${typeof menuWidth === 'number' ? `${menuWidth}px` : menuWidth}, ${MENU_MAX_INLINE_SIZE_FALLBACK})`,
+      )
     : styles.popover;
   // Context for compound items
   const contextValue = useMemo<DropdownMenuContextValue>(
@@ -481,6 +529,7 @@ export function DropdownMenu({
   // Resolve menu content: data-driven items become components
   const menuContent =
     props.items !== undefined ? renderDropdownItems(items) : children;
+  const hasOverflow = useMenuOverflow(listRef, menuContent, popover.isOpen);
 
   return (
     <>
@@ -526,7 +575,11 @@ export function DropdownMenu({
           onKeyDown={listKeyDown}
           {...mergeProps(
             themeProps('dropdown-menu'),
-            stylex.props(styles.dropdown, xstyle),
+            stylex.props(
+              styles.dropdown,
+              hasOverflow && styles.scrollable,
+              xstyle,
+            ),
             className,
             style,
           )}>
@@ -538,7 +591,11 @@ export function DropdownMenu({
           placement,
           alignment,
           offset: spacingVars['--spacing-1'],
-          xstyle: [popoverXstyle, layerAnimations[placement]],
+          xstyle: [
+            styles.popoverViewport,
+            popoverXstyle,
+            layerAnimations[placement],
+          ],
         },
       )}
     </>

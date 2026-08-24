@@ -70,7 +70,7 @@ export const docs = {
     {
       name: 'menuWidth',
       type: 'number | string',
-      description: 'Custom menu width; defaults to matching the trigger button width.',
+      description: 'Minimum menu width. The menu may grow for its content, but it is capped to the available viewport space. Defaults to matching the trigger width up to that cap.',
     },
     {
       name: 'placement',
@@ -115,6 +115,9 @@ export const docs = {
     bestPractices: [
       { guidance: true, description: 'Keep menu items concise and action-oriented so users can scan options quickly.' },
       { guidance: true, description: 'Use sections and dividers to group related actions when the menu has many items.' },
+      { guidance: true, description: 'For a short, flat action set on a compact touch surface, a product may explicitly render the same actions in an action-sheet-style BottomSheet.' },
+      { guidance: true, description: 'Keep DropdownMenu anchored for concise contextual actions. It supports click, tap, and keyboard activation and does not automatically turn into a BottomSheet on narrow or touch devices.' },
+      { guidance: true, description: 'When the content is no longer a short list of immediate actions, reevaluate the interaction and choose a component that matches the actual task; length, search, multiselect, richness, or hierarchy alone does not automatically imply BottomSheet or Dialog.' },
       { guidance: false, description: 'Use a DropdownMenu for navigation; use a navigation component instead.' },
       { guidance: false, description: 'Place more than 10–12 items in a single menu without grouping them into sections.' },
     ],
@@ -128,6 +131,9 @@ export const docsZh = {
     bestPractices: [
       { guidance: true, description: 'Keep menu items concise and action-oriented so users can scan options quickly.' },
       { guidance: true, description: 'Use sections and dividers to group related actions when the menu has many items.' },
+      { guidance: true, description: 'For a short, flat action set on a compact touch surface, a product may explicitly render the same actions in an action-sheet-style BottomSheet.' },
+      { guidance: true, description: 'Keep DropdownMenu anchored for concise contextual actions. It supports click, tap, and keyboard activation and does not automatically turn into a BottomSheet on narrow or touch devices.' },
+      { guidance: true, description: 'When the content is no longer a short list of immediate actions, reevaluate the interaction and choose a component that matches the actual task; length, search, multiselect, richness, or hierarchy alone does not automatically imply BottomSheet or Dialog.' },
       { guidance: false, description: 'Use a DropdownMenu for navigation; use a navigation component instead.' },
       { guidance: false, description: 'Place more than 10–12 items in a single menu without grouping them into sections.' },
     ],
@@ -142,6 +148,9 @@ export const docsDense = {
     bestPractices: [
       { guidance: true, description: 'Keep menu items concise and action-oriented so users can scan options quickly.' },
       { guidance: true, description: 'Use sections and dividers to group related actions when the menu has many items.' },
+      { guidance: true, description: 'For a short, flat action set on a compact touch surface, a product may explicitly render the same actions in an action-sheet-style BottomSheet.' },
+      { guidance: true, description: 'Keep DropdownMenu anchored for concise contextual actions. It supports click, tap, and keyboard activation and does not automatically turn into a BottomSheet on narrow or touch devices.' },
+      { guidance: true, description: 'When the content is no longer a short list of immediate actions, reevaluate the interaction and choose a component that matches the actual task; length, search, multiselect, richness, or hierarchy alone does not automatically imply BottomSheet or Dialog.' },
       { guidance: false, description: 'Use a DropdownMenu for navigation; use a navigation component instead.' },
       { guidance: false, description: 'Place more than 10–12 items in a single menu without grouping them into sections.' },
     ],
