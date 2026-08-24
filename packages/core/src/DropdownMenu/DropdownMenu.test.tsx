@@ -156,8 +156,9 @@ describe('DropdownMenu', () => {
     expect(popover?.className).toContain(
       'DropdownMenu__styles.popoverViewport',
     );
+    expect(popover?.className).toContain('DropdownMenu__styles.popoverAligned');
     expect(popover).toHaveStyle(
-      'min-width: min(anchor-size(width),calc(100vi - max(var(--spacing-4),env(safe-area-inset-left,0px)) - max(var(--spacing-4),env(safe-area-inset-right,0px))))',
+      'min-width: min(anchor-size(width),calc(100% - max(var(--spacing-4),env(safe-area-inset-left,0px),env(safe-area-inset-right,0px))))',
     );
 
     unmount();
@@ -174,7 +175,7 @@ describe('DropdownMenu', () => {
       'DropdownMenu__styles.popoverViewport',
     );
     expect(popover).toHaveStyle({minWidth: 'var(--x-minWidth)'});
-    expect(popover?.getAttribute('style')).toContain('min(640px, calc(100vw');
+    expect(popover?.getAttribute('style')).toContain('min(640px, calc(100%');
   });
 
   it('caps menu height and only scrolls when content overflows', async () => {

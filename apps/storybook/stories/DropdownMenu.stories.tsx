@@ -1223,14 +1223,14 @@ export const TallContentOverflow: Story = {
 };
 
 export const SubmenuViewportFit: Story = {
-  name: 'Stress / submenu viewport containment',
+  name: 'Readiness / submenu edge fit',
   parameters: {
     layout: 'fullscreen',
     viewport: {defaultViewport: 'mobile1'},
     docs: {
       description: {
         story:
-          'Containment stress test, not a recommended compact-touch presentation. The submenu intentionally requests 640px; when the parent and child cannot fit side by side, the layer stays inside viewport gutters but overlaps the parent. Products needing hierarchy on compact touch surfaces should choose an explicit drill-in interaction rather than assuming a cascade can fit.',
+          'Uses the actual Storybook viewport with concise parent and child menus that can fit side by side. The submenu flips toward the available side, remains separated from its parent, and stays within viewport gutters. Use the compact drill-in example when the hierarchy cannot fit this contract.',
       },
     },
   },
@@ -1240,23 +1240,14 @@ export const SubmenuViewportFit: Story = {
         <DropdownMenu
           button={{label: 'Project actions'}}
           alignment="end"
-          menuWidth={200}>
-          <DropdownMenuItem label="Rename project" onClick={() => {}} />
-          <DropdownMenuSubMenu label="Move to project" menuWidth={640}>
-            <DropdownMenuItem
-              label="Customer insights and research"
-              onClick={() => {}}
-            />
-            <DropdownMenuItem
-              label="Design systems platform"
-              onClick={() => {}}
-            />
-            <DropdownMenuItem
-              label="Mobile quality engineering"
-              onClick={() => {}}
-            />
+          menuWidth={140}>
+          <DropdownMenuItem label="Rename" onClick={() => {}} />
+          <DropdownMenuSubMenu label="Move to" menuWidth={140}>
+            <DropdownMenuItem label="Research" onClick={() => {}} />
+            <DropdownMenuItem label="Platform" onClick={() => {}} />
+            <DropdownMenuItem label="Engineering" onClick={() => {}} />
           </DropdownMenuSubMenu>
-          <DropdownMenuItem label="Archive project" onClick={() => {}} />
+          <DropdownMenuItem label="Archive" onClick={() => {}} />
         </DropdownMenu>
       </div>
     </div>

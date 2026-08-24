@@ -74,6 +74,8 @@ const MENU_MAX_INLINE_SIZE = `calc(100vi - max(${MENU_VIEWPORT_GUTTER}, env(safe
 const MENU_MAX_INLINE_SIZE_FALLBACK = `calc(100vw - ${MENU_VIEWPORT_GUTTER} - ${MENU_VIEWPORT_GUTTER})`;
 const MENU_MAX_BLOCK_SIZE = `min(300px, calc(100dvb - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-top, 0px)) - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-bottom, 0px))))`;
 const MENU_MAX_BLOCK_SIZE_FALLBACK = `min(300px, calc(100vh - ${MENU_VIEWPORT_GUTTER} - ${MENU_VIEWPORT_GUTTER}))`;
+const MENU_POSITION_AREA_MAX_INLINE_SIZE = `calc(100% - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)))`;
+const MENU_POSITION_AREA_MAX_INLINE_SIZE_FALLBACK = `calc(100% - ${MENU_VIEWPORT_GUTTER})`;
 
 const styles = stylex.create({
   dropdown: {
@@ -105,6 +107,30 @@ const styles = stylex.create({
   },
   popoverViewport: {
     boxSizing: 'border-box',
+    maxBlockSize: stylex.firstThatWorks(
+      MENU_MAX_BLOCK_SIZE,
+      MENU_MAX_BLOCK_SIZE_FALLBACK,
+    ),
+  },
+  popoverViewportAligned: {
+    maxInlineSize: stylex.firstThatWorks(
+      MENU_POSITION_AREA_MAX_INLINE_SIZE,
+      MENU_POSITION_AREA_MAX_INLINE_SIZE_FALLBACK,
+    ),
+  },
+  popoverViewportStart: {
+    marginInlineEnd: {
+      default: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px))`,
+      ':is([dir="rtl"] *)': `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px))`,
+    },
+  },
+  popoverViewportEnd: {
+    marginInlineStart: {
+      default: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px))`,
+      ':is([dir="rtl"] *)': `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px))`,
+    },
+  },
+  popoverViewportCentered: {
     marginInlineStart: {
       default: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px))`,
       ':is([dir="rtl"] *)': `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px))`,
@@ -117,12 +143,15 @@ const styles = stylex.create({
       MENU_MAX_INLINE_SIZE,
       MENU_MAX_INLINE_SIZE_FALLBACK,
     ),
-    maxBlockSize: stylex.firstThatWorks(
-      MENU_MAX_BLOCK_SIZE,
-      MENU_MAX_BLOCK_SIZE_FALLBACK,
+  },
+  popoverAligned: {
+    minWidth: stylex.firstThatWorks(
+      `min(anchor-size(width), ${MENU_POSITION_AREA_MAX_INLINE_SIZE})`,
+      `min(anchor-size(width), ${MENU_POSITION_AREA_MAX_INLINE_SIZE_FALLBACK})`,
+      'anchor-size(width)',
     ),
   },
-  popover: {
+  popoverCentered: {
     minWidth: stylex.firstThatWorks(
       `min(anchor-size(width), ${MENU_MAX_INLINE_SIZE})`,
       `min(anchor-size(width), ${MENU_MAX_INLINE_SIZE_FALLBACK})`,
@@ -515,11 +544,17 @@ export function DropdownMenu({
       <Icon icon="chevronDown" size="sm" color="inherit" />
     ) : undefined);
 
+  const requestedWidthLimit =
+    alignment === 'center'
+      ? MENU_MAX_INLINE_SIZE_FALLBACK
+      : MENU_POSITION_AREA_MAX_INLINE_SIZE_FALLBACK;
   const popoverXstyle = menuWidth
     ? styles.popoverCustomWidth(
-        `min(${typeof menuWidth === 'number' ? `${menuWidth}px` : menuWidth}, ${MENU_MAX_INLINE_SIZE_FALLBACK})`,
+        `min(${typeof menuWidth === 'number' ? `${menuWidth}px` : menuWidth}, ${requestedWidthLimit})`,
       )
-    : styles.popover;
+    : alignment === 'center'
+      ? styles.popoverCentered
+      : styles.popoverAligned;
   // Context for compound items
   const contextValue = useMemo<DropdownMenuContextValue>(
     () => ({closeMenu, menuSize}),
@@ -593,6 +628,14 @@ export function DropdownMenu({
           offset: spacingVars['--spacing-1'],
           xstyle: [
             styles.popoverViewport,
+            alignment === 'center'
+              ? styles.popoverViewportCentered
+              : [
+                  styles.popoverViewportAligned,
+                  alignment === 'start'
+                    ? styles.popoverViewportStart
+                    : styles.popoverViewportEnd,
+                ],
             popoverXstyle,
             layerAnimations[placement],
           ],
