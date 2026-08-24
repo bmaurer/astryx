@@ -1,8 +1,14 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
 import type {Meta, StoryObj} from '@storybook/react';
+import * as stylex from '@stylexjs/stylex';
 import {Badge} from '@astryxdesign/core/Badge';
-import {useState} from 'react';
+import {BottomSheet} from '@astryxdesign/core/BottomSheet';
+import {Button} from '@astryxdesign/core/Button';
+import {Heading} from '@astryxdesign/core/Heading';
+import {List, ListItem} from '@astryxdesign/core/List';
+import {Section} from '@astryxdesign/core/Section';
+import {useEffect, useState} from 'react';
 import {
   DropdownMenu,
   DropdownMenuItem,
@@ -12,6 +18,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSubMenu,
 } from '@astryxdesign/core/DropdownMenu';
+import {spacingVars} from '@astryxdesign/core/theme/tokens.stylex';
 import {
   PencilIcon,
   TrashIcon,
@@ -47,7 +54,8 @@ const meta: Meta<typeof DropdownMenu> = {
     },
     menuWidth: {
       control: 'text',
-      description: 'Custom menu width (number for px or CSS string)',
+      description:
+        'Minimum menu width (number for px or CSS string), capped to the available viewport space',
     },
     placement: {
       control: 'select',
@@ -68,6 +76,125 @@ const meta: Meta<typeof DropdownMenu> = {
 
 export default meta;
 type Story = StoryObj<typeof DropdownMenu>;
+
+const readinessStyles = stylex.create({
+  viewportStoryCanvas: {
+    boxSizing: 'border-box',
+    inlineSize: '100%',
+    minBlockSize: '100dvh',
+    paddingBlockStart: spacingVars['--spacing-4'],
+    paddingBlockEnd: spacingVars['--spacing-4'],
+    paddingInlineStart: spacingVars['--spacing-4'],
+    paddingInlineEnd: spacingVars['--spacing-4'],
+    overflow: 'clip',
+  },
+  edgeAnchorRow: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+  },
+  actionList: {
+    inlineSize: '100%',
+  },
+});
+
+const PROJECT_ACTIONS = [
+  'Edit project',
+  'Duplicate project',
+  'Share project',
+  'Archive project',
+] as const;
+
+type ProjectAction = (typeof PROJECT_ACTIONS)[number];
+type ActionPresentation = 'dropdown-menu' | 'action-sheet';
+
+function useCompactTouchSurface(): boolean {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) {
+      return;
+    }
+    const query = window.matchMedia(
+      '(max-width: 639px) and (pointer: coarse) and (hover: none)',
+    );
+    const sync = () => setMatches(query.matches);
+    sync();
+    query.addEventListener('change', sync);
+    return () => query.removeEventListener('change', sync);
+  }, []);
+
+  return matches;
+}
+
+function ProjectActionPresentation({
+  forcePresentation,
+}: {
+  forcePresentation?: ActionPresentation;
+}) {
+  const isCompactTouchSurface = useCompactTouchSurface();
+  const presentation =
+    forcePresentation ??
+    (isCompactTouchSurface ? 'action-sheet' : 'dropdown-menu');
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+  const selectAction = (action: ProjectAction) => {
+    console.log(`${action} selected`);
+    setIsSheetOpen(false);
+  };
+
+  if (presentation === 'action-sheet') {
+    return (
+      <>
+        <Button label="Project actions" onClick={() => setIsSheetOpen(true)}>
+          Project actions
+        </Button>
+        <BottomSheet
+          isOpen={isSheetOpen}
+          onOpenChange={setIsSheetOpen}
+          label="Project actions"
+          height="hug">
+          <Section padding={4}>
+            <List
+              hasDividers
+              header={<Heading level={3}>Project actions</Heading>}
+              xstyle={readinessStyles.actionList}>
+              {PROJECT_ACTIONS.map(action => (
+                <ListItem
+                  key={action}
+                  label={action}
+                  onClick={() => selectAction(action)}
+                />
+              ))}
+            </List>
+          </Section>
+        </BottomSheet>
+      </>
+    );
+  }
+
+  return (
+    <DropdownMenu
+      button={{label: 'Project actions'}}
+      items={PROJECT_ACTIONS.map(action => ({
+        label: action,
+        onClick: () => selectAction(action),
+      }))}
+    />
+  );
+}
+
+const PROJECT_DESTINATIONS = [
+  ['Apollo launch', 'Marketing'],
+  ['Customer insights', 'Research'],
+  ['Design systems', 'Platform'],
+  ['Growth experiments', 'Product'],
+  ['Incident review', 'Operations'],
+  ['Mobile quality', 'Engineering'],
+  ['Quarterly planning', 'Strategy'],
+  ['Recruiting plan', 'People'],
+  ['Security follow-up', 'Trust'],
+  ['Website refresh', 'Brand'],
+] as const;
 
 // Basic usage
 export const Default: Story = {
@@ -868,4 +995,190 @@ export const ModeParity: Story = {
       </DropdownMenu>
     </div>
   ),
+};
+
+// =============================================================================
+// Responsive and Interaction Readiness Evidence
+// =============================================================================
+
+export const ActionSheetPresentation: Story = {
+  name: 'Presentation / action sheet',
+  parameters: {
+    layout: 'fullscreen',
+    viewport: {defaultViewport: 'mobile1'},
+    docs: {
+      story: {inline: false, height: '560px'},
+      description: {
+        story:
+          'An explicit action-sheet presentation for a short, flat set of actions. It uses BottomSheet behavior—dialog focus, scrim, Escape, and swipe dismissal—rather than changing DropdownMenu itself.',
+      },
+    },
+  },
+  render: () => (
+    <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
+      <ProjectActionPresentation forcePresentation="action-sheet" />
+    </div>
+  ),
+  play: async ({canvasElement}) => {
+    const trigger = canvasElement.querySelector('button');
+    if (trigger instanceof HTMLElement) {
+      trigger.click();
+    }
+  },
+};
+
+export const AdaptiveActionPresentation: Story = {
+  name: 'Presentation / adaptive action menu',
+  parameters: {
+    layout: 'fullscreen',
+    viewport: {defaultViewport: 'mobile1'},
+    docs: {
+      story: {inline: false, height: '560px'},
+      description: {
+        story:
+          'A product-owned example using the same actions in both presentations. This example policy chooses the action sheet only when the real environment is compact, coarse-pointer, and hover-free; it is not a DropdownMenu default or a universal breakpoint rule. Storybook viewport size alone does not pretend to change pointer or hover capability.',
+      },
+    },
+  },
+  render: () => (
+    <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
+      <ProjectActionPresentation />
+    </div>
+  ),
+  play: async ({canvasElement}) => {
+    const trigger = canvasElement.querySelector('button');
+    if (trigger instanceof HTMLElement) {
+      trigger.click();
+    }
+  },
+};
+
+export const ViewportFit: Story = {
+  name: 'Readiness / viewport fit',
+  parameters: {
+    layout: 'fullscreen',
+    viewport: {defaultViewport: 'mobile1'},
+    docs: {
+      description: {
+        story:
+          'Uses the actual Storybook viewport. The menu requests a 640px minimum width near the inline edge and must keep 16px safe-area-aware gutters instead of widening the page.',
+      },
+    },
+  },
+  render: () => (
+    <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
+      <div {...stylex.props(readinessStyles.edgeAnchorRow)}>
+        <DropdownMenu
+          button={{label: 'Project actions'}}
+          alignment="end"
+          menuWidth={640}
+          items={[
+            {label: 'Rename project', onClick: () => {}},
+            {label: 'Duplicate project', onClick: () => {}},
+            {
+              label: 'Share with external collaborators and reviewers',
+              onClick: () => {},
+            },
+            {type: 'divider'},
+            {label: 'Archive project', onClick: () => {}},
+          ]}
+        />
+      </div>
+    </div>
+  ),
+  play: async ({canvasElement}) => {
+    const trigger = canvasElement.querySelector('button');
+    if (trigger instanceof HTMLElement) {
+      trigger.click();
+    }
+  },
+};
+
+export const TallContentOverflow: Story = {
+  name: 'Readiness / tall content overflow',
+  parameters: {
+    layout: 'fullscreen',
+    viewport: {defaultViewport: 'mobile1'},
+    docs: {
+      description: {
+        story:
+          'Uses the actual Storybook viewport and a realistic project list. The anchored menu stays at or below 300px and scrolls internally, so its actions remain reachable without scrolling the page.',
+      },
+    },
+  },
+  render: () => (
+    <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
+      <DropdownMenu button={{label: 'Move to project'}} menuWidth={280}>
+        {PROJECT_DESTINATIONS.map(([label, team]) => (
+          <DropdownMenuItem
+            key={label}
+            label={label}
+            description={team}
+            onClick={() => {}}
+          />
+        ))}
+      </DropdownMenu>
+    </div>
+  ),
+  play: async ({canvasElement}) => {
+    const trigger = canvasElement.querySelector('button');
+    if (trigger instanceof HTMLElement) {
+      trigger.click();
+    }
+  },
+};
+
+export const SubmenuViewportFit: Story = {
+  name: 'Readiness / submenu viewport fit',
+  parameters: {
+    layout: 'fullscreen',
+    viewport: {defaultViewport: 'mobile1'},
+    docs: {
+      description: {
+        story:
+          'Uses the actual Storybook viewport. The submenu requests a 640px minimum width from an edge-aligned parent, then flips or shifts and caps itself to the same safe viewport gutters as the root menu.',
+      },
+    },
+  },
+  render: () => (
+    <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
+      <div {...stylex.props(readinessStyles.edgeAnchorRow)}>
+        <DropdownMenu
+          button={{label: 'Project actions'}}
+          alignment="end"
+          menuWidth={200}>
+          <DropdownMenuItem label="Rename project" onClick={() => {}} />
+          <DropdownMenuSubMenu label="Move to project" menuWidth={640}>
+            <DropdownMenuItem
+              label="Customer insights and research"
+              onClick={() => {}}
+            />
+            <DropdownMenuItem
+              label="Design systems platform"
+              onClick={() => {}}
+            />
+            <DropdownMenuItem
+              label="Mobile quality engineering"
+              onClick={() => {}}
+            />
+          </DropdownMenuSubMenu>
+          <DropdownMenuItem label="Archive project" onClick={() => {}} />
+        </DropdownMenu>
+      </div>
+    </div>
+  ),
+  play: async ({canvasElement}) => {
+    const trigger = canvasElement.querySelector('button');
+    if (!(trigger instanceof HTMLElement)) {
+      return;
+    }
+    trigger.click();
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+    const submenuTrigger = canvasElement.querySelector(
+      '[role="menuitem"][aria-haspopup="menu"]',
+    );
+    if (submenuTrigger instanceof HTMLElement) {
+      submenuTrigger.click();
+    }
+  },
 };

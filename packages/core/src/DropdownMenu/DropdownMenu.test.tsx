@@ -147,6 +147,77 @@ describe('DropdownMenu', () => {
     );
   });
 
+  it('caps default and custom widths to the available viewport', () => {
+    const {unmount} = render(
+      <DropdownMenu button={{label: 'Actions'}} items={[{label: 'Item 1'}]} />,
+    );
+    let menu = screen.getByRole('menu', {hidden: true});
+    let popover = menu.closest('[popover]');
+    expect(popover?.className).toContain(
+      'DropdownMenu__styles.popoverViewport',
+    );
+    expect(popover).toHaveStyle(
+      'min-width: min(anchor-size(width),calc(100vi - max(var(--spacing-4),env(safe-area-inset-left,0px)) - max(var(--spacing-4),env(safe-area-inset-right,0px))))',
+    );
+
+    unmount();
+    render(
+      <DropdownMenu
+        button={{label: 'Wide actions'}}
+        menuWidth={640}
+        items={[{label: 'Item 1'}]}
+      />,
+    );
+    menu = screen.getByRole('menu', {hidden: true});
+    popover = menu.closest('[popover]');
+    expect(popover?.className).toContain(
+      'DropdownMenu__styles.popoverViewport',
+    );
+    expect(popover).toHaveStyle({minWidth: 'var(--x-minWidth)'});
+    expect(popover?.getAttribute('style')).toContain('min(640px, calc(100vw');
+  });
+
+  it('caps menu height and only scrolls when content overflows', async () => {
+    const clientHeightSpy = vi
+      .spyOn(HTMLElement.prototype, 'clientHeight', 'get')
+      .mockReturnValue(300);
+    const scrollHeightSpy = vi
+      .spyOn(HTMLElement.prototype, 'scrollHeight', 'get')
+      .mockReturnValue(300);
+
+    try {
+      render(
+        <DropdownMenu
+          button={{label: 'Actions'}}
+          items={[{label: 'Item 1'}]}
+        />,
+      );
+      const menu = screen.getByRole('menu', {hidden: true});
+      fireEvent.click(screen.getByRole('button', {name: /Actions/}));
+      await waitFor(() => {
+        expect(screen.getByRole('button', {name: /Actions/})).toHaveAttribute(
+          'aria-expanded',
+          'true',
+        );
+      });
+      expect(menu).toHaveStyle(
+        'max-height: min(300px,calc(100dvb - max(var(--spacing-4),env(safe-area-inset-top,0px)) - max(var(--spacing-4),env(safe-area-inset-bottom,0px))))',
+      );
+      expect(menu).not.toHaveStyle({overflowY: 'auto'});
+
+      scrollHeightSpy.mockReturnValue(480);
+      fireEvent(window, new Event('resize'));
+
+      await waitFor(() => {
+        expect(menu).toHaveStyle({overflowY: 'auto'});
+        expect(menu).toHaveStyle({overflowX: 'hidden'});
+      });
+    } finally {
+      clientHeightSpy.mockRestore();
+      scrollHeightSpy.mockRestore();
+    }
+  });
+
   it('has aria-haspopup and aria-expanded attributes', () => {
     render(
       <DropdownMenu button={{label: 'Actions'}} items={[{label: 'Item 1'}]} />,
