@@ -279,9 +279,6 @@ function TallContentOverflowExample() {
   return (
     <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
       <Popover
-        isOpen={true}
-        hasAutoFocus={false}
-        hasLightDismiss={false}
         placement="below"
         alignment="start"
         label="Move to project"
@@ -711,9 +708,6 @@ export const ViewportFit: Story = {
     <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
       <div {...stylex.props(readinessStyles.edgeAnchorRow)}>
         <Popover
-          isOpen={true}
-          hasAutoFocus={false}
-          hasLightDismiss={false}
           placement="below"
           alignment="end"
           label="Narrow viewport fit evidence"
@@ -740,6 +734,12 @@ export const ViewportFit: Story = {
       </div>
     </div>
   ),
+  play: async ({canvasElement}) => {
+    const trigger = canvasElement.querySelector('button');
+    if (trigger instanceof HTMLElement) {
+      trigger.click();
+    }
+  },
 };
 
 export const MatchTriggerViewportFit: Story = {
@@ -757,9 +757,6 @@ export const MatchTriggerViewportFit: Story = {
   render: () => (
     <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
       <Popover
-        isOpen={true}
-        hasAutoFocus={false}
-        hasLightDismiss={false}
         placement="below"
         alignment="start"
         label="Match-trigger viewport evidence"
@@ -783,6 +780,12 @@ export const MatchTriggerViewportFit: Story = {
       </Popover>
     </div>
   ),
+  play: async ({canvasElement}) => {
+    const trigger = canvasElement.querySelector('button');
+    if (trigger instanceof HTMLElement) {
+      trigger.click();
+    }
+  },
 };
 
 export const TallContentOverflow: Story = {
@@ -798,6 +801,12 @@ export const TallContentOverflow: Story = {
     },
   },
   render: () => <TallContentOverflowExample />,
+  play: async ({canvasElement}) => {
+    const trigger = canvasElement.querySelector('button');
+    if (trigger instanceof HTMLElement) {
+      trigger.click();
+    }
+  },
 };
 
 export const TriggerInteractionEvidence: Story = {
