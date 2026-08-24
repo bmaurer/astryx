@@ -50,7 +50,7 @@ import {
 } from '../Field';
 import {Icon} from '../Icon';
 import {VisuallyHidden} from '../VisuallyHidden';
-import {Spinner} from '../Spinner';
+import {BusyIndicator} from '../Indicator';
 import {
   Calendar,
   type ISODateString,
@@ -1520,7 +1520,7 @@ export function DateTimeInput({
               onClick={handleClear}
             />
           )}
-          {isBusy && <Spinner size="sm" />}
+          {isBusy && <BusyIndicator size="sm" />}
           {statusIcon}
         </div>
 

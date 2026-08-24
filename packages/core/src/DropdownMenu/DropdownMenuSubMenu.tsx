@@ -49,7 +49,7 @@ import React, {
 } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import {Icon, renderIconSlot, type IconType} from '../Icon';
-import {Spinner} from '../Spinner';
+import {BusyIndicator} from '../Indicator';
 import {Item} from '../Item';
 import {useLayer} from '../Layer/useLayer';
 import {layerAnimations} from '../Layer/layerAnimations.stylex';
@@ -477,7 +477,7 @@ export function DropdownMenuSubMenu(
 
   const endAffordance = hasSpinner ? (
     <span {...stylex.props(triggerStyles.caret)}>
-      <Spinner size="sm" />
+      <BusyIndicator size="sm" />
     </span>
   ) : (
     <span {...stylex.props(triggerStyles.caret)}>

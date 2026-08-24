@@ -34,7 +34,7 @@ import {
 import {getKey, mergeProps} from '../utils';
 import {Badge} from '../Badge';
 import {Icon, type IconName} from '../Icon';
-import {Spinner} from '../Spinner';
+import {BusyIndicator} from '../Indicator';
 import {VisuallyHidden} from '../VisuallyHidden';
 import {themeProps} from '../utils/themeProps';
 import {useTranslator} from '../i18n';
@@ -215,6 +215,8 @@ const styles = stylex.create({
     },
   },
   statusIcon: {
+    // was shade="subtle"
+    '--_spinner-color': colorVars['--color-text-secondary'],
     position: 'relative',
     display: 'inline-flex',
     alignItems: 'center',
@@ -417,9 +419,9 @@ function CallRow({call}: {call: ChatToolCallItem}) {
         title={status === 'error' ? call.errorMessage : undefined}
         {...stylex.props(styles.statusIcon, STATUS_STYLES[status])}>
         {status === 'running' ? (
-          <Spinner size="sm" shade="subtle" />
+          <BusyIndicator size="sm" />
         ) : status === 'pending' ? (
-          <Spinner size="sm" shade="subtle" />
+          <BusyIndicator size="sm" />
         ) : (
           <>
             <span {...stylex.props(styles.statusIconCircle)} />
@@ -620,9 +622,9 @@ export function ChatToolCalls(props: ChatToolCallsProps) {
             <span
               {...stylex.props(styles.statusIcon, STATUS_STYLES[latestStatus])}>
               {latestStatus === 'running' ? (
-                <Spinner size="sm" shade="subtle" />
+                <BusyIndicator size="sm" />
               ) : latestStatus === 'pending' ? (
-                <Spinner size="sm" shade="subtle" />
+                <BusyIndicator size="sm" />
               ) : (
                 <>
                   <span {...stylex.props(styles.statusIconCircle)} />
