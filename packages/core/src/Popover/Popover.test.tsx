@@ -11,7 +11,8 @@
  */
 
 import {describe, it, expect, vi, beforeAll, afterAll} from 'vitest';
-import {render, screen, fireEvent} from '@testing-library/react';
+import {render, screen, fireEvent, waitFor} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React, {useRef} from 'react';
 import {Popover} from './Popover';
 import type {UsePopoverReturn} from './usePopover';
@@ -203,6 +204,71 @@ describe('Popover', () => {
       </Popover>,
     );
     expect(screen.getByTestId('my-popover')).toBeInTheDocument();
+  });
+
+  it('constrains the layer to viewport and safe-area gutters', () => {
+    render(
+      <Popover
+        content={<span>Content</span>}
+        label="Test"
+        width={640}
+        data-testid="popover-content">
+        <button type="button">Open</button>
+      </Popover>,
+    );
+
+    fireEvent.click(screen.getByRole('button', {name: 'Open'}));
+
+    const layer = document.querySelector('[popover]');
+    expect(layer).toHaveStyle({boxSizing: 'border-box'});
+    expect(layer?.className).toContain('Popover__styles.viewportFit');
+    const content = screen.getByTestId('popover-content');
+    expect(content.className).toContain('Popover__styles.surfaceViewportFit');
+    expect(content).toHaveStyle({overflow: 'auto'});
+  });
+
+  it('caps match-trigger sizing to the available inline viewport', () => {
+    render(
+      <Popover content={<span>Content</span>} label="Test">
+        <button type="button">Open</button>
+      </Popover>,
+    );
+
+    fireEvent.click(screen.getByRole('button', {name: 'Open'}));
+
+    expect(document.querySelector('[popover]')).toHaveStyle(
+      'min-width: min(anchor-size(width),calc(100vi - max(var(--spacing-4),env(safe-area-inset-left)) - max(var(--spacing-4),env(safe-area-inset-right))))',
+    );
+  });
+
+  it('sets render-prop aria-haspopup from the configured popup role', () => {
+    render(
+      <Popover
+        role="none"
+        content={
+          <div role="menu" aria-label="Actions">
+            Menu content
+          </div>
+        }
+        label="Actions">
+        {triggerProps => (
+          <button
+            type="button"
+            ref={triggerProps.ref}
+            onClick={triggerProps.onClick}
+            aria-haspopup={triggerProps['aria-haspopup']}
+            aria-expanded={triggerProps['aria-expanded']}
+            aria-controls={triggerProps['aria-controls']}>
+            Open menu
+          </button>
+        )}
+      </Popover>,
+    );
+
+    expect(screen.getByRole('button', {name: 'Open menu'})).toHaveAttribute(
+      'aria-haspopup',
+      'true',
+    );
   });
 
   it('supports anchorRef sibling mode', () => {
@@ -437,6 +503,62 @@ describe('Popover', () => {
   });
 
   describe('focus restoration', () => {
+    it('focuses the dialog container when content has no controls', async () => {
+      render(
+        <Popover content={<span>Read-only content</span>} label="Read only">
+          <button type="button">Open read only</button>
+        </Popover>,
+      );
+      fireEvent.click(screen.getByRole('button', {name: 'Open read only'}));
+
+      const dialog = screen.getByRole('dialog', {
+        name: 'Read only',
+        hidden: true,
+      });
+      await waitFor(() => expect(dialog).toHaveFocus());
+      expect(
+        screen.getByRole('button', {name: 'Close popover', hidden: true}),
+      ).not.toHaveFocus();
+    });
+
+    it('prefers a genuine content control for initial focus', async () => {
+      render(
+        <Popover
+          content={<button type="button">Content action</button>}
+          label="Action popover">
+          <button type="button">Open action</button>
+        </Popover>,
+      );
+      fireEvent.click(screen.getByRole('button', {name: 'Open action'}));
+
+      await waitFor(() =>
+        expect(
+          screen.getByRole('button', {name: 'Content action', hidden: true}),
+        ).toHaveFocus(),
+      );
+    });
+
+    it('keeps the fallback close button reachable by Tab', async () => {
+      const user = userEvent.setup();
+      render(
+        <Popover content={<span>Read-only content</span>} label="Read only">
+          <button type="button">Open read only</button>
+        </Popover>,
+      );
+      fireEvent.click(screen.getByRole('button', {name: 'Open read only'}));
+      await waitFor(() =>
+        expect(
+          screen.getByRole('dialog', {name: 'Read only', hidden: true}),
+        ).toHaveFocus(),
+      );
+
+      await user.tab();
+
+      expect(
+        screen.getByRole('button', {name: 'Close popover', hidden: true}),
+      ).toHaveFocus();
+    });
+
     it('returns focus to the trigger when closed via Escape', () => {
       render(
         <Popover

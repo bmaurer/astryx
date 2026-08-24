@@ -38,6 +38,11 @@ import {InteractiveRoleContext} from '../InteractiveRoleContext/InteractiveRoleC
 // =============================================================================
 
 const BUTTON_SELECTOR = 'button, [role="button"]';
+const POPOVER_VIEWPORT_GUTTER = spacingVars['--spacing-4'];
+const POPOVER_MAX_INLINE_SIZE = `calc(100vi - max(${POPOVER_VIEWPORT_GUTTER}, env(safe-area-inset-left)) - max(${POPOVER_VIEWPORT_GUTTER}, env(safe-area-inset-right)))`;
+const POPOVER_MAX_INLINE_SIZE_FALLBACK = `calc(100vw - ${POPOVER_VIEWPORT_GUTTER} - ${POPOVER_VIEWPORT_GUTTER})`;
+const POPOVER_MAX_BLOCK_SIZE = `calc(100dvb - max(${POPOVER_VIEWPORT_GUTTER}, env(safe-area-inset-top)) - max(${POPOVER_VIEWPORT_GUTTER}, env(safe-area-inset-bottom)))`;
+const POPOVER_MAX_BLOCK_SIZE_FALLBACK = `calc(100vh - ${POPOVER_VIEWPORT_GUTTER} - ${POPOVER_VIEWPORT_GUTTER})`;
 
 /**
  * Find the trigger button inside a container element.
@@ -63,8 +68,8 @@ export interface PopoverTriggerRenderProps {
   ref: (el: HTMLElement | null) => void;
   /** Toggle the popover open/closed. */
   onClick: () => void;
-  /** ARIA attribute: indicates the element triggers a dialog. */
-  'aria-haspopup': 'dialog';
+  /** ARIA attribute: indicates the popup type exposed by the trigger. */
+  'aria-haspopup': 'dialog' | 'true';
   /** ARIA attribute: whether the popover is currently open. */
   'aria-expanded': boolean;
   /** ARIA attribute: ID of the controlled popover element. */
@@ -241,6 +246,24 @@ const styles = stylex.create({
   anchorWrapper: {
     display: 'inline-flex',
   },
+  viewportFit: {
+    boxSizing: 'border-box',
+    maxInlineSize: stylex.firstThatWorks(
+      POPOVER_MAX_INLINE_SIZE,
+      POPOVER_MAX_INLINE_SIZE_FALLBACK,
+    ),
+    maxBlockSize: stylex.firstThatWorks(
+      POPOVER_MAX_BLOCK_SIZE,
+      POPOVER_MAX_BLOCK_SIZE_FALLBACK,
+    ),
+  },
+  surfaceViewportFit: {
+    boxSizing: 'border-box',
+    maxInlineSize: 'inherit',
+    maxBlockSize: 'inherit',
+    overflow: 'auto',
+    overscrollBehavior: 'contain',
+  },
   // Content padding, applied to the popup surface so a theme's `padding`
   // replaces it instead of nesting inside it.
   contentPadding: {
@@ -253,7 +276,11 @@ const styles = stylex.create({
     width: typeof width === 'number' ? `${width}px` : width,
   }),
   matchTrigger: {
-    minWidth: 'anchor-size(width)',
+    minWidth: stylex.firstThatWorks(
+      `min(anchor-size(width), ${POPOVER_MAX_INLINE_SIZE})`,
+      `min(anchor-size(width), ${POPOVER_MAX_INLINE_SIZE_FALLBACK})`,
+      'anchor-size(width)',
+    ),
   },
 });
 
@@ -343,7 +370,7 @@ export function Popover({
     // it is the element the `popover` theme target has to sit on — a target on
     // the content div inside it styles a box that paints nothing.
     surfaceTarget: 'popover',
-    xstyle: [styles.contentPadding, xstyle],
+    xstyle: [styles.contentPadding, styles.surfaceViewportFit, xstyle],
     className,
     style,
     onShow: handlePopoverShow,
@@ -503,18 +530,27 @@ export function Popover({
   }, [isOpen, isControlled, popover]);
 
   // Determine popover xstyle
-  const popoverXstyle = width ? styles.customWidth(width) : styles.matchTrigger;
+  const popoverSizeXstyle = width
+    ? styles.customWidth(width)
+    : styles.matchTrigger;
 
   // Sibling mode: render only the popover (no wrapper needed)
   if (anchorRef && children == null) {
     return (
       <>
-        {popover.render(<div data-testid={testId}>{content}</div>, {
-          placement,
-          alignment,
-          offset: spacingVars['--spacing-1'],
-          xstyle: [popoverXstyle, layerAnimations[placement]],
-        })}
+        {popover.render(
+          <div data-testid={testId}>{content}</div>,
+          {
+            placement,
+            alignment,
+            offset: spacingVars['--spacing-1'],
+            xstyle: [
+              styles.viewportFit,
+              popoverSizeXstyle,
+              layerAnimations[placement],
+            ],
+          },
+        )}
       </>
     );
   }
@@ -526,7 +562,7 @@ export function Popover({
     const triggerProps: PopoverTriggerRenderProps = {
       ref: popover.triggerRef,
       onClick: handleTriggerClick,
-      'aria-haspopup': 'dialog',
+      'aria-haspopup': popover.triggerProps['aria-haspopup'],
       'aria-expanded': popover.isOpen,
       'aria-controls': popover.id,
     };
@@ -534,12 +570,19 @@ export function Popover({
     return (
       <>
         {children(triggerProps)}
-        {popover.render(<div data-testid={testId}>{content}</div>, {
-          placement,
-          alignment,
-          offset: spacingVars['--spacing-1'],
-          xstyle: [popoverXstyle, layerAnimations[placement]],
-        })}
+        {popover.render(
+          <div data-testid={testId}>{content}</div>,
+          {
+            placement,
+            alignment,
+            offset: spacingVars['--spacing-1'],
+            xstyle: [
+              styles.viewportFit,
+              popoverSizeXstyle,
+              layerAnimations[placement],
+            ],
+          },
+        )}
       </>
     );
   }
@@ -552,12 +595,19 @@ export function Popover({
           {children}
         </div>
       </InteractiveRoleContext>
-      {popover.render(<div data-testid={testId}>{content}</div>, {
-        placement,
-        alignment,
-        offset: spacingVars['--spacing-1'],
-        xstyle: [popoverXstyle, layerAnimations[placement]],
-      })}
+      {popover.render(
+        <div data-testid={testId}>{content}</div>,
+        {
+          placement,
+          alignment,
+          offset: spacingVars['--spacing-1'],
+          xstyle: [
+            styles.viewportFit,
+            popoverSizeXstyle,
+            layerAnimations[placement],
+          ],
+        },
+      )}
     </>
   );
 }

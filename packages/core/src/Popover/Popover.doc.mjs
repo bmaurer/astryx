@@ -64,7 +64,7 @@ export const docs = {
         {
           name: 'width',
           type: 'number | string',
-          description: 'Width of the popover container.',
+          description: 'Width of the popover container. The layer still caps to the viewport and safe-area gutters before scrolling long content.',
           default: "'auto'",
         },
         {
@@ -220,7 +220,7 @@ export const docsZh = {
         {
           name: 'width',
           type: 'number | string',
-          description: '弹出框容器的宽度。',
+          description: '弹出框容器的宽度。弹出层仍会限制在视口和安全区域留白内，长内容再滚动。',
           default: "'auto'",
         },
         {
@@ -340,7 +340,7 @@ export const docsDense = {
         isOpen: 'Whether popover shown in controlled mode.',
         onOpenChange: 'Callback fired when popover visibility changes.',
         isEnabled: 'When false, trigger interactions ignored.',
-        width: 'Popover container width.',
+        width: 'Popover container width; capped to viewport/safe-area gutters before long content scrolls.',
         label: 'Accessible label for popover dialog.',
         hasCloseButton: 'Whether to include hidden close button for accessibility.',
         closeButtonLabel: 'Label for hidden close button.',

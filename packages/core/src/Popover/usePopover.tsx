@@ -28,12 +28,36 @@ import {
   shadowVars,
 } from '../theme/tokens.stylex';
 import {Button} from '../Button';
+import {FOCUSABLE_SELECTOR} from '../hooks/focusableSelector';
 import {rtlStyles} from '../utils';
 import {useTranslator} from '../i18n';
 import {useDevWarning} from '../hooks/useDevWarning';
 import {mergeProps} from '../utils/mergeProps';
 import {themeProps} from '../utils/themeProps';
 import {stableClassName} from '../naming';
+
+const FALLBACK_CLOSE_SELECTOR = '[data-astryx-popover-fallback-close]';
+
+function attemptFocus(element: HTMLElement): boolean {
+  try {
+    element.focus();
+  } catch {
+    // Ignore non-focusable elements; the caller will try the next target.
+  }
+  return document.activeElement === element;
+}
+
+function focusFirstContentControl(container: HTMLElement): boolean {
+  const focusable = Array.from(
+    container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+  ).filter(element => element.closest(FALLBACK_CLOSE_SELECTOR) == null);
+  for (const element of focusable) {
+    if (attemptFocus(element)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 const styles = stylex.create({
   // Default popover surface — background, radius, shadow.
@@ -385,19 +409,34 @@ function usePopoverImplementation(
     onEscape: hasEscapeDismiss || hasLightDismiss ? layer.hide : undefined,
   });
 
+  const focusInitialTarget = useCallback(() => {
+    const container = contentRef.current;
+    if (!container) {
+      return;
+    }
+    if (focusFirstContentControl(container)) {
+      return;
+    }
+    if (role === 'dialog') {
+      attemptFocus(container);
+      return;
+    }
+    focusFirst();
+  }, [contentRef, focusFirst, role]);
+
   // Auto-focus first element when popover opens (unless skipped)
   useEffect(() => {
     if (layer.isOpen && hasAutoFocus && !skipAutoFocusRef.current) {
       // Use requestAnimationFrame to ensure DOM is ready
       requestAnimationFrame(() => {
-        focusFirst();
+        focusInitialTarget();
       });
     }
     // Reset the skip flag after the effect runs
     if (!layer.isOpen) {
       skipAutoFocusRef.current = false;
     }
-  }, [layer.isOpen, hasAutoFocus, focusFirst]);
+  }, [layer.isOpen, hasAutoFocus, focusInitialTarget]);
 
   // Combined ref for trigger element (layer anchor + our ref)
   const triggerRef = useCallback(
@@ -465,6 +504,7 @@ function usePopoverImplementation(
             role={role === 'dialog' ? 'dialog' : undefined}
             aria-modal={role === 'dialog' && isModal ? true : undefined}
             aria-label={role === 'dialog' ? dialogLabel : undefined}
+            tabIndex={role === 'dialog' ? -1 : undefined}
             {...mergeProps(
               {...surfaceProps, className: surfaceClassName},
               stylex.props(
@@ -478,6 +518,7 @@ function usePopoverImplementation(
             {children}
             {hasCloseButton && (
               <div
+                data-astryx-popover-fallback-close=""
                 {...stylex.props(
                   styles.closeButtonWrapper,
                   rtlStyles.centerInline('100%'),
