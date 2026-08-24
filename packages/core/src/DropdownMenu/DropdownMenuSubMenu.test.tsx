@@ -102,6 +102,9 @@ describe('DropdownMenuSubMenu', () => {
     expect(popover?.className).toContain(
       'DropdownMenuSubMenu__flyoutStyles.popoverViewport',
     );
+    expect(popover).toHaveStyle(
+      'margin-inline-start: max(var(--spacing-2),env(safe-area-inset-left,0px))',
+    );
     expect(popover).toHaveStyle({minWidth: 'var(--x-minWidth)'});
     expect(popover?.getAttribute('style')).toContain('min(640px, calc(100vw');
     expect(flyout).toHaveStyle(

@@ -84,6 +84,9 @@ import {
 import {focusMenuItemOnHover} from './menuItemHover';
 
 const MENU_VIEWPORT_GUTTER = spacingVars['--spacing-4'];
+// `useLayer` adds 4px of anchor clearance. An 8px collision margin resolves
+// to a 4px visible gap after the browser flips the flyout.
+const MENU_FLYOUT_COLLISION_GUTTER = spacingVars['--spacing-2'];
 const MENU_MAX_INLINE_SIZE = `calc(100vi - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px)) - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px)))`;
 const MENU_MAX_INLINE_SIZE_FALLBACK = `calc(100vw - ${MENU_VIEWPORT_GUTTER} - ${MENU_VIEWPORT_GUTTER})`;
 const MENU_MAX_BLOCK_SIZE = `min(300px, calc(100dvb - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-top, 0px)) - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-bottom, 0px))))`;
@@ -170,12 +173,12 @@ const flyoutStyles = stylex.create({
   popoverViewport: {
     boxSizing: 'border-box',
     marginInlineStart: {
-      default: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px))`,
-      ':is([dir="rtl"] *)': `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px))`,
+      default: `max(${MENU_FLYOUT_COLLISION_GUTTER}, env(safe-area-inset-left, 0px))`,
+      ':is([dir="rtl"] *)': `max(${MENU_FLYOUT_COLLISION_GUTTER}, env(safe-area-inset-right, 0px))`,
     },
     marginInlineEnd: {
-      default: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px))`,
-      ':is([dir="rtl"] *)': `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px))`,
+      default: `max(${MENU_FLYOUT_COLLISION_GUTTER}, env(safe-area-inset-right, 0px))`,
+      ':is([dir="rtl"] *)': `max(${MENU_FLYOUT_COLLISION_GUTTER}, env(safe-area-inset-left, 0px))`,
     },
     maxInlineSize: stylex.firstThatWorks(
       MENU_MAX_INLINE_SIZE,
