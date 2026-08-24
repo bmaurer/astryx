@@ -260,8 +260,14 @@ const styles = stylex.create({
   },
   surfaceViewportFit: {
     boxSizing: 'border-box',
-    maxInlineSize: 'inherit',
-    maxBlockSize: 'inherit',
+    maxInlineSize: stylex.firstThatWorks(
+      POPOVER_MAX_INLINE_SIZE,
+      POPOVER_MAX_INLINE_SIZE_FALLBACK,
+    ),
+    maxBlockSize: stylex.firstThatWorks(
+      POPOVER_MAX_BLOCK_SIZE,
+      POPOVER_MAX_BLOCK_SIZE_FALLBACK,
+    ),
   },
   surfaceScrollable: {
     overflow: 'auto',

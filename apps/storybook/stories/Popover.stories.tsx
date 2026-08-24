@@ -78,24 +78,29 @@ const PROJECT_ACTIONS: ReadonlyArray<{
   },
 ];
 
+const TALL_POPOVER_ITEMS = Array.from({length: 16}, (_, index) => ({
+  id: `result-${index + 1}`,
+  label: `Search result ${index + 1}`,
+  description: 'Supporting information remains inside the Popover scroll area.',
+}));
+
 const readinessStyles = stylex.create({
-  evidenceFrame: {
-    inlineSize: 320,
-    maxInlineSize: '100%',
-    minBlockSize: 240,
+  viewportStoryCanvas: {
+    boxSizing: 'border-box',
+    inlineSize: '100%',
+    minBlockSize: '100dvh',
     paddingBlockStart: spacingVars['--spacing-4'],
     paddingBlockEnd: spacingVars['--spacing-4'],
     paddingInlineStart: spacingVars['--spacing-4'],
     paddingInlineEnd: spacingVars['--spacing-4'],
-    backgroundColor: colorVars['--color-background-muted'],
-    borderColor: colorVars['--color-border'],
-    borderStyle: 'solid',
-    borderWidth: 1,
-    borderRadius: radiusVars['--radius-container'],
+    overflow: 'clip',
   },
   edgeAnchorRow: {
     display: 'flex',
     justifyContent: 'flex-end',
+  },
+  oversizedTrigger: {
+    inlineSize: 640,
   },
   evidenceCopy: {
     maxInlineSize: 520,
@@ -632,16 +637,17 @@ export const RenderProp: Story = {
 export const ViewportFit: Story = {
   name: 'Viewport Fit',
   parameters: {
+    layout: 'fullscreen',
     viewport: {defaultViewport: 'mobile1'},
     docs: {
       description: {
         story:
-          'Desktop Storybook evidence for a narrow viewport: the popover is requested at 640px wide but should cap to the viewport/safe-area gutter instead of overflowing. This does not verify iOS WebKit top-layer behavior.',
+          'Uses the actual Storybook viewport rather than a simulated phone frame. The Popover requests a 640px width and must cap to the real iframe viewport and safe-area gutters.',
       },
     },
   },
   render: () => (
-    <div {...stylex.props(readinessStyles.evidenceFrame)}>
+    <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
       <div {...stylex.props(readinessStyles.edgeAnchorRow)}>
         <Popover
           isOpen={true}
@@ -671,6 +677,101 @@ export const ViewportFit: Story = {
           <Button label="Open fit evidence">Open fit evidence</Button>
         </Popover>
       </div>
+    </div>
+  ),
+};
+
+export const MatchTriggerViewportFit: Story = {
+  name: 'Match-trigger viewport fit',
+  parameters: {
+    layout: 'fullscreen',
+    viewport: {defaultViewport: 'mobile1'},
+    docs: {
+      description: {
+        story:
+          'Uses the actual Storybook viewport. The real trigger is intentionally 640px wide, while Popover keeps its default match-trigger sizing; the Popover must cap to the available viewport instead of inheriting the full trigger width.',
+      },
+    },
+  },
+  render: () => (
+    <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
+      <Popover
+        isOpen={true}
+        hasAutoFocus={false}
+        hasLightDismiss={false}
+        placement="below"
+        alignment="start"
+        label="Match-trigger viewport evidence"
+        data-testid="match-trigger-popover"
+        content={
+          <VStack gap={2} xstyle={readinessStyles.evidenceCopy}>
+            <Heading level={4} tabIndex={-1}>
+              Match-trigger sizing
+            </Heading>
+            <Text type="body">
+              The anchor is wider than this viewport, but the Popover stays
+              inside the available inline space.
+            </Text>
+          </VStack>
+        }>
+        <Button
+          label="Oversized match-width trigger"
+          xstyle={readinessStyles.oversizedTrigger}>
+          Oversized match-width trigger
+        </Button>
+      </Popover>
+    </div>
+  ),
+};
+
+export const TallContentOverflow: Story = {
+  name: 'Tall content overflow',
+  parameters: {
+    layout: 'fullscreen',
+    viewport: {defaultViewport: 'mobile1'},
+    docs: {
+      description: {
+        story:
+          'Uses the actual Storybook viewport and a real Popover with enough content to exceed its available block size. The Popover should remain inside the viewport and make only its content surface scrollable.',
+      },
+    },
+  },
+  render: () => (
+    <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
+      <Popover
+        isOpen={true}
+        hasAutoFocus={false}
+        hasLightDismiss={false}
+        placement="below"
+        alignment="start"
+        label="Tall search results"
+        width={320}
+        data-testid="tall-popover"
+        content={
+          <List
+            density="compact"
+            hasDividers
+            header={
+              <VStack gap={1}>
+                <Heading level={4} tabIndex={-1}>
+                  Search results
+                </Heading>
+                <Text type="supporting" color="secondary">
+                  Scroll this real Popover to reach all results.
+                </Text>
+              </VStack>
+            }>
+            {TALL_POPOVER_ITEMS.map(item => (
+              <ListItem
+                key={item.id}
+                label={item.label}
+                description={item.description}
+              />
+            ))}
+          </List>
+        }>
+        <Button label="Open tall results">Open tall results</Button>
+      </Popover>
     </div>
   ),
 };

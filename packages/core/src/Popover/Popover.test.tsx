@@ -2,7 +2,7 @@
 
 /**
  * @file Popover.test.tsx
- * @input Uses vitest, @testing-library/react, Popover, Dialog,
+ * @input Uses vitest, Testing Library, node:fs, Popover, Dialog, and
  *   SegmentedControl
  * @output Unit tests for Popover component behavior
  * @position Testing; validates Popover.tsx implementation
@@ -13,6 +13,7 @@
 import {describe, it, expect, vi, beforeAll, afterAll} from 'vitest';
 import {render, screen, fireEvent, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {readFileSync} from 'node:fs';
 import React, {useRef} from 'react';
 import {Popover} from './Popover';
 import type {UsePopoverReturn} from './usePopover';
@@ -224,6 +225,13 @@ describe('Popover', () => {
     expect(layer?.className).toContain('Popover__styles.viewportFit');
     const surface = screen.getByTestId('popover-content').parentElement;
     expect(surface?.className).toContain('Popover__styles.surfaceViewportFit');
+    const popoverSource = readFileSync(
+      'packages/core/src/Popover/Popover.tsx',
+      'utf8',
+    );
+    expect(popoverSource).toMatch(
+      /surfaceViewportFit:[\s\S]*?maxBlockSize: stylex\.firstThatWorks\(\s*POPOVER_MAX_BLOCK_SIZE/,
+    );
     expect(surface?.className).not.toContain(
       'Popover__styles.surfaceScrollable',
     );
