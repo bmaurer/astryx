@@ -16,11 +16,7 @@ import {Switch} from '@astryxdesign/core/Switch';
 import {CheckboxInput} from '@astryxdesign/core/CheckboxInput';
 import {Divider} from '@astryxdesign/core/Divider';
 import {Section} from '@astryxdesign/core/Section';
-import {
-  colorVars,
-  radiusVars,
-  spacingVars,
-} from '@astryxdesign/core/theme/tokens.stylex';
+import {spacingVars} from '@astryxdesign/core/theme/tokens.stylex';
 
 const meta: Meta<typeof Popover> = {
   title: 'Core/Popover',
@@ -118,18 +114,6 @@ const readinessStyles = stylex.create({
   evidenceCopy: {
     maxInlineSize: 520,
     overflowWrap: 'anywhere',
-  },
-  presentationFrame: {
-    minBlockSize: 320,
-    paddingBlockStart: spacingVars['--spacing-4'],
-    paddingBlockEnd: spacingVars['--spacing-4'],
-    paddingInlineStart: spacingVars['--spacing-4'],
-    paddingInlineEnd: spacingVars['--spacing-4'],
-    backgroundColor: colorVars['--color-background-muted'],
-    borderColor: colorVars['--color-border'],
-    borderStyle: 'solid',
-    borderWidth: 1,
-    borderRadius: radiusVars['--radius-container'],
   },
   actionList: {
     inlineSize: '100%',
@@ -240,7 +224,7 @@ function ProjectActionSurface({
 
   if (resolvedPresentation === 'bottom-sheet') {
     return (
-      <div {...stylex.props(readinessStyles.presentationFrame)}>
+      <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
         <Button label="Open project actions" onClick={() => setIsOpen(true)}>
           Open project actions
         </Button>
@@ -256,7 +240,7 @@ function ProjectActionSurface({
   }
 
   return (
-    <div {...stylex.props(readinessStyles.presentationFrame)}>
+    <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
       <Popover
         isOpen={isOpen}
         onOpenChange={setIsOpen}
@@ -698,6 +682,7 @@ export const ViewportFit: Story = {
     layout: 'fullscreen',
     viewport: {defaultViewport: 'mobile1'},
     docs: {
+      story: {inline: false, height: '844px'},
       description: {
         story:
           'Uses the actual Storybook viewport rather than a simulated phone frame. The Popover requests a 640px width and must cap to the real iframe viewport and safe-area gutters.',
@@ -748,6 +733,7 @@ export const MatchTriggerViewportFit: Story = {
     layout: 'fullscreen',
     viewport: {defaultViewport: 'mobile1'},
     docs: {
+      story: {inline: false, height: '844px'},
       description: {
         story:
           'Uses the actual Storybook viewport. The real trigger is intentionally 640px wide, while Popover keeps its default match-trigger sizing; the Popover must cap to the available viewport instead of inheriting the full trigger width.',
@@ -794,6 +780,7 @@ export const TallContentOverflow: Story = {
     layout: 'fullscreen',
     viewport: {defaultViewport: 'mobile1'},
     docs: {
+      story: {inline: false, height: '844px'},
       description: {
         story:
           'Uses the actual Storybook viewport and a realistic project picker. The product-level 360px/50dvh cap keeps this lightweight anchored surface compact, while Popover detects the overflow and makes its content scrollable. Scrolling demonstrates bounded overflow handling; it does not by itself determine whether another presentation is more appropriate.',
@@ -812,7 +799,9 @@ export const TallContentOverflow: Story = {
 export const TriggerInteractionEvidence: Story = {
   name: 'Trigger Interaction Evidence',
   parameters: {
+    layout: 'fullscreen',
     docs: {
+      story: {inline: false, height: '844px'},
       description: {
         story:
           'Desktop Storybook interaction evidence: the native button trigger opens the popover without hover. Use real touch/iOS evidence before claiming mobile Safari behavior.',
@@ -850,7 +839,9 @@ export const TriggerInteractionEvidence: Story = {
 export const KeepPopoverPresentation: Story = {
   name: 'Keep Popover Presentation',
   parameters: {
+    layout: 'fullscreen',
     docs: {
+      story: {inline: false, height: '844px'},
       description: {
         story:
           'Keep Popover for anchored, compact supplemental details and actions. The trigger is click/tap activated, not hover dependent, and the compact surface keeps context near the trigger.',
@@ -871,7 +862,7 @@ export const BottomSheetPresentationOption: Story = {
   parameters: {
     layout: 'fullscreen',
     docs: {
-      story: {inline: false, height: '560px'},
+      story: {inline: false, height: '844px'},
       description: {
         story:
           'This story shows BottomSheet as an explicit alternative for the same focused task when a product wants a bottom-edge modal touch surface. It changes the contract: dialog focus ownership, scrim behavior, Escape handling, swipe-to-dismiss, and sheet body scrolling differ from Popover.',
@@ -910,7 +901,7 @@ export const AdaptivePopoverRecipe: PresentationRecipeStory = {
   parameters: {
     layout: 'fullscreen',
     docs: {
-      story: {inline: false, height: '560px'},
+      story: {inline: false, height: '844px'},
       description: {
         story:
           'Story-local recipe only: Core Popover does not silently adapt. Products opt in with touchPresentation="bottom-sheet" and can force presentation="popover" or presentation="bottom-sheet" for review and tests.',
