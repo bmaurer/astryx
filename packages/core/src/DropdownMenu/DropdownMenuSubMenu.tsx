@@ -588,11 +588,10 @@ export function DropdownMenuSubMenu(
           ref={menuRef}
           id={contentId}
           role="menu"
-          // Focusable as a fallback target so an empty/loading flyout (e.g.
-          // hasSpinner with only a disabled row) can still receive keyboard
-          // focus and own arrow/Escape keys instead of leaving focus on the
-          // parent list.
-          tabIndex={-1}
+          // Focusable as a fallback target so an empty/loading flyout can own
+          // arrow/Escape keys. An overflowing flyout joins the Tab order so its
+          // scrollable region is keyboard-accessible.
+          tabIndex={hasOverflow ? 0 : -1}
           aria-labelledby={triggerId}
           onKeyDown={handleContentKeyDown}
           onMouseEnter={contentProps.onMouseEnter}

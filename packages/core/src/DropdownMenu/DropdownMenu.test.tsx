@@ -204,6 +204,7 @@ describe('DropdownMenu', () => {
         'max-height: min(300px,calc(100dvb - max(var(--spacing-4),env(safe-area-inset-top,0px)) - max(var(--spacing-4),env(safe-area-inset-bottom,0px))))',
       );
       expect(menu).not.toHaveStyle({overflowY: 'auto'});
+      expect(menu).toHaveAttribute('tabindex', '-1');
 
       scrollHeightSpy.mockReturnValue(480);
       fireEvent(window, new Event('resize'));

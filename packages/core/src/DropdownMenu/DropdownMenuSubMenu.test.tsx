@@ -108,6 +108,7 @@ describe('DropdownMenuSubMenu', () => {
       'max-height: min(300px,calc(100dvb - max(var(--spacing-4),env(safe-area-inset-top,0px)) - max(var(--spacing-4),env(safe-area-inset-bottom,0px))))',
     );
     expect(flyout).not.toHaveStyle({overflowY: 'auto'});
+    expect(flyout).toHaveAttribute('tabindex', '-1');
 
     Object.defineProperties(flyout, {
       clientHeight: {configurable: true, value: 300},
@@ -117,6 +118,7 @@ describe('DropdownMenuSubMenu', () => {
 
     await waitFor(() => {
       expect(flyout).toHaveStyle({overflowY: 'auto'});
+      expect(flyout).toHaveAttribute('tabindex', '0');
     });
   });
 

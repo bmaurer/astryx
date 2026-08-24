@@ -572,11 +572,11 @@ export function DropdownMenu({
           ref={listRef}
           id={menuId}
           role="menu"
-          // Focus target for pointer opens (not in the Tab order): holding
-          // focus on the container keeps key events (arrows, typeahead,
-          // Escape, Tab) inside the menu without highlighting any item.
-          // Mirrors the DropdownMenuSubMenu flyout container.
-          tabIndex={-1}
+          // Pointer opens focus the container so arrows, typeahead, Escape and
+          // Tab remain owned by the menu without pre-highlighting an item.
+          // An overflowing menu joins the Tab order so its scrollable region is
+          // keyboard-accessible; Tab still dismisses through listKeyDown.
+          tabIndex={hasOverflow ? 0 : -1}
           // Give the menu an accessible name from its trigger's label, so
           // screen readers announce e.g. "Actions menu" rather than an unnamed
           // menu (menus-13).
