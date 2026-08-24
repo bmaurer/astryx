@@ -183,6 +183,74 @@ function ProjectActionPresentation({
   );
 }
 
+function CompactDrillInActionSheet() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [view, setView] = useState<'actions' | 'projects'>('actions');
+
+  const close = () => {
+    setIsOpen(false);
+    setView('actions');
+  };
+
+  return (
+    <>
+      <Button label="Project actions" onClick={() => setIsOpen(true)}>
+        Project actions
+      </Button>
+      <BottomSheet
+        isOpen={isOpen}
+        onOpenChange={nextIsOpen => {
+          setIsOpen(nextIsOpen);
+          if (!nextIsOpen) {
+            setView('actions');
+          }
+        }}
+        label={view === 'actions' ? 'Project actions' : 'Move to project'}
+        height="hug">
+        <Section padding={4}>
+          {view === 'actions' ? (
+            <List
+              hasDividers
+              header={<Heading level={3}>Project actions</Heading>}
+              xstyle={readinessStyles.actionList}>
+              <ListItem label="Rename project" onClick={close} />
+              <ListItem
+                label="Move to project"
+                onClick={() => setView('projects')}
+              />
+              <ListItem label="Archive project" onClick={close} />
+            </List>
+          ) : (
+            <List
+              hasDividers
+              header={
+                <div>
+                  <Button
+                    label="Back to project actions"
+                    variant="ghost"
+                    onClick={() => setView('actions')}>
+                    Back
+                  </Button>
+                  <Heading level={3}>Move to project</Heading>
+                </div>
+              }
+              xstyle={readinessStyles.actionList}>
+              {PROJECT_DESTINATIONS.slice(0, 4).map(([label, team]) => (
+                <ListItem
+                  key={label}
+                  label={label}
+                  description={team}
+                  onClick={close}
+                />
+              ))}
+            </List>
+          )}
+        </Section>
+      </BottomSheet>
+    </>
+  );
+}
+
 const PROJECT_DESTINATIONS = [
   ['Apollo launch', 'Marketing'],
   ['Customer insights', 'Research'],
@@ -1053,6 +1121,32 @@ export const AdaptiveActionPresentation: Story = {
   },
 };
 
+export const CompactDrillInPresentation: Story = {
+  name: 'Presentation / compact drill-in hierarchy',
+  parameters: {
+    layout: 'fullscreen',
+    viewport: {defaultViewport: 'mobile1'},
+    docs: {
+      story: {inline: false, height: '560px'},
+      description: {
+        story:
+          'An explicit product-owned alternative when a cascading submenu cannot fit beside its parent on a compact touch surface. BottomSheet owns the modal contract, and Move to project drills into a second list with a Back action. Core DropdownMenu does not switch to this automatically.',
+      },
+    },
+  },
+  render: () => (
+    <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
+      <CompactDrillInActionSheet />
+    </div>
+  ),
+  play: async ({canvasElement}) => {
+    const trigger = canvasElement.querySelector('button');
+    if (trigger instanceof HTMLElement) {
+      trigger.click();
+    }
+  },
+};
+
 export const ViewportFit: Story = {
   name: 'Readiness / viewport fit',
   parameters: {
@@ -1129,14 +1223,14 @@ export const TallContentOverflow: Story = {
 };
 
 export const SubmenuViewportFit: Story = {
-  name: 'Readiness / submenu viewport fit',
+  name: 'Stress / submenu viewport containment',
   parameters: {
     layout: 'fullscreen',
     viewport: {defaultViewport: 'mobile1'},
     docs: {
       description: {
         story:
-          'Uses the actual Storybook viewport. The submenu requests a 640px minimum width from an edge-aligned parent, then flips or shifts and caps itself to the same safe viewport gutters as the root menu.',
+          'Containment stress test, not a recommended compact-touch presentation. The submenu intentionally requests 640px; when the parent and child cannot fit side by side, the layer stays inside viewport gutters but overlaps the parent. Products needing hierarchy on compact touch surfaces should choose an explicit drill-in interaction rather than assuming a cascade can fit.',
       },
     },
   },
