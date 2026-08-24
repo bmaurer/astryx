@@ -78,11 +78,18 @@ const PROJECT_ACTIONS: ReadonlyArray<{
   },
 ];
 
-const TALL_POPOVER_ITEMS = Array.from({length: 16}, (_, index) => ({
-  id: `result-${index + 1}`,
-  label: `Search result ${index + 1}`,
-  description: 'Supporting information remains inside the Popover scroll area.',
-}));
+const PROJECT_DESTINATIONS = [
+  ['Apollo launch', 'Marketing · 12 open tasks'],
+  ['Customer insights', 'Research · 8 open tasks'],
+  ['Design systems', 'Platform · 24 open tasks'],
+  ['Growth experiments', 'Product · 6 open tasks'],
+  ['Incident review', 'Operations · 4 open tasks'],
+  ['Mobile quality', 'Engineering · 15 open tasks'],
+  ['Quarterly planning', 'Strategy · 9 open tasks'],
+  ['Recruiting plan', 'People · 7 open tasks'],
+  ['Security follow-up', 'Trust · 3 open tasks'],
+  ['Website refresh', 'Brand · 11 open tasks'],
+] as const;
 
 const readinessStyles = stylex.create({
   viewportStoryCanvas: {
@@ -101,6 +108,12 @@ const readinessStyles = stylex.create({
   },
   oversizedTrigger: {
     inlineSize: 640,
+  },
+  boundedPopoverContent: {
+    maxBlockSize: stylex.firstThatWorks(
+      'min(50dvb, 360px)',
+      'min(50vh, 360px)',
+    ),
   },
   evidenceCopy: {
     maxInlineSize: 520,
@@ -253,6 +266,54 @@ function ProjectActionSurface({
         width={320}
         content={content}>
         <Button label="Open project actions">Open project actions</Button>
+      </Popover>
+    </div>
+  );
+}
+
+function TallContentOverflowExample() {
+  const [selectedProject, setSelectedProject] = React.useState<string | null>(
+    null,
+  );
+
+  return (
+    <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
+      <Popover
+        isOpen={true}
+        hasAutoFocus={false}
+        hasLightDismiss={false}
+        placement="below"
+        alignment="start"
+        label="Move to project"
+        width={320}
+        data-testid="tall-popover"
+        xstyle={readinessStyles.boundedPopoverContent}
+        content={
+          <List
+            density="compact"
+            hasDividers
+            header={
+              <VStack gap={1}>
+                <Heading level={4} tabIndex={-1}>
+                  Move to project
+                </Heading>
+                <Text type="supporting" color="secondary">
+                  Choose a destination for this task.
+                </Text>
+              </VStack>
+            }>
+            {PROJECT_DESTINATIONS.map(([label, description]) => (
+              <ListItem
+                key={label}
+                label={label}
+                description={description}
+                isSelected={selectedProject === label}
+                onClick={() => setSelectedProject(label)}
+              />
+            ))}
+          </List>
+        }>
+        <Button label="Move task">Move task</Button>
       </Popover>
     </div>
   );
@@ -732,48 +793,11 @@ export const TallContentOverflow: Story = {
     docs: {
       description: {
         story:
-          'Uses the actual Storybook viewport and a real Popover with enough content to exceed its available block size. The Popover should remain inside the viewport and make only its content surface scrollable.',
+          'Uses the actual Storybook viewport and a realistic project picker. The product-level 360px/50dvh cap keeps this lightweight anchored surface compact, while Popover detects the overflow and makes its content scrollable. Content needing a near-full-screen surface should use BottomSheet or Dialog instead.',
       },
     },
   },
-  render: () => (
-    <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
-      <Popover
-        isOpen={true}
-        hasAutoFocus={false}
-        hasLightDismiss={false}
-        placement="below"
-        alignment="start"
-        label="Tall search results"
-        width={320}
-        data-testid="tall-popover"
-        content={
-          <List
-            density="compact"
-            hasDividers
-            header={
-              <VStack gap={1}>
-                <Heading level={4} tabIndex={-1}>
-                  Search results
-                </Heading>
-                <Text type="supporting" color="secondary">
-                  Scroll this real Popover to reach all results.
-                </Text>
-              </VStack>
-            }>
-            {TALL_POPOVER_ITEMS.map(item => (
-              <ListItem
-                key={item.id}
-                label={item.label}
-                description={item.description}
-              />
-            ))}
-          </List>
-        }>
-        <Button label="Open tall results">Open tall results</Button>
-      </Popover>
-    </div>
-  ),
+  render: () => <TallContentOverflowExample />,
 };
 
 export const TriggerInteractionEvidence: Story = {
