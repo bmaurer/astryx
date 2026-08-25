@@ -1320,7 +1320,7 @@ export function Step({
         <div
           aria-hidden="true"
           {...mergeProps(
-            themeProps('step-connector'),
+            themeProps('step-connector', {segment: 'content'}),
             stylex.props(
               // connectorTrack first: it declares `position: relative` to
               // anchor its fill layer, but this segment is absolutely placed
@@ -1358,7 +1358,7 @@ export function Step({
             <div
               aria-hidden="true"
               {...mergeProps(
-                themeProps('step-connector'),
+                themeProps('step-connector', {segment: 'lead'}),
                 stylex.props(
                   styles.otSegBaseV,
                   styles.otSegLeadV(densitySpace),
@@ -1373,7 +1373,7 @@ export function Step({
             <div
               aria-hidden="true"
               {...mergeProps(
-                themeProps('step-connector'),
+                themeProps('step-connector', {segment: 'rail'}),
                 stylex.props(
                   styles.otSegBaseV,
                   styles.otSegFlexV,
@@ -1438,7 +1438,7 @@ export function Step({
           <div
             aria-hidden="true"
             {...mergeProps(
-              themeProps('step-connector'),
+              themeProps('step-connector', {segment: 'lead'}),
               stylex.props(
                 styles.otSegH,
                 styles.connectorTrack,
@@ -1452,7 +1452,7 @@ export function Step({
           <div
             aria-hidden="true"
             {...mergeProps(
-              themeProps('step-connector'),
+              themeProps('step-connector', {segment: 'rail'}),
               stylex.props(
                 styles.otSegH,
                 styles.connectorTrack,

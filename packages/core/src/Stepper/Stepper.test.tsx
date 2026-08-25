@@ -1021,4 +1021,55 @@ describe('Stepper', () => {
       expect(isInstant(getByTestId('b'))).toBe(true);
     });
   });
+
+  describe('connector segments', () => {
+    // A step draws its track from up to three connector elements that share the
+    // one `step-connector` target. `segment` is what tells them apart, so a
+    // theme can reach the cap arriving at a glyph without also hitting the rail
+    // leaving it — structurally they are only distinguishable by sibling
+    // position, which changes with `indicator="none"`.
+    const segmentsOf = (container: HTMLElement) =>
+      [...container.querySelectorAll('.astryx-step-connector')].map(node =>
+        node.getAttribute('data-segment'),
+      );
+
+    it('labels the vertical lead, rail and content segments', () => {
+      const {container} = render(
+        <Stepper
+          activeStep={1}
+          orientation="vertical"
+          indicatorPosition="on-track">
+          <Step step={0} label="One" />
+          <Step step={1} label="Two">
+            supporting content
+          </Step>
+          <Step step={2} label="Three" />
+        </Stepper>,
+      );
+      // Every step contributes a lead and a rail; only the step carrying
+      // content adds the segment that runs beside it.
+      expect(segmentsOf(container)).toEqual([
+        'lead',
+        'rail',
+        'lead',
+        'rail',
+        'content',
+        'lead',
+        'rail',
+      ]);
+    });
+
+    it('labels the horizontal lead and rail segments', () => {
+      const {container} = render(
+        <Stepper
+          activeStep={1}
+          orientation="horizontal"
+          indicatorPosition="on-track">
+          <Step step={0} label="One" />
+          <Step step={1} label="Two" />
+        </Stepper>,
+      );
+      expect(segmentsOf(container)).toEqual(['lead', 'rail', 'lead', 'rail']);
+    });
+  });
 });
