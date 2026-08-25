@@ -121,6 +121,16 @@ const styles = stylex.create({
     placeItems: 'center',
     overflow: 'hidden',
     verticalAlign: 'middle',
+    // The hosts that paint a spinner inside a fixed-size control are flex
+    // containers, and several are no bigger than the spinner they hold — a
+    // Switch thumb is 14px at the smallest size, exactly the `sm` box. Under a
+    // flex item's default `flex-shrink: 1` the host compresses this box while
+    // the ring keeps drawing at the size its attributes ask for, and
+    // `overflow: hidden` then clips the ring the box exists to contain. Nothing
+    // reports it: the spinner just renders a slice of itself. Refusing to
+    // shrink keeps the box and the ring one measurement, so a spinner that does
+    // not fit overflows visibly at the host instead.
+    flexShrink: 0,
   },
   ring: {
     backfaceVisibility: 'hidden',
