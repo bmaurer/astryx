@@ -15,6 +15,11 @@
  * - Status icon (themeProps 'banner-icon'): the target rides on the default
  *   <Icon> itself — the element that paints — so 'status:X' overrides reach
  *   the glyph (#4166); for a custom `icon` node it stays on the layout wrapper
+ * - Description (themeProps 'banner-description'): the supporting line owns its
+ *   own colour and type, and the space between it and the title
+ * - End area (themeProps 'banner-actions'): the actions row, including the edge
+ *   compensation — a theme whose banner grows to its buttons rather than
+ *   letting them overhang the header padding overrides it here
  * - No left border accent — color is expressed through the full header background
  * - Each visual area owns its own border-radius (no overflow:clip on the container)
  * - Children are collapsible by default: a toggle appears in the header end
@@ -612,14 +617,23 @@ export function Banner({
           )}>
           <div {...stylex.props(styles.title)}>{title}</div>
           {isRenderable(description) && (
-            <div {...stylex.props(styles.description)}>{description}</div>
+            <div
+              {...mergeProps(
+                themeProps('banner-description'),
+                stylex.props(styles.description),
+              )}>
+              {description}
+            </div>
           )}
         </div>
         {showEndArea && (
           <div
-            {...stylex.props(
-              styles.endArea,
-              edgeCompSlot.inset(spacingVars['--spacing-2']),
+            {...mergeProps(
+              themeProps('banner-actions'),
+              stylex.props(
+                styles.endArea,
+                edgeCompSlot.inset(spacingVars['--spacing-2']),
+              ),
             )}>
             {endContent}
             {hasToggle && (
