@@ -356,6 +356,7 @@ export function Popover({
   'data-testid': testId,
 }: PopoverProps): ReactElement {
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const measurementFrameRef = useRef<number | null>(null);
   const [hasOverflow, setHasOverflow] = useState(false);
   const isControlled = isOpen !== undefined;
 
@@ -406,6 +407,16 @@ export function Popover({
     );
   }, [popover.contentRef]);
 
+  const scheduleOverflowMeasurement = useCallback(() => {
+    if (measurementFrameRef.current != null) {
+      return;
+    }
+    measurementFrameRef.current = window.requestAnimationFrame(() => {
+      measurementFrameRef.current = null;
+      measureOverflow();
+    });
+  }, [measureOverflow]);
+
   useIsomorphicLayoutEffect(() => {
     const surface = popover.contentRef.current;
     if (!surface) {
@@ -415,32 +426,42 @@ export function Popover({
     const resizeObserver =
       typeof ResizeObserver === 'undefined'
         ? null
-        : new ResizeObserver(measureOverflow);
+        : new ResizeObserver(scheduleOverflowMeasurement);
     const mutationObserver =
       typeof MutationObserver === 'undefined'
         ? null
-        : new MutationObserver(measureOverflow);
+        : new MutationObserver(scheduleOverflowMeasurement);
     resizeObserver?.observe(surface);
     mutationObserver?.observe(surface, {
       childList: true,
       characterData: true,
       subtree: true,
     });
-    surface.addEventListener('load', measureOverflow, true);
-    window.addEventListener('resize', measureOverflow);
-    window.visualViewport?.addEventListener('resize', measureOverflow);
+    surface.addEventListener('load', scheduleOverflowMeasurement, true);
+    window.addEventListener('resize', scheduleOverflowMeasurement);
+    window.visualViewport?.addEventListener(
+      'resize',
+      scheduleOverflowMeasurement,
+    );
     return () => {
       resizeObserver?.disconnect();
       mutationObserver?.disconnect();
-      surface.removeEventListener('load', measureOverflow, true);
-      window.removeEventListener('resize', measureOverflow);
-      window.visualViewport?.removeEventListener('resize', measureOverflow);
+      surface.removeEventListener('load', scheduleOverflowMeasurement, true);
+      window.removeEventListener('resize', scheduleOverflowMeasurement);
+      window.visualViewport?.removeEventListener(
+        'resize',
+        scheduleOverflowMeasurement,
+      );
+      if (measurementFrameRef.current != null) {
+        window.cancelAnimationFrame(measurementFrameRef.current);
+        measurementFrameRef.current = null;
+      }
     };
-  }, [measureOverflow]);
+  }, [measureOverflow, popover.isOpen, scheduleOverflowMeasurement]);
 
   useIsomorphicLayoutEffect(() => {
-    measureOverflow();
-  }, [content, measureOverflow, popover.isOpen]);
+    scheduleOverflowMeasurement();
+  }, [content, popover.isOpen, scheduleOverflowMeasurement]);
 
   // Shared handler for click events on the trigger button.
   const handleTriggerClick = useCallback(() => {
@@ -603,19 +624,16 @@ export function Popover({
   if (anchorRef && children == null) {
     return (
       <>
-        {popover.render(
-          <div data-testid={testId}>{content}</div>,
-          {
-            placement,
-            alignment,
-            offset: spacingVars['--spacing-1'],
-            xstyle: [
-              styles.viewportFit,
-              popoverSizeXstyle,
-              layerAnimations[placement],
-            ],
-          },
-        )}
+        {popover.render(<div data-testid={testId}>{content}</div>, {
+          placement,
+          alignment,
+          offset: spacingVars['--spacing-1'],
+          xstyle: [
+            styles.viewportFit,
+            popoverSizeXstyle,
+            layerAnimations[placement],
+          ],
+        })}
       </>
     );
   }
@@ -635,19 +653,16 @@ export function Popover({
     return (
       <>
         {children(triggerProps)}
-        {popover.render(
-          <div data-testid={testId}>{content}</div>,
-          {
-            placement,
-            alignment,
-            offset: spacingVars['--spacing-1'],
-            xstyle: [
-              styles.viewportFit,
-              popoverSizeXstyle,
-              layerAnimations[placement],
-            ],
-          },
-        )}
+        {popover.render(<div data-testid={testId}>{content}</div>, {
+          placement,
+          alignment,
+          offset: spacingVars['--spacing-1'],
+          xstyle: [
+            styles.viewportFit,
+            popoverSizeXstyle,
+            layerAnimations[placement],
+          ],
+        })}
       </>
     );
   }
@@ -660,19 +675,16 @@ export function Popover({
           {children}
         </div>
       </InteractiveRoleContext>
-      {popover.render(
-        <div data-testid={testId}>{content}</div>,
-        {
-          placement,
-          alignment,
-          offset: spacingVars['--spacing-1'],
-          xstyle: [
-            styles.viewportFit,
-            popoverSizeXstyle,
-            layerAnimations[placement],
-          ],
-        },
-      )}
+      {popover.render(<div data-testid={testId}>{content}</div>, {
+        placement,
+        alignment,
+        offset: spacingVars['--spacing-1'],
+        xstyle: [
+          styles.viewportFit,
+          popoverSizeXstyle,
+          layerAnimations[placement],
+        ],
+      })}
     </>
   );
 }

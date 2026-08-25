@@ -11,7 +11,7 @@
  */
 
 import {describe, it, expect, vi, beforeAll, afterAll} from 'vitest';
-import {render, screen, fireEvent, waitFor} from '@testing-library/react';
+import {render, screen, fireEvent, waitFor, act} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {readFileSync} from 'node:fs';
 import React, {useRef} from 'react';
@@ -264,14 +264,73 @@ describe('Popover', () => {
 
       expect(
         screen.getByTestId('popover-content').parentElement?.className,
-      ).toContain(
-        'Popover__styles.surfaceScrollable',
-      );
+      ).toContain('Popover__styles.surfaceScrollable');
     } finally {
       clientHeight.mockRestore();
       scrollHeight.mockRestore();
       clientWidth.mockRestore();
       scrollWidth.mockRestore();
+    }
+  });
+
+  it('coalesces repeated overflow signals into one animation frame', () => {
+    let resizeCallback: ResizeObserverCallback | undefined;
+    let mutationCallback: MutationCallback | undefined;
+    const frameCallbacks: FrameRequestCallback[] = [];
+
+    class ResizeObserverMock {
+      constructor(callback: ResizeObserverCallback) {
+        resizeCallback = callback;
+      }
+      observe = vi.fn();
+      unobserve = vi.fn();
+      disconnect = vi.fn();
+    }
+
+    class MutationObserverMock {
+      constructor(callback: MutationCallback) {
+        mutationCallback = callback;
+      }
+      observe = vi.fn();
+      disconnect = vi.fn();
+      takeRecords = vi.fn(() => []);
+    }
+
+    const requestFrame = vi.fn((callback: FrameRequestCallback) => {
+      frameCallbacks.push(callback);
+      return frameCallbacks.length;
+    });
+    const cancelFrame = vi.fn();
+    vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+    vi.stubGlobal('MutationObserver', MutationObserverMock);
+    vi.stubGlobal('requestAnimationFrame', requestFrame);
+    vi.stubGlobal('cancelAnimationFrame', cancelFrame);
+
+    const {unmount} = render(
+      <Popover content={<span>Content</span>} label="Test">
+        <button type="button">Open</button>
+      </Popover>,
+    );
+
+    try {
+      fireEvent.click(screen.getByRole('button', {name: 'Open'}));
+      while (frameCallbacks.length > 0) {
+        const pendingFrames = frameCallbacks.splice(0);
+        act(() => pendingFrames.forEach(callback => callback(0)));
+      }
+      requestFrame.mockClear();
+
+      act(() => {
+        resizeCallback?.([], {} as ResizeObserver);
+        mutationCallback?.([], {} as MutationObserver);
+        window.dispatchEvent(new Event('resize'));
+      });
+
+      expect(requestFrame).toHaveBeenCalledTimes(1);
+      expect(frameCallbacks).toHaveLength(1);
+    } finally {
+      unmount();
+      vi.unstubAllGlobals();
     }
   });
 

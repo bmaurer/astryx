@@ -796,6 +796,41 @@ export const TallContentOverflow: Story = {
   },
 };
 
+export const ReadOnlyDialogFocus: Story = {
+  name: 'Read-only dialog focus',
+  parameters: {
+    layout: 'fullscreen',
+    docs: {
+      story: {inline: false, height: '844px'},
+      description: {
+        story:
+          'Manual assistive-technology check for a dialog-style Popover with no content controls. On open, the labeled dialog container receives focus without revealing the fallback close button. Confirm the dialog name and role are announced, Tab reaches Close popover, Shift+Tab remains contained, Escape closes, and focus returns to the trigger.',
+      },
+    },
+  },
+  render: () => (
+    <Popover
+      placement="below"
+      label="Deployment status"
+      content={
+        <VStack gap={2}>
+          <Heading level={4}>Deployment status</Heading>
+          <Text type="body">
+            The latest production deployment completed successfully.
+          </Text>
+        </VStack>
+      }>
+      <Button label="View deployment status">View deployment status</Button>
+    </Popover>
+  ),
+  play: async ({canvasElement}) => {
+    const trigger = canvasElement.querySelector('button');
+    if (trigger instanceof HTMLElement) {
+      trigger.click();
+    }
+  },
+};
+
 export const TriggerInteractionEvidence: Story = {
   name: 'Trigger Interaction Evidence',
   parameters: {
