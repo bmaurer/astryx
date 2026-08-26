@@ -86,7 +86,22 @@ const styles = stylex.create({
     paddingBlockEnd: 0,
   },
   toastWrapperInner: {
-    overflow: 'hidden',
+    // The collapse animates the wrapper's grid row, and this box clips the
+    // card so the shrinking row reads as the toast folding away. But the clip
+    // box hugs the card's border box exactly, so it also cut off every shadow
+    // the card casts — including Astryx's own `--shadow-med`, which has been
+    // declared and invisible.
+    //
+    // `clip` rather than `hidden` because only `clip` takes
+    // `overflow-clip-margin`: the box still clips, and the card may paint this
+    // far outside it. 32px is the reach of `--shadow-high` (`0 8px 24px`), the
+    // largest elevation shadow the system ships, so any built-in shadow — and
+    // any theme's, up to that size — paints in full.
+    overflow: 'clip',
+    overflowClipMargin: 32,
+    // `hidden` zeroes a grid item's automatic minimum size; `clip` does not,
+    // and without this the row cannot shrink and the collapse stops animating.
+    minHeight: 0,
   },
 });
 
