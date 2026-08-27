@@ -241,7 +241,7 @@ const styles = stylex.create({
     // a precedence over the box that it has never had.
     [BOX_SIZE]: `calc(var(${RESOLVED_DIAMETER}) + var(${RESOLVED_STROKE}) * 2)`,
 
-// The box is the ring's size, and a host does not get to take that away.
+    // The box is the ring's size, and a host does not get to take that away.
     //
     // `overflow: hidden` used to sit here, carried over from the canvas ring
     // this component no longer draws. It clipped nothing — the painted circle

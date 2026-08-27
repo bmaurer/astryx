@@ -220,6 +220,9 @@ export const ThemedHairlineStroke: Story = {
       <Theme theme={themedHairline} mode="light">
         <Spinner size="xl" />
       </Theme>
+    </VStack>
+  ),
+};
 
 /**
  * A flex host narrower than the spinner in it. The box keeps the ring's size
