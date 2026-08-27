@@ -7,6 +7,7 @@
 'use client';
 
 import {Fragment, useMemo} from 'react';
+import {FlaskConical} from 'lucide-react';
 import * as stylex from '@stylexjs/stylex';
 import {Text} from '@astryxdesign/core/Text';
 import {Heading} from '@astryxdesign/core/Text';
@@ -14,6 +15,7 @@ import {VStack, HStack} from '@astryxdesign/core/Layout';
 import {Section} from '@astryxdesign/core/Section';
 import {Grid} from '@astryxdesign/core/Grid';
 import {ClickableCard} from '@astryxdesign/core/ClickableCard';
+import {Icon} from '@astryxdesign/core/Icon';
 import {Divider} from '@astryxdesign/core/Divider';
 import {Button} from '@astryxdesign/core/Button';
 import {Popover} from '@astryxdesign/core/Popover';
@@ -78,44 +80,51 @@ interface CategoryItem {
   category: string;
   /** Whether a showcase block exists to render in this component's tile */
   hasShowcase: boolean;
+  packageName: string;
+  canaryOnly: boolean;
 }
 
 export default function ComponentsGalleryPage() {
   /** All categorized components (excluding hidden, hooks, and utilities) */
   const categorizedItems = useMemo(() => {
-    const coreComponents = componentRegistry['@astryxdesign/core'] ?? [];
     const items: CategoryItem[] = [];
 
-    for (const comp of coreComponents) {
-      // Skip components explicitly hidden from overview
-      if (comp.isHiddenFromOverview) {
-        continue;
-      }
-      // Skip hidden components
-      if (comp.hidden) {
-        continue;
-      }
-      // Skip hooks (they appear in the Utilities section)
-      if (comp.name.startsWith('use')) {
-        continue;
-      }
-      // Skip components without a category
-      if (!comp.category) {
-        continue;
-      }
-      // Skip utilities group
-      if (comp.group === 'Utilities') {
-        continue;
-      }
+    for (const [packageName, packageComponents] of Object.entries(
+      componentRegistry,
+    )) {
+      for (const comp of packageComponents) {
+        // Skip components explicitly hidden from overview
+        if (comp.isHiddenFromOverview) {
+          continue;
+        }
+        // Skip hidden components
+        if (comp.hidden) {
+          continue;
+        }
+        // Skip hooks (they appear in the Utilities section)
+        if (comp.name.startsWith('use')) {
+          continue;
+        }
+        // Skip components without a category
+        if (!comp.category) {
+          continue;
+        }
+        // Skip utilities group
+        if (comp.group === 'Utilities') {
+          continue;
+        }
 
-      items.push({
-        name: comp.name,
-        displayName: comp.displayName,
-        description: comp.description,
-        href: `/components/${comp.name}`,
-        category: comp.category,
-        hasShowcase: SHOWCASE_NAMES.has(comp.name),
-      });
+        items.push({
+          name: comp.name,
+          displayName: comp.displayName,
+          description: comp.description,
+          href: `/components/${comp.name}`,
+          category: comp.category,
+          hasShowcase: SHOWCASE_NAMES.has(comp.name),
+          packageName,
+          canaryOnly: comp.canaryOnly,
+        });
+      }
     }
 
     return items;
@@ -216,9 +225,9 @@ export default function ComponentsGalleryPage() {
                   gap={3}
                   rowGap={4}>
                   {items.map(item => (
-                    <VStack key={item.name} gap={1}>
+                    <VStack key={`${item.packageName}:${item.name}`} gap={1}>
                       <ClickableCard
-                        label={item.displayName}
+                        label={`${item.displayName}${item.canaryOnly ? ' (unstable)' : ''}`}
                         href={item.href}
                         padding={0}
                         variant="transparent">
@@ -228,7 +237,16 @@ export default function ComponentsGalleryPage() {
                           <div {...stylex.props(styles.cardImage)} />
                         )}
                       </ClickableCard>
-                      <Text type="supporting">{item.displayName}</Text>
+                      <HStack gap={1} vAlign="center">
+                        <Text type="supporting">{item.displayName}</Text>
+                        {item.canaryOnly && (
+                          <Icon
+                            icon={FlaskConical}
+                            label="Unstable"
+                            size="sm"
+                          />
+                        )}
+                      </HStack>
                     </VStack>
                   ))}
                 </Grid>

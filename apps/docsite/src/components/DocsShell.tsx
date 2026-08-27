@@ -4,22 +4,44 @@
 
 import {useState, useMemo} from 'react';
 import {usePathname} from 'next/navigation';
-import {Search} from 'lucide-react';
+import {Search, FlaskConical} from 'lucide-react';
+import * as stylex from '@stylexjs/stylex';
 import {AppShell} from '@astryxdesign/core/AppShell';
 import {SideNav, SideNavItem, SideNavSection} from '@astryxdesign/core/SideNav';
 import {TextInput} from '@astryxdesign/core/TextInput';
+import {Icon} from '@astryxdesign/core/Icon';
 import {SharedTopNav} from './SharedTopNav';
 import {CanaryBanner} from './CanaryBanner';
 import {CURRENT_TARGET} from '../lib/docsVersions';
 import type {PackageMeta} from '../generated/packageRegistry';
 import type {DocTopic} from '../generated/docsRegistry';
-import type {GroupedEntry} from '../generated/groupedComponentRegistry';
-import {getComponentSidebarData} from './componentSidebarData';
+import {
+  getComponentSidebarData,
+  type ComponentSidebarEntry,
+} from './componentSidebarData';
 
 interface DocsShellProps {
   children: React.ReactNode;
   packages: PackageMeta[];
   docTopics: DocTopic[];
+}
+
+const styles = stylex.create({
+  unstableMarker: {
+    alignItems: 'center',
+    display: 'inline-flex',
+    height: 24,
+    justifyContent: 'center',
+    width: 24,
+  },
+});
+
+function UnstableMarker() {
+  return (
+    <span {...stylex.props(styles.unstableMarker)}>
+      <Icon icon={FlaskConical} label="Unstable" size="sm" />
+    </span>
+  );
 }
 
 /** Foundations: tokens first, then alphabetical */
@@ -45,7 +67,7 @@ export function DocsShell({children, packages, docTopics}: DocsShellProps) {
 
   // When searching, flatten groups to individual entries so results are
   // all at the same level with no nesting.
-  const flatSearchResults = useMemo<GroupedEntry[]>(() => {
+  const flatSearchResults = useMemo<ComponentSidebarEntry[]>(() => {
     if (!q) {
       return [];
     }
@@ -61,6 +83,8 @@ export function DocsShell({children, packages, docTopics}: DocsShellProps) {
           displayName: e.displayName,
           href: e.href,
           description: '',
+          packageName: e.packageName,
+          canaryOnly: e.canaryOnly,
         }));
     });
   }, [componentItems, q]);
@@ -169,6 +193,7 @@ export function DocsShell({children, packages, docTopics}: DocsShellProps) {
                     <SideNavItem
                       key={p.name}
                       label={p.name}
+                      endContent={p.canaryOnly ? <UnstableMarker /> : undefined}
                       href={`/docs/${p.name.replace('@astryxdesign/', '')}`}
                       isSelected={
                         pathname ===
@@ -195,8 +220,11 @@ export function DocsShell({children, packages, docTopics}: DocsShellProps) {
                 {q
                   ? flatSearchResults.map(item => (
                       <SideNavItem
-                        key={item.name}
+                        key={`${item.packageName}:${item.name}`}
                         label={item.displayName}
+                        endContent={
+                          item.canaryOnly ? <UnstableMarker /> : undefined
+                        }
                         href={item.href}
                         isSelected={pathname === item.href}
                       />
@@ -204,15 +232,21 @@ export function DocsShell({children, packages, docTopics}: DocsShellProps) {
                   : componentItems.map(item =>
                       item.type === 'entry' ? (
                         <SideNavItem
-                          key={item.name}
+                          key={`${item.packageName}:${item.name}`}
                           label={item.displayName}
+                          endContent={
+                            item.canaryOnly ? <UnstableMarker /> : undefined
+                          }
                           href={item.href}
                           isSelected={pathname === item.href}
                         />
                       ) : (
                         <SideNavItem
-                          key={item.label}
+                          key={`${item.packageName}:${item.label}`}
                           label={item.displayName}
+                          endContent={
+                            item.canaryOnly ? <UnstableMarker /> : undefined
+                          }
                           collapsible={{
                             defaultIsCollapsed: !item.entries.some(
                               e => pathname === e.href,
@@ -220,8 +254,13 @@ export function DocsShell({children, packages, docTopics}: DocsShellProps) {
                           }}>
                           {item.entries.map(entry => (
                             <SideNavItem
-                              key={entry.name}
+                              key={`${entry.packageName}:${entry.name}`}
                               label={entry.displayName}
+                              endContent={
+                                entry.canaryOnly ? (
+                                  <UnstableMarker />
+                                ) : undefined
+                              }
                               href={entry.href}
                               isSelected={pathname === entry.href}
                             />
@@ -235,8 +274,11 @@ export function DocsShell({children, packages, docTopics}: DocsShellProps) {
                   (q ? (
                     filteredUtilities.map(comp => (
                       <SideNavItem
-                        key={comp.name}
+                        key={`${comp.packageName}:${comp.name}`}
                         label={comp.displayName}
+                        endContent={
+                          comp.canaryOnly ? <UnstableMarker /> : undefined
+                        }
                         href={comp.href}
                         isSelected={pathname === comp.href}
                       />
@@ -247,8 +289,11 @@ export function DocsShell({children, packages, docTopics}: DocsShellProps) {
                       collapsible={{defaultIsCollapsed: true}}>
                       {utilities.map(comp => (
                         <SideNavItem
-                          key={comp.name}
+                          key={`${comp.packageName}:${comp.name}`}
                           label={comp.displayName}
+                          endContent={
+                            comp.canaryOnly ? <UnstableMarker /> : undefined
+                          }
                           href={comp.href}
                           isSelected={pathname === comp.href}
                         />

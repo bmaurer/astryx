@@ -10,6 +10,7 @@ import {flattenComponentSidebarEntries} from './componentSidebarData';
 export interface SearchItemAuxiliaryData {
   group: string;
   keywords: string[];
+  canaryOnly: boolean;
 }
 
 export interface SearchItem extends SearchableItem<SearchItemAuxiliaryData> {
@@ -66,9 +67,12 @@ export function buildSearchPaletteItems({
       label: entry.displayName,
       auxiliaryData: {
         group: 'Component',
+        canaryOnly: entry.canaryOnly,
         keywords: uniqueKeywords([
           entry.name,
           entry.displayName,
+          entry.packageName,
+          entry.canaryOnly ? 'unstable' : null,
           comp?.moduleName,
           ...(comp?.keywords ?? []),
         ]),
@@ -90,6 +94,7 @@ export function buildSearchPaletteItems({
       label: pkg.displayName,
       auxiliaryData: {
         group: 'Package',
+        canaryOnly: pkg.canaryOnly,
         keywords: uniqueKeywords([pkg.name, pkg.displayName]),
       },
     });
@@ -101,6 +106,7 @@ export function buildSearchPaletteItems({
       label: doc.title,
       auxiliaryData: {
         group: doc.category === 'guide' ? 'Guide' : 'Foundations',
+        canaryOnly: false,
         keywords: uniqueKeywords([doc.topic, doc.title, doc.category]),
       },
     });
@@ -112,6 +118,7 @@ export function buildSearchPaletteItems({
       label: tmpl.name,
       auxiliaryData: {
         group: 'Template',
+        canaryOnly: false,
         keywords: uniqueKeywords([tmpl.slug, tmpl.name, tmpl.category]),
       },
     });

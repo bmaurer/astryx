@@ -5,6 +5,10 @@
 import {useMemo, useCallback} from 'react';
 import {useRouter} from 'next/navigation';
 import {CommandPalette} from '@astryxdesign/core/CommandPalette';
+import {HStack} from '@astryxdesign/core/Layout';
+import {Icon} from '@astryxdesign/core/Icon';
+import {Text} from '@astryxdesign/core/Text';
+import {FlaskConical} from 'lucide-react';
 import {createStaticSource} from '@astryxdesign/core/Typeahead';
 import type {ComponentEntry} from '../generated/componentRegistry';
 import type {PackageMeta} from '../generated/packageRegistry';
@@ -77,6 +81,14 @@ export function SearchPalette({
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       searchSource={searchSource}
+      renderItem={item => (
+        <HStack gap={1} vAlign="center">
+          <Text type="inherit">{item.label}</Text>
+          {item.auxiliaryData.canaryOnly && (
+            <Icon icon={FlaskConical} label="Unstable" size="sm" />
+          )}
+        </HStack>
+      )}
       label="Search docs, components, and templates"
       value=""
       onValueChange={handleValueChange}

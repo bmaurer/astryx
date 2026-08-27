@@ -2,7 +2,10 @@
 
 import {isValidElement, type ReactElement} from 'react';
 import {describe, expect, it, vi} from 'vitest';
-import {resolveValue} from '../components/component-detail/resolveElements';
+import {
+  getComponent,
+  resolveValue,
+} from '../components/component-detail/resolveElements';
 
 vi.mock('@astryxdesign/core', () => ({
   Badge: () => null,
@@ -12,6 +15,19 @@ vi.mock('@astryxdesign/core', () => ({
 }));
 
 describe('component detail element resolution', () => {
+  it('resolves external components and nested descriptors lazily', () => {
+    expect(getComponent('RichTextEditor')).not.toBeNull();
+    const tourStep = resolveValue({
+      __element: 'TourStep',
+      props: {title: 'Review'},
+    });
+    expect(isValidElement(tourStep)).toBe(true);
+    expect((tourStep as ReactElement).type).not.toBe('TourStep');
+    expect(
+      ((tourStep as ReactElement).type as {displayName?: string}).displayName,
+    ).toBe('TourStep');
+  });
+
   it('resolves descriptor arrays from playground defaults into React elements', () => {
     const resolved = resolveValue([
       {__element: 'SideNavItem', props: {label: 'Dashboard'}},

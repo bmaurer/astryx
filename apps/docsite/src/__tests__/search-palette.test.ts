@@ -12,7 +12,10 @@ import {components} from '../generated/componentRegistry';
 import {packages} from '../generated/packageRegistry';
 import {docTopics} from '../generated/docsRegistry';
 import {templates} from '../generated/templateRegistry';
-import {flattenComponentSidebarEntries} from '../components/componentSidebarData';
+import {
+  flattenComponentSidebarEntries,
+  getComponentSidebarData,
+} from '../components/componentSidebarData';
 import {
   buildSearchPaletteItems,
   getSearchItemKeywords,
@@ -51,6 +54,48 @@ describe('SearchPalette data', () => {
     expect(componentIds).toContain('/components/DropdownMenuItem');
     expect(componentIds).toContain('/components/CommandPalette');
     expect(componentIds).toContain('/components/Table');
+  });
+
+  it('includes canary-only component packages with canary metadata', () => {
+    const entries = flattenComponentSidebarEntries();
+    const items = buildItems();
+    const canaryPackages = new Set(
+      packages.filter(pkg => pkg.canaryOnly).map(pkg => pkg.name),
+    );
+    const canaryEntries = entries.filter(entry =>
+      canaryPackages.has(entry.packageName),
+    );
+
+    expect(canaryEntries.length).toBeGreaterThan(0);
+    expect(canaryEntries.every(entry => entry.canaryOnly)).toBe(true);
+    expect(
+      canaryEntries.every(
+        entry =>
+          items.find(item => item.id === entry.href)?.auxiliaryData.canaryOnly,
+      ),
+    ).toBe(true);
+    expect(
+      entries
+        .filter(entry => !canaryPackages.has(entry.packageName))
+        .every(entry => !entry.canaryOnly),
+    ).toBe(true);
+  });
+
+  it('merges same-named families contributed by multiple packages', () => {
+    const groups = getComponentSidebarData().componentItems.filter(
+      item => item.type === 'group',
+    );
+    expect(groups.filter(group => group.label === 'Charts')).toHaveLength(1);
+    expect(groups.filter(group => group.label === 'Chat')).toHaveLength(1);
+    const threeD = groups.find(group => group.label === '3D');
+    expect(threeD?.displayName).toBe('3D');
+    expect(groups.filter(group => group.label === '3D')).toHaveLength(1);
+    expect(groups.some(group => group.label === 'ThreeD')).toBe(false);
+
+    const charts = groups.find(group => group.label === 'Charts');
+    expect(charts?.entries.map(entry => entry.name)).toEqual(
+      expect.arrayContaining(['Chart', 'ChartSwatch', 'ChartBar', 'ChartLine']),
+    );
   });
 
   it('finds Dropdown Menu by spaced display name and PascalCase API name', () => {

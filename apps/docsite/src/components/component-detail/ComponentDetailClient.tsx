@@ -6,7 +6,9 @@ import * as stylex from '@stylexjs/stylex';
 import {Suspense} from 'react';
 import {useSearchParams, useRouter, usePathname} from 'next/navigation';
 import {Heading, Text} from '@astryxdesign/core/Text';
-import {VStack} from '@astryxdesign/core/Layout';
+import {VStack, HStack} from '@astryxdesign/core/Layout';
+import {Icon} from '@astryxdesign/core/Icon';
+import {FlaskConical} from 'lucide-react';
 import {Section} from '@astryxdesign/core/Section';
 import {Card} from '@astryxdesign/core/Card';
 import {Divider} from '@astryxdesign/core';
@@ -211,10 +213,16 @@ function ComponentDetailInner({
       xstyle={styles.section}>
       <VStack gap={4}>
         <VStack gap={2}>
-          <Text type="display-1">{comp.displayName}</Text>
+          <HStack gap={2} vAlign="center">
+            <Text type="display-1">{comp.displayName}</Text>
+            {comp.canaryOnly && (
+              <Icon icon={FlaskConical} label="Unstable" size="md" />
+            )}
+          </HStack>
           <Text type="supporting" color="secondary">
             {pkg}
             {pkgVersion ? ` v${pkgVersion}` : ''} · {comp.moduleName}
+            {comp.canaryOnly && pkg ? ` · npm install ${pkg}@canary` : ''}
           </Text>
         </VStack>
 
