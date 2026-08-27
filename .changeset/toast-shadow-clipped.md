@@ -23,7 +23,9 @@ preserving the exact paint boundary the exit shipped with before this fix.
 
 Below a settled stock toast on a white page, per pixel row: `255,255,255` at
 every offset before; `237 → 245 → 250 → 254` over the shadow's 14px reach
-after. During exit, paint outside the shrinking row is clipped and hit testing
-is disabled.
+after. During exit the row clips again, so anything outside the shrinking row
+is neither painted nor hit-testable — while the wrapper itself keeps the
+ordinary pointer boundary it has always had, and still absorbs a click aimed
+at a toast that is still on screen.
 
 @freddymeta

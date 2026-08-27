@@ -177,6 +177,23 @@ export interface ToastViewportProps {
 }
 
 /**
+ * Drop an id from a Set of ids, keeping the Set's identity when the id is not
+ * in it so React can skip the re-render. The viewport tracks two of these
+ * (exiting rows, settled rows) and each has to be pruned from more than one
+ * place.
+ */
+const withoutId =
+  (id: string) =>
+  (prev: Set<string>): Set<string> => {
+    if (!prev.has(id)) {
+      return prev;
+    }
+    const next = new Set(prev);
+    next.delete(id);
+    return next;
+  };
+
+/**
  * Container that renders and manages toast notifications. Place at the root
  * of your app to enable useToast(). Toasts stack with enter/exit
  * animations and auto-promote to the CSS top layer.
@@ -286,6 +303,23 @@ export function ToastViewport({
         // else to the polite region (role="status") — mirrors Toast.tsx.
         announce(text, entry.options.type === 'error' ? 'assertive' : 'polite');
       }
+      // An overwrite swaps a new entry, with a new id, into the replaced
+      // toast's place. The old row unmounts without ever being dismissed, so
+      // neither removeToast nor handleExited runs for it and its id would sit
+      // in `settledIds` for the life of the viewport — one dead id per update
+      // for the very pattern uniqueID exists to serve ("Saving…" overwritten
+      // by "Saved", a progress toast rewritten per chunk). Resolved against
+      // the committed list rather than inside the `setToasts` updater below,
+      // which React may run more than once; the `ignore` check above reads it
+      // the same way.
+      if (uniqueID) {
+        const replaced = toastsRef.current.find(
+          t => t.options.uniqueID === uniqueID,
+        );
+        if (replaced) {
+          setSettledIds(withoutId(replaced.id));
+        }
+      }
       setToasts(prev => {
         if (uniqueID) {
           const existing = prev.find(t => t.options.uniqueID === uniqueID);
@@ -339,14 +373,7 @@ export function ToastViewport({
         pendingFocusRef.current = 'restore';
       }
     }
-    setSettledIds(prev => {
-      if (!prev.has(id)) {
-        return prev;
-      }
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
+    setSettledIds(withoutId(id));
     setExitingIds(prev => {
       if (prev.has(id)) {
         return prev;
@@ -357,14 +384,7 @@ export function ToastViewport({
 
   const handleExited = useCallback((id: string) => {
     exitingIdsRef.current.delete(id);
-    setExitingIds(prev => {
-      if (!prev.has(id)) {
-        return prev;
-      }
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
+    setExitingIds(withoutId(id));
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 

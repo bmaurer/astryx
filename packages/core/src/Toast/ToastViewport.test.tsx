@@ -644,6 +644,57 @@ describe('Toast native motion contract', () => {
     expect(getComputedStyle(wrapper).pointerEvents).toBe('auto');
   });
 
+  it('settles a toast that replaced another through uniqueID', () => {
+    // An overwrite unmounts the replaced row and mounts a new one with a new
+    // id, so the new row runs its own entry transition and has to release the
+    // clip on its own. The replaced id is dropped at the same time: nothing
+    // dismisses it, so neither removeToast nor handleExited would ever prune
+    // it, and a viewport overwriting one uniqueID on a schedule would collect
+    // a dead id per update for as long as it lives.
+    render(
+      <ToastViewport isTopLayer={false} position="bottomEnd" maxVisible={3}>
+        <ShowToastButton
+          options={{uniqueID: 'save', body: 'Saving changes'}}
+          triggerLabel="Show v1"
+        />
+        <ShowToastButton
+          options={{uniqueID: 'save', body: 'Changes saved'}}
+          triggerLabel="Show v2"
+        />
+      </ToastViewport>,
+    );
+
+    act(() => {
+      fireEvent.click(screen.getByText('Show v1'));
+    });
+    const first = getToastWrapperByText('Saving changes');
+    const firstId = first.getAttribute('data-toast-id');
+    act(() => {
+      fireEvent.transitionEnd(first, {propertyName: 'grid-template-rows'});
+    });
+    expect(
+      getComputedStyle(first.firstElementChild as HTMLElement).overflow,
+    ).toBe('visible');
+
+    act(() => {
+      fireEvent.click(screen.getByText('Show v2'));
+    });
+    const second = getToastWrapperByText('Changes saved');
+    // A different row, so the settled state of the one it replaced says
+    // nothing about it: it starts clipped.
+    expect(second.getAttribute('data-toast-id')).not.toBe(firstId);
+    expect(
+      getComputedStyle(second.firstElementChild as HTMLElement).overflow,
+    ).toBe('hidden');
+
+    act(() => {
+      fireEvent.transitionEnd(second, {propertyName: 'grid-template-rows'});
+    });
+    expect(
+      getComputedStyle(second.firstElementChild as HTMLElement).overflow,
+    ).toBe('visible');
+  });
+
   it('keeps reduced motion transitions eventful for exit cleanup', () => {
     const toastSource = readFileSync(
       'packages/core/src/Toast/Toast.tsx',
