@@ -341,7 +341,7 @@ export const SizeVariants: Story = {
           label="Medium (32px)"
           value={md}
           onChange={setMd}
-          placeholder="Medium size (default)"
+          placeholder="Medium size"
           size="md"
         />
         <DateTimeInput
