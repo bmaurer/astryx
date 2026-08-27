@@ -636,10 +636,12 @@ describe('Toast native motion contract', () => {
         within(wrapper).getByRole('button', {name: 'Dismiss notification'}),
       );
     });
-    // Dismissal restores the clip synchronously and removes the exiting toast
-    // from hit testing before the row begins to shrink.
+    // Dismissal restores main's original clip boundary synchronously. The
+    // wrapper keeps its normal hit boundary, so a second click while the toast
+    // is still visible is absorbed by the toast rather than falling through
+    // to an obscured control underneath.
     expect(getComputedStyle(inner).overflow).toBe('hidden');
-    expect(getComputedStyle(wrapper).pointerEvents).toBe('none');
+    expect(getComputedStyle(wrapper).pointerEvents).toBe('auto');
   });
 
   it('keeps reduced motion transitions eventful for exit cleanup', () => {

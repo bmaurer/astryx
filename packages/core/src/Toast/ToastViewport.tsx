@@ -121,11 +121,6 @@ const styles = stylex.create({
   toastWrapperExiting: {
     gridTemplateRows: '0fr',
     paddingBlockEnd: 0,
-    // A toast leaves the interaction model the moment dismissal starts. This
-    // is stricter than relying on the shrinking clip for hit testing: even if
-    // a descendant paints outside its row, an Undo or close cannot fire after
-    // the toast has already been dismissed.
-    pointerEvents: 'none',
   },
   toastWrapperInner: {
     width: '100%',

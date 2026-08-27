@@ -13,9 +13,10 @@ pixel below a stock toast was pure white.
 
 The row now keeps its cross-engine `overflow: hidden` boundary during entry and
 exit, and releases it to `overflow: visible` only after the opening transition
-settles. Dismissal restores the clip synchronously and removes pointer events
-for the whole exit, so a nearly-collapsed toast cannot fire an out-of-bounds
-Undo or close action.
+settles. Dismissal restores the clip synchronously. The wrapper keeps its
+ordinary pointer boundary, so a second click while the toast is still visible
+is absorbed by the toast rather than falling through to an obscured control
+underneath.
 
 This avoids `overflow-clip-margin`, which WebKit 26.5 does not support, while
 preserving the exact paint boundary the exit shipped with before this fix.
