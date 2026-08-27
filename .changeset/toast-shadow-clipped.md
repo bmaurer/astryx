@@ -4,22 +4,25 @@
 
 [fix] Toast: the card's shadow is no longer clipped away.
 
-Each toast sits in a box with `overflow: hidden` — the clip is what makes the
-wrapper's grid-row collapse read as the toast folding away. But that box hugs
-the card's border box exactly, with no slack on any side, so it also cut off
-every shadow the card casts. Astryx's own `--shadow-med` has been declared on
-the toast and invisible: measured against a white page, the pixels immediately
-below a stock toast were pure white.
+Each toast's grid row used `overflow: hidden` throughout its lifetime. The clip
+is load-bearing while the row opens and closes — it makes the toast read as
+folding into the stack — but at rest it hugs the card's border box with zero
+slack on every side and cuts off every shadow the card casts. Astryx's own
+`--shadow-med` was declared and invisible: against a white page, every sampled
+pixel below a stock toast was pure white.
 
-The clip is now `overflow: clip` with `overflow-clip-margin: 32px` — still
-clipping, but letting the card paint that far outside the box. 32px is the
-reach of `--shadow-high` (`0 8px 24px`), the largest elevation shadow the
-system ships, so any built-in shadow and any theme's up to that size paints in
-full. `min-height: 0` comes with it: `hidden` zeroes a grid item's automatic
-minimum size and `clip` does not, so without it the row could no longer
-shrink and the collapse stopped animating.
+The row now keeps its cross-engine `overflow: hidden` boundary during entry and
+exit, and releases it to `overflow: visible` only after the opening transition
+settles. Dismissal restores the clip synchronously and removes pointer events
+for the whole exit, so a nearly-collapsed toast cannot fire an out-of-bounds
+Undo or close action.
 
-Below a stock toast, on a white page, per pixel row: `255,255,255` at every
-offset before; `237 → 245 → 250 → 254` over the shadow's 14px reach after.
+This avoids `overflow-clip-margin`, which WebKit 26.5 does not support, while
+preserving the exact paint boundary the exit shipped with before this fix.
+
+Below a settled stock toast on a white page, per pixel row: `255,255,255` at
+every offset before; `237 → 245 → 250 → 254` over the shadow's 14px reach
+after. During exit, paint outside the shrinking row is clipped and hit testing
+is disabled.
 
 @freddymeta
