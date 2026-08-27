@@ -178,6 +178,31 @@ describe('DropdownMenu', () => {
     expect(popover?.getAttribute('style')).toContain('min(640px, calc(100%');
   });
 
+  it.each(['max-content', 'fit-content', 'auto'])(
+    'preserves the valid %s menuWidth while retaining the viewport cap',
+    menuWidth => {
+      render(
+        <DropdownMenu
+          button={{label: 'Actions'}}
+          menuWidth={menuWidth}
+          items={[{label: 'Item 1'}]}
+        />,
+      );
+
+      const popover = screen
+        .getByRole('menu', {hidden: true})
+        .closest('[popover]');
+      expect(popover?.className).toContain(
+        'DropdownMenu__styles.popoverCustomIntrinsicWidth',
+      );
+      expect(popover?.getAttribute('style')).toContain(menuWidth);
+      expect(popover?.className).toContain(
+        'DropdownMenu__styles.popoverViewportAligned',
+      );
+      expect(popover?.getAttribute('style')).not.toContain(`min(${menuWidth},`);
+    },
+  );
+
   it('caps menu height and only scrolls when content overflows', async () => {
     const clientHeightSpy = vi
       .spyOn(HTMLElement.prototype, 'clientHeight', 'get')

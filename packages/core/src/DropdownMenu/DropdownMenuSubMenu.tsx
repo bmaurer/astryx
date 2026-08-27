@@ -5,8 +5,8 @@
 /**
  * @file DropdownMenuSubMenu.tsx
  * @input React, stylex, useLayer (context mode), useListFocus, useMenuHover,
- *   useTypeahead, viewport-safe menu geometry, Item, Icon, Spinner, and
- *   DropdownMenu context + item roles
+ *   useTypeahead, the shared viewport-safe menu-width resolver, Item, Icon,
+ *   Spinner, and DropdownMenu context + item roles
  * @output Exports DropdownMenuSubMenu — a single menu row that reveals a nested
  *   flyout menu of its own children/items.
  * @position Sub-component; place inside a DropdownMenu (or ContextMenu)
@@ -58,6 +58,7 @@ import {useListFocus} from '../hooks/useListFocus';
 import {useMenuHover} from '../hooks/useMenuHover';
 import {useTypeahead} from '../hooks/useTypeahead';
 import {useMenuOverflow} from './useMenuOverflow';
+import {resolveMenuWidth} from './menuWidth';
 import {
   colorVars,
   spacingVars,
@@ -198,6 +199,9 @@ const flyoutStyles = stylex.create({
   },
   popoverCustomWidth: (width: string) => ({
     minWidth: width,
+  }),
+  popoverCustomIntrinsicWidth: (width: string) => ({
+    inlineSize: width,
   }),
 });
 
@@ -539,10 +543,13 @@ export function DropdownMenuSubMenu(
     </span>
   );
 
-  const popoverXstyle = menuWidth
-    ? flyoutStyles.popoverCustomWidth(
-        `min(${typeof menuWidth === 'number' ? `${menuWidth}px` : menuWidth}, ${MENU_MAX_INLINE_SIZE_FALLBACK})`,
-      )
+  const resolvedMenuWidth = menuWidth
+    ? resolveMenuWidth(menuWidth, MENU_MAX_INLINE_SIZE_FALLBACK)
+    : null;
+  const popoverXstyle = resolvedMenuWidth
+    ? resolvedMenuWidth.property === 'inlineSize'
+      ? flyoutStyles.popoverCustomIntrinsicWidth(resolvedMenuWidth.value)
+      : flyoutStyles.popoverCustomWidth(resolvedMenuWidth.value)
     : flyoutStyles.popover;
 
   return (

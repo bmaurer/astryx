@@ -125,6 +125,35 @@ describe('DropdownMenuSubMenu', () => {
     });
   });
 
+  it.each(['max-content', 'fit-content', 'auto'])(
+    'preserves the valid %s flyout width while retaining the viewport cap',
+    async menuWidth => {
+      const user = userEvent.setup();
+      render(
+        <DropdownMenu button={{label: 'Actions'}}>
+          <DropdownMenuSubMenu label="Move to" menuWidth={menuWidth}>
+            <DropdownMenuItem label="Folder A" onClick={() => {}} />
+          </DropdownMenuSubMenu>
+        </DropdownMenu>,
+      );
+      await user.click(screen.getByRole('button', {name: /Actions/}));
+      await user.click(
+        screen.getByRole('menuitem', {name: /Move to/, hidden: true}),
+      );
+
+      const flyout = screen.getByRole('menu', {name: /Move to/, hidden: true});
+      const popover = flyout.closest('[popover]');
+      expect(popover?.className).toContain(
+        'DropdownMenuSubMenu__flyoutStyles.popoverCustomIntrinsicWidth',
+      );
+      expect(popover?.getAttribute('style')).toContain(menuWidth);
+      expect(popover?.className).toContain(
+        'DropdownMenuSubMenu__flyoutStyles.popoverViewport',
+      );
+      expect(popover?.getAttribute('style')).not.toContain(`min(${menuWidth},`);
+    },
+  );
+
   it('opens on ArrowRight and returns focus to the trigger on ArrowLeft', async () => {
     const user = userEvent.setup();
     render(<MoveMenu />);

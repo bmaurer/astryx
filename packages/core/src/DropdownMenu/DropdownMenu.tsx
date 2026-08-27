@@ -4,8 +4,8 @@
 
 /**
  * @file DropdownMenu.tsx
- * @input Uses React, StyleX, usePopover, Button, Icon, useListFocus, and
- *   viewport-safe menu geometry
+ * @input Uses React, StyleX, usePopover, Button, Icon, useListFocus, and the
+ *   shared viewport-safe menu-width resolver
  * @output Exports DropdownMenu with anchored responsive sizing and menu behavior
  * @position Core implementation; consumed by index.ts
  *
@@ -56,6 +56,7 @@ import {
 import {useListFocus} from '../hooks/useListFocus';
 import {useTypeahead} from '../hooks/useTypeahead';
 import {useMenuOverflow} from './useMenuOverflow';
+import {resolveMenuWidth} from './menuWidth';
 import {layerAnimations} from '../Layer/layerAnimations.stylex';
 import type {LayerAlignment, LayerPlacement} from '../Layer/useLayer';
 import {
@@ -160,6 +161,9 @@ const styles = stylex.create({
   },
   popoverCustomWidth: (width: string) => ({
     minWidth: width,
+  }),
+  popoverCustomIntrinsicWidth: (width: string) => ({
+    inlineSize: width,
   }),
 });
 
@@ -548,10 +552,13 @@ export function DropdownMenu({
     alignment === 'center'
       ? MENU_MAX_INLINE_SIZE_FALLBACK
       : MENU_POSITION_AREA_MAX_INLINE_SIZE_FALLBACK;
-  const popoverXstyle = menuWidth
-    ? styles.popoverCustomWidth(
-        `min(${typeof menuWidth === 'number' ? `${menuWidth}px` : menuWidth}, ${requestedWidthLimit})`,
-      )
+  const resolvedMenuWidth = menuWidth
+    ? resolveMenuWidth(menuWidth, requestedWidthLimit)
+    : null;
+  const popoverXstyle = resolvedMenuWidth
+    ? resolvedMenuWidth.property === 'inlineSize'
+      ? styles.popoverCustomIntrinsicWidth(resolvedMenuWidth.value)
+      : styles.popoverCustomWidth(resolvedMenuWidth.value)
     : alignment === 'center'
       ? styles.popoverCentered
       : styles.popoverAligned;
