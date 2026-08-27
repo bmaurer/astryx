@@ -30,6 +30,7 @@ import * as stylex from '@stylexjs/stylex';
 import type {StyleXStyles} from '@stylexjs/stylex';
 import {usePopover} from '../Popover/usePopover';
 import {useAnnounce} from '../hooks/useAnnounce';
+import {useIsomorphicLayoutEffect} from '../hooks/useIsomorphicLayoutEffect';
 import {isImeKeyEvent} from '../utils/ime';
 import {TypeaheadItem} from './TypeaheadItem';
 import {Icon} from '../Icon';
@@ -460,8 +461,17 @@ export const BaseTypeahead = function BaseTypeahead<T extends SearchableItem>({
   // doing. The ref keeps the identity of a caller's inline arrow from
   // mattering, and the guard makes the report edge-triggered: the redundant
   // `false` on every keystroke below the query threshold reports nothing.
+  //
+  // The ref is synced in a layout effect rather than during render, following
+  // `onMotionStartRef` in BottomSheetPanel — a render that React discards
+  // must not leave the ref pointing at the callback from the abandoned pass.
+  // This effect only writes a ref, so it commits nothing and no wrapper
+  // re-renders for it; every caller of `setLoading` runs from an event or an
+  // awaited continuation, long after the first commit.
   const onLoadingChangeRef = useRef(__onLoadingChange);
-  onLoadingChangeRef.current = __onLoadingChange;
+  useIsomorphicLayoutEffect(() => {
+    onLoadingChangeRef.current = __onLoadingChange;
+  }, [__onLoadingChange]);
   const loadingRef = useRef(false);
   const setLoading = useCallback((next: boolean) => {
     if (loadingRef.current === next) {

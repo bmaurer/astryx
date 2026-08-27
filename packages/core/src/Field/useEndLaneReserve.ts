@@ -92,8 +92,12 @@ export function useEndLaneReserve(
       }
       // Border box: the lane's own padding and border are part of what the
       // input has to clear. `borderBoxSize` is the value the observer already
-      // computed; reading `offsetWidth` here would force a second layout.
-      const next = entry.borderBoxSize?.[0]?.inlineSize ?? entry.contentRect.width;
+      // computed, so it costs no layout; the fallback for a browser without
+      // it reads `offsetWidth`, which is border-box too — `contentRect` is
+      // not, and would under-reserve the moment the lane grows a padding.
+      const next =
+        entry.borderBoxSize?.[0]?.inlineSize ??
+        (entry.target as HTMLElement).offsetWidth;
       // Round up. A fractional width left as-is reserves a hair too little and
       // the glyph's last subpixel column still lands on the caret.
       setWidth(Math.ceil(next));
