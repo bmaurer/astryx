@@ -2,10 +2,10 @@
 '@astryxdesign/core': patch
 ---
 
-[fix] Spinner: the box no longer shrinks when a flex host is narrower than it (#5484)
+[fix] Spinner: a narrow flex host no longer compresses the box and clips the ring (#5484)
 
-Several components paint a spinner inside a fixed-size control, and some of those controls are exactly the size of the spinner in them — a Switch thumb is 14px at the smallest size, the same as the `sm` box. Those hosts are flex containers, and under a flex item's default `flex-shrink: 1` the host was free to compress the spinner's box while the ring kept drawing at the size its own attributes asked for. `overflow: hidden` on the box then clipped the ring it exists to contain, so the spinner rendered a slice of itself with nothing reporting a problem. The box now refuses to shrink, which keeps it and the ring one measurement: a spinner that does not fit its host overflows visibly there instead of being silently cut. No change at any size or shade that already fitted.
+The spinner's box carried `overflow: hidden` from the canvas ring it no longer draws. It clipped nothing — the painted circle is inscribed in the box, so hiding or showing the overflow renders the same pixels at every size and shade — but a flex item whose overflow is not `visible` has an automatic minimum size of zero. That left the box with no floor: a flex host narrower than the spinner compressed it while the ring kept drawing at the size its own attributes ask for, and the clip then cut the ring off at the box edge, silently, because a sliced ring still spins.
+
+Ordinary layouts reached it. A `md` spinner beside a label in a 140px row rendered a 16px box around a 20px ring; an `lg` spinner next to a `flex: 1 0 100px` sibling lost half of its ring. The clip is gone and the box is `flex-shrink: 0`, so the box and the ring stay one measurement and a spinner that does not fit overflows its host visibly instead. Nothing moves for a spinner whose host already fitted it.
 
 @freddymeta
-</content>
-<parameter name="node_id">85252.od.fbinfra.net
