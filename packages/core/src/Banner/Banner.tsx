@@ -17,9 +17,9 @@
  *   the glyph (#4166); for a custom `icon` node it stays on the layout wrapper
  * - Description (themeProps 'banner-description'): the supporting line owns its
  *   own colour and type, and the space between it and the title
- * - End area (themeProps 'banner-actions'): the actions row, including the edge
- *   compensation — a theme whose banner grows to its buttons rather than
- *   letting them overhang the header padding overrides it here
+ * - The end area carries no target: it is a layout row (flex, wrap, edge
+ *   compensation) rather than a painted surface, and a theme that wants the
+ *   header to grow around its buttons sets `padding-block` on 'banner'
  * - No left border accent — color is expressed through the full header background
  * - Each visual area owns its own border-radius (no overflow:clip on the container)
  * - Children are collapsible by default: a toggle appears in the header end
@@ -631,12 +631,9 @@ export function Banner({
         </div>
         {showEndArea && (
           <div
-            {...mergeProps(
-              themeProps('banner-actions'),
-              stylex.props(
-                styles.endArea,
-                edgeCompSlot.inset(spacingVars['--spacing-2']),
-              ),
+            {...stylex.props(
+              styles.endArea,
+              edgeCompSlot.inset(spacingVars['--spacing-2']),
             )}>
             {endContent}
             {hasToggle && (
