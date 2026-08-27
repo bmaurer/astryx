@@ -918,6 +918,7 @@ describe('BaseTypeahead minQueryLength', () => {
     await waitFor(() => {
       expect(screen.getByRole('status', {name: 'Loading'})).toBeInTheDocument();
     });
+    expect(input).toHaveAttribute('aria-busy', 'true');
 
     fireEvent.change(input, {target: {value: 'Ap'}});
     await act(async () => {
@@ -928,6 +929,7 @@ describe('BaseTypeahead minQueryLength', () => {
     expect(
       screen.queryByRole('status', {name: 'Loading'}),
     ).not.toBeInTheDocument();
+    expect(input).not.toHaveAttribute('aria-busy');
     expect(input).toHaveAttribute('aria-expanded', 'false');
   });
 });
@@ -1443,5 +1445,139 @@ describe('Typeahead statusVariant forwarding', () => {
       'data-variant',
       'detached',
     );
+  });
+});
+
+describe('busy indicator ownership', () => {
+  /** A source that stays in flight until the test settles it. */
+  const pendingSource = () => {
+    let settle: (items: SearchableItem[]) => void = () => {};
+    return {
+      source: {
+        search: async () =>
+          new Promise<SearchableItem[]>(resolve => {
+            settle = resolve;
+          }),
+        bootstrap: () => [],
+      },
+      settle: (items: SearchableItem[] = []) => settle(items),
+    };
+  };
+
+  it('renders its own named status for a direct caller', async () => {
+    // BaseTypeaheadProps is re-exported from the package entry point, so the
+    // base has direct callers this repo cannot see. They painted no indicator
+    // of their own — the base did it for them — so it keeps doing it, and the
+    // status stays a named one rather than a bare aria-busy that only reaches
+    // assistive tech.
+    const {source, settle} = pendingSource();
+    render(
+      <BaseTypeahead
+        searchSource={source}
+        value={null}
+        onChange={() => {}}
+        debounceMs={0}
+      />,
+    );
+    const input = screen.getByRole('combobox');
+
+    fireEvent.change(input, {target: {value: 'App'}});
+    await waitFor(() => {
+      expect(screen.getByRole('status', {name: 'Loading'})).toBeInTheDocument();
+    });
+    // A Spinner, not the static clock glyph this used to render: `clock`
+    // means *time* everywhere else in core, and nothing about it moved while
+    // a search was out.
+    expect(
+      screen.getByRole('status', {name: 'Loading'}).querySelector('svg'),
+    ).toBeInTheDocument();
+
+    await act(async () => {
+      settle();
+      await Promise.resolve();
+    });
+    expect(
+      screen.queryByRole('status', {name: 'Loading'}),
+    ).not.toBeInTheDocument();
+  });
+
+  it('hands the indicator over to a field that takes it, and renders none itself', async () => {
+    // Typeahead and Tokenizer paint the spinner in the one inline-end lane
+    // they already own. Two indicators in one field is the defect this PR
+    // exists to fix, so the base must yield rather than add to it.
+    const {source, settle} = pendingSource();
+    const onLoadingChange = vi.fn();
+    render(
+      <BaseTypeahead
+        searchSource={source}
+        value={null}
+        onChange={() => {}}
+        __onLoadingChange={onLoadingChange}
+        debounceMs={0}
+      />,
+    );
+    const input = screen.getByRole('combobox');
+
+    fireEvent.change(input, {target: {value: 'App'}});
+    await waitFor(() => {
+      expect(input).toHaveAttribute('aria-busy', 'true');
+    });
+    // Scoped by name: the announcer for result counts is a role="status"
+    // live region too, and it is not the indicator.
+    expect(
+      screen.queryByRole('status', {name: 'Loading'}),
+    ).not.toBeInTheDocument();
+    expect(onLoadingChange).toHaveBeenLastCalledWith(true);
+
+    await act(async () => {
+      settle();
+      await Promise.resolve();
+    });
+    expect(onLoadingChange).toHaveBeenLastCalledWith(false);
+  });
+
+  it('reports each transition once, and reports nothing when nothing changed', async () => {
+    // Edge-triggered on purpose. Every keystroke below the query threshold
+    // clears the flag, and an unconditional report would hand the wrapper a
+    // `false` per character — each one a state write, and on a field that is
+    // re-rendering as the user types.
+    const {source, settle} = pendingSource();
+    const onLoadingChange = vi.fn();
+    render(
+      <BaseTypeahead
+        searchSource={source}
+        value={null}
+        onChange={() => {}}
+        __onLoadingChange={onLoadingChange}
+        minQueryLength={3}
+        debounceMs={0}
+      />,
+    );
+    const input = screen.getByRole('combobox');
+
+    // Below the threshold: no search, so nothing to report.
+    fireEvent.change(input, {target: {value: 'A'}});
+    fireEvent.change(input, {target: {value: 'Ap'}});
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(onLoadingChange).not.toHaveBeenCalled();
+
+    fireEvent.change(input, {target: {value: 'App'}});
+    await waitFor(() => {
+      expect(onLoadingChange).toHaveBeenCalledTimes(1);
+    });
+    expect(onLoadingChange).toHaveBeenCalledWith(true);
+
+    // Back below the threshold: one report out, not one per keystroke.
+    fireEvent.change(input, {target: {value: 'Ap'}});
+    fireEvent.change(input, {target: {value: 'A'}});
+    fireEvent.change(input, {target: {value: ''}});
+    await act(async () => {
+      settle();
+      await Promise.resolve();
+    });
+    expect(onLoadingChange).toHaveBeenCalledTimes(2);
+    expect(onLoadingChange).toHaveBeenLastCalledWith(false);
   });
 });

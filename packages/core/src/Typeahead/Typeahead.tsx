@@ -42,6 +42,8 @@ import {Token} from '../Token';
 import {useTooltip} from '../Tooltip';
 import {renderIconSlot, type IconType} from '../Icon';
 import {VisuallyHidden} from '../VisuallyHidden';
+import {Spinner} from '../Spinner';
+import {useEndLaneReserve} from '../Field/useEndLaneReserve';
 import {spacingVars, sizeVars} from '../theme/tokens.stylex';
 import {groupStyles} from '../InputGroup/groupStyles';
 import {useInputGroup} from '../InputGroup/InputGroupContext';
@@ -167,6 +169,14 @@ export interface TypeaheadProps<T extends SearchableItem> extends Omit<
 // Styles
 // =============================================================================
 
+// How far the end lane sits from the field's inline-end border. Also what the
+// input has to clear, so it is named rather than repeated: the reserve below
+// is derived from the same expression that positions the lane.
+const LANE_INSET = {
+  md: `calc((${sizeVars['--size-element-md']} - 20px) / 2 - 1px)`,
+  sm: `calc((${sizeVars['--size-element-sm']} - 20px) / 2 - 1px)`,
+} as const;
+
 const styles = stylex.create({
   wrapper: {
     position: 'relative',
@@ -186,15 +196,24 @@ const styles = stylex.create({
     // -(8px - 3px) = -5px positions token equidistant from left edge as top.
     margin: `calc(-1 * (${spacingVars['--spacing-2']} - ${spacingVars['--spacing-1']} + 1px))`,
   },
-  clearButton: {
+  // One lane for everything that sits at the field's inline end. It is
+  // absolute rather than in-flow because the wrapper wraps: a selected token
+  // can push a later in-flow sibling onto a second row, and this has to stay
+  // on the field's first row. Anything added here is a flex child, so the
+  // busy indicator and the clear button sit beside each other instead of
+  // both landing in the same corner.
+  endLane: {
     position: 'absolute',
-    top: `calc((${sizeVars['--size-element-md']} - 20px) / 2 - 1px)`,
-    insetInlineEnd: `calc((${sizeVars['--size-element-md']} - 20px) / 2 - 1px)`,
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacingVars['--spacing-1'],
+    top: LANE_INSET.md,
+    insetInlineEnd: LANE_INSET.md,
     height: '20px',
   },
-  clearButtonSm: {
-    top: `calc((${sizeVars['--size-element-sm']} - 20px) / 2 - 1px)`,
-    insetInlineEnd: `calc((${sizeVars['--size-element-sm']} - 20px) / 2 - 1px)`,
+  endLaneSm: {
+    top: LANE_INSET.sm,
+    insetInlineEnd: LANE_INSET.sm,
   },
   inputHidden: {
     width: 0,
@@ -299,6 +318,14 @@ export function Typeahead<T extends SearchableItem>({
   });
 
   // Edit mode: when the user clicks the token to edit the selected value
+  // Reported by BaseTypeahead so the indicator can live in this field's own
+  // end lane, beside the clear button, rather than in the engine's row.
+  const [isLoading, setIsLoading] = useState(false);
+  // The lane holds a spinner, a clear button, or both, so what the input has
+  // to clear changes while the field is in use. Measured rather than assumed.
+  const [laneRef, laneReserve] = useEndLaneReserve(
+    size === 'sm' ? LANE_INSET.sm : LANE_INSET.md,
+  );
   const [isEditing, setIsEditing] = useState(false);
   const [editingValue, setEditingValue] = useState<T | null>(null);
 
@@ -485,10 +512,11 @@ export function Typeahead<T extends SearchableItem>({
           ariaLabelledBy={ariaLabelledBy}
           onChangeQuery={onChangeQuery}
           onOpenChange={onOpenChange}
+          __onLoadingChange={setIsLoading}
           debounceMs={debounceMs}
           anchorRef={wrapperRef}
           onKeyDown={handleKeyDown}
-          inputXStyle={showToken ? styles.inputHidden : undefined}
+          inputXStyle={showToken ? styles.inputHidden : laneReserve}
           // While the token is shown the input is collapsed (width 0 /
           // opacity 0) — take it out of the Tab order so keyboard users
           // don't hit an invisible stop (WCAG 2.4.3 / 2.4.7). It stays
@@ -497,15 +525,26 @@ export function Typeahead<T extends SearchableItem>({
           inputTabIndex={showToken ? -1 : undefined}
           size={size}
         />
-        {hasClear && value && !isDisabled && (
-          <InputClearButton
-            label={t('@astryx.typeahead.clearSelection')}
-            onClick={e => {
-              e.stopPropagation();
-              handleClear();
-            }}
-            xstyle={[styles.clearButton, size === 'sm' && styles.clearButtonSm]}
-          />
+        {(isLoading || (hasClear && value && !isDisabled)) && (
+          <div
+            ref={laneRef}
+            {...stylex.props(
+              styles.endLane,
+              size === 'sm' && styles.endLaneSm,
+            )}>
+            {isLoading && (
+              <Spinner size="sm" aria-label={t('@astryx.typeahead.loading')} />
+            )}
+            {hasClear && value && !isDisabled && (
+              <InputClearButton
+                label={t('@astryx.typeahead.clearSelection')}
+                onClick={e => {
+                  e.stopPropagation();
+                  handleClear();
+                }}
+              />
+            )}
+          </div>
         )}
       </div>
       {showsDisabledMessage &&

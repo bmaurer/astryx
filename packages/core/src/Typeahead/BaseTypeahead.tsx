@@ -33,6 +33,7 @@ import {useAnnounce} from '../hooks/useAnnounce';
 import {isImeKeyEvent} from '../utils/ime';
 import {TypeaheadItem} from './TypeaheadItem';
 import {Icon} from '../Icon';
+import {Spinner} from '../Spinner';
 import {
   colorVars,
   spacingVars,
@@ -169,6 +170,25 @@ export interface BaseTypeaheadProps<T extends SearchableItem> extends Omit<
    * @internal
    */
   __queryEntries?: (query: string, results: T[]) => T[];
+
+  /**
+   * Called when a search starts or settles, so a wrapper can paint the busy
+   * state in the one inline-end lane it already owns for its clear button and
+   * end content, instead of the base rendering a second indicator competing
+   * for the same corner.
+   *
+   * Passing this takes the indicator over: the base stops rendering its own.
+   * A caller that does not pass it keeps the visible, named status the base
+   * has always rendered.
+   *
+   * Underscored and `@internal` for the same reason as `__queryEntries`
+   * above: `BaseTypeaheadProps` is re-exported from the package entry point,
+   * so anything named on it ships as public API at the next cut, and this is
+   * a wiring detail between the two wrappers and the base.
+   *
+   * @internal
+   */
+  __onLoadingChange?: (isLoading: boolean) => void;
 
   /**
    * Debounce delay in ms before triggering search after typing.
@@ -310,10 +330,15 @@ const styles = stylex.create({
     fontSize: typeScaleVars['--text-supporting-size'],
     color: colorVars['--color-text-secondary'],
   },
-  loadingSpinner: {
+  // The indicator a direct caller gets. In flow, where it has always been, so
+  // it reserves its own width and the input's text never runs under it.
+  // Typeahead and Tokenizer take the indicator over and paint it in their own
+  // inline-end lane instead; this is what renders for everyone else.
+  loadingStatus: {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
     padding: spacingVars['--spacing-1'],
   },
 });
@@ -389,6 +414,7 @@ export const BaseTypeahead = function BaseTypeahead<T extends SearchableItem>({
   onChangeQuery,
   onOpenChange,
   __queryEntries,
+  __onLoadingChange,
   inputId: externalInputId,
   ariaDescribedBy,
   ariaLabelledBy,
@@ -423,6 +449,28 @@ export const BaseTypeahead = function BaseTypeahead<T extends SearchableItem>({
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+
+  // Report the busy state to a wrapper that has taken the indicator over.
+  //
+  // Through a ref, and at the call site rather than from an effect: an effect
+  // would run after this component had already committed, so the wrapper's
+  // own state change landed in a second commit — two renders of the whole
+  // field per transition, four across a search. Called here, the wrapper's
+  // setState batches with ours into the one commit that React was already
+  // doing. The ref keeps the identity of a caller's inline arrow from
+  // mattering, and the guard makes the report edge-triggered: the redundant
+  // `false` on every keystroke below the query threshold reports nothing.
+  const onLoadingChangeRef = useRef(__onLoadingChange);
+  onLoadingChangeRef.current = __onLoadingChange;
+  const loadingRef = useRef(false);
+  const setLoading = useCallback((next: boolean) => {
+    if (loadingRef.current === next) {
+      return;
+    }
+    loadingRef.current = next;
+    setIsLoading(next);
+    onLoadingChangeRef.current?.(next);
+  }, []);
 
   // Track active pointer to defer popover.show() past click events.
   // With popover="auto", showing the popover between pointerdown and
@@ -499,7 +547,7 @@ export const BaseTypeahead = function BaseTypeahead<T extends SearchableItem>({
       // in-flight response for an older query fails the gen check below
       // instead of overwriting the newer results.
       const gen = ++searchGenRef.current;
-      setIsLoading(true);
+      setLoading(true);
       setHasSearched(true);
       try {
         const searchResults = await searchSource.search(searchQuery);
@@ -534,7 +582,7 @@ export const BaseTypeahead = function BaseTypeahead<T extends SearchableItem>({
         setHighlightedIndex(-1);
       } finally {
         if (searchGenRef.current === gen) {
-          setIsLoading(false);
+          setLoading(false);
         }
       }
     },
@@ -545,6 +593,7 @@ export const BaseTypeahead = function BaseTypeahead<T extends SearchableItem>({
       announce,
       emptySearchResultsText,
       __queryEntries,
+      setLoading,
       t,
     ],
   );
@@ -552,7 +601,7 @@ export const BaseTypeahead = function BaseTypeahead<T extends SearchableItem>({
   // Perform bootstrap
   const performBootstrap = useCallback(async () => {
     const gen = ++searchGenRef.current;
-    setIsLoading(true);
+    setLoading(true);
     try {
       const bootstrapResults = await searchSource.bootstrap();
       if (searchGenRef.current !== gen) {
@@ -572,10 +621,10 @@ export const BaseTypeahead = function BaseTypeahead<T extends SearchableItem>({
       setResults([]);
     } finally {
       if (searchGenRef.current === gen) {
-        setIsLoading(false);
+        setLoading(false);
       }
     }
-  }, [searchSource, maxMenuItems, showLayer]);
+  }, [searchSource, maxMenuItems, showLayer, setLoading]);
 
   // Handle query change
   const handleQueryChange = useCallback(
@@ -608,7 +657,7 @@ export const BaseTypeahead = function BaseTypeahead<T extends SearchableItem>({
         // its own `finally` will decline to clear this — so clear it here or
         // the field spins forever. Backspacing below the threshold on a remote
         // source is the everyday way to hit that.
-        setIsLoading(false);
+        setLoading(false);
         // Clear any lingering result-count / no-results announcement.
         announce('');
         if (derived.length > 0) {
@@ -645,6 +694,7 @@ export const BaseTypeahead = function BaseTypeahead<T extends SearchableItem>({
       debounceMs,
       searchSource,
       announce,
+      setLoading,
     ],
   );
 
@@ -673,11 +723,11 @@ export const BaseTypeahead = function BaseTypeahead<T extends SearchableItem>({
       // Same reason as in handleQueryChange: the invalidated search will not
       // clear this itself. Selecting a stale result while the next search is
       // still in flight would otherwise leave the field spinning.
-      setIsLoading(false);
+      setLoading(false);
       popover.hide();
       inputRef.current?.focus();
     },
-    [onChange, popover, searchSource],
+    [onChange, popover, searchSource, setLoading],
   );
 
   // Handle focus
@@ -889,6 +939,7 @@ export const BaseTypeahead = function BaseTypeahead<T extends SearchableItem>({
             : undefined
         }
         aria-autocomplete="list"
+        aria-busy={isLoading || undefined}
         aria-describedby={ariaDescribedBy}
         aria-labelledby={ariaLabelledBy}
         aria-disabled={isFocusableDisabled ? 'true' : undefined}
@@ -923,15 +974,11 @@ export const BaseTypeahead = function BaseTypeahead<T extends SearchableItem>({
           inputXStyle,
         )}
       />
-      {isLoading && (
-        <span
-          role="status"
-          aria-label={t('@astryx.typeahead.loading')}
-          {...stylex.props(styles.loadingSpinner)}>
-          <Icon icon="clock" size="sm" color="secondary" />
+      {isLoading && __onLoadingChange == null && (
+        <span {...stylex.props(styles.loadingStatus)}>
+          <Spinner size="sm" aria-label={t('@astryx.typeahead.loading')} />
         </span>
       )}
-
       {popover.render(
         <div
           id={listboxId}

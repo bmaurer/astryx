@@ -24,6 +24,28 @@ const fruitSource: SearchSource = {
   bootstrap: () => fruits.slice(0, 5),
 };
 
+/**
+ * A remote source, near enough. The busy state only exists between the
+ * keystroke and the response, so a synchronous source never shows it — which
+ * is why the indicator went unexercised long enough to ship as a clock.
+ */
+const slowFruitSource: SearchSource = {
+  search: (query: string) =>
+    new Promise(resolve => {
+      setTimeout(
+        () =>
+          resolve(
+            fruits.filter(f =>
+              f.label.toLowerCase().includes(query.toLowerCase()),
+            ),
+          ),
+        1200,
+      );
+    }),
+  bootstrap: () =>
+    new Promise(resolve => setTimeout(() => resolve(fruits.slice(0, 5)), 1200)),
+};
+
 const meta: Meta<typeof Typeahead> = {
   title: 'Core/Typeahead',
   component: Typeahead,
@@ -264,4 +286,24 @@ export const StatusVariantComparison: Story = {
       </div>
     );
   },
+};
+
+export const Loading: Story = {
+  render: () => {
+    const [value, setValue] = useState<SearchableItem | null>(null);
+    return (
+      <div style={{width: 320}}>
+        <Typeahead
+          label="Fruit"
+          placeholder="Type to search…"
+          searchSource={slowFruitSource}
+          value={value}
+          onChange={setValue}
+          hasClear
+          debounceMs={0}
+        />
+      </div>
+    );
+  },
+  name: 'Loading (async source)',
 };

@@ -40,6 +40,8 @@ import {
   type FieldStatusVariant,
 } from '../Field';
 import {Token} from '../Token';
+import {Spinner} from '../Spinner';
+import {useEndLaneReserve} from '../Field/useEndLaneReserve';
 import {renderIconSlot, type IconType} from '../Icon';
 import {OverflowList} from '../OverflowList';
 import {useLayer} from '../Layer/useLayer';
@@ -232,6 +234,10 @@ export interface TokenizerProps<T extends SearchableItem> extends Omit<
 // Styles
 // =============================================================================
 
+// How far the end lane sits from the field's inline-end border, named once
+// because the input's reserve is derived from the same value.
+const END_LANE_INSET = spacingVars['--spacing-2'];
+
 const styles = stylex.create({
   wrapper: {
     position: 'relative',
@@ -267,7 +273,7 @@ const styles = stylex.create({
     // Match the field's inline padding (inputWrapperStyles.base uses
     // spacing-2) so end content (clear button, resultCount) lines up with
     // the text/start-icon inset instead of hugging the border at ~3px.
-    insetInlineEnd: spacingVars['--spacing-2'],
+    insetInlineEnd: END_LANE_INSET,
     display: 'flex',
     alignItems: 'center',
     gap: spacingVars['--spacing-2'],
@@ -461,6 +467,13 @@ export function Tokenizer<T extends SearchableItem>({
   }));
 
   // Focus-within state for overflow truncation
+  // Reported by BaseTypeahead so the indicator can live in this field's own
+  // end lane, beside endContent and the clear button.
+  const [isLoading, setIsLoading] = useState(false);
+  // What sits in the end lane varies most here — a spinner, arbitrary
+  // `endContent`, a clear button, or all three — so its width is measured
+  // rather than assumed, and the input reserves it.
+  const [laneRef, laneReserve] = useEndLaneReserve(END_LANE_INSET);
   const [isFocusedWithin, setIsFocusedWithin] = useState(false);
   const isTruncated =
     !isFocusedWithin && tokenOverflowBehavior !== 'none' && value.length > 0;
@@ -814,17 +827,21 @@ export function Tokenizer<T extends SearchableItem>({
         ariaDescribedBy={ariaDescribedBy}
         onChangeQuery={onChangeQuery}
         __queryEntries={createEntries}
+        __onLoadingChange={setIsLoading}
         debounceMs={debounceMs}
         onKeyDown={handleKeyDown}
         anchorRef={wrapperRef}
         size={size}
-        inputXStyle={
+        inputXStyle={[
           isAtMax || isTruncated
             ? styles.inputAtMax
             : value.length > 0
               ? styles.inputCompact
-              : undefined
-        }
+              : undefined,
+          // Not for the collapsed states above: those give the input no width
+          // to pad, and `inputAtMax` zeroes its padding outright.
+          !(isAtMax || isTruncated) && laneReserve,
+        ]}
       />
       {htmlName != null &&
         value.map(item => (
@@ -838,8 +855,15 @@ export function Tokenizer<T extends SearchableItem>({
             disabled={isDisabled}
           />
         ))}
-      {(endContent || (hasClear && value.length > 0 && !isDisabled)) && (
-        <div {...stylex.props(styles.endSection, endSectionSizeStyles[size])}>
+      {(isLoading ||
+        endContent ||
+        (hasClear && value.length > 0 && !isDisabled)) && (
+        <div
+          ref={laneRef}
+          {...stylex.props(styles.endSection, endSectionSizeStyles[size])}>
+          {isLoading && (
+            <Spinner size="sm" aria-label={t('@astryx.typeahead.loading')} />
+          )}
           {endContent}
           {hasClear && value.length > 0 && !isDisabled && (
             <InputClearButton
