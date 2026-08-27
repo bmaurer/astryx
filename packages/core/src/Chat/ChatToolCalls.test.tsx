@@ -46,6 +46,13 @@ describe('ChatToolCalls', () => {
     expect(screen.queryByText('1.2s')).not.toBeInTheDocument();
   });
 
+  it('exposes pending work on the call row', () => {
+    const {container} = render(
+      <ChatToolCalls calls={[{name: 'bash', status: 'running'}]} />,
+    );
+    expect(container.querySelector('[aria-busy="true"]')).toBeInTheDocument();
+  });
+
   it('defaults to collapsed', () => {
     render(
       <ChatToolCalls
