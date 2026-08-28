@@ -4,7 +4,11 @@ import type {Meta, StoryObj} from '@storybook/react';
 import {useState, useRef, type ReactNode} from 'react';
 import * as stylex from '@stylexjs/stylex';
 import {Toast, useToast, ToastViewport} from '@astryxdesign/core/Toast';
-import type {ToastOptions, ToastType} from '@astryxdesign/core/Toast';
+import type {
+  ToastContentRenderProps,
+  ToastOptions,
+  ToastType,
+} from '@astryxdesign/core/Toast';
 import {Theme, defineTheme, useTheme} from '@astryxdesign/core/theme';
 import {Button} from '@astryxdesign/core/Button';
 import {Link} from '@astryxdesign/core/Link';
@@ -13,6 +17,11 @@ import {Stack} from '@astryxdesign/core/Stack';
 import {Heading} from '@astryxdesign/core/Text';
 import {Dialog} from '@astryxdesign/core/Dialog';
 import {Text} from '@astryxdesign/core/Text';
+import {
+  colorVars,
+  radiusVars,
+  spacingVars,
+} from '@astryxdesign/core/theme/tokens.stylex';
 
 const styles = stylex.create({
   narrowLayoutReference: {
@@ -832,3 +841,140 @@ function ThemedToastTriggers() {
 }
 
 function noop() {}
+
+// =============================================================================
+// Custom content (renderContent)
+// =============================================================================
+
+const customContentStyles = stylex.create({
+  row: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: spacingVars['--spacing-3'],
+    width: '100%',
+  },
+  stripe: {
+    alignSelf: 'stretch',
+    width: 4,
+    borderRadius: radiusVars['--radius-full'],
+    flexShrink: 0,
+  },
+  stripeInfo: {backgroundColor: colorVars['--color-accent']},
+  stripeError: {backgroundColor: colorVars['--color-text-red']},
+  text: {flex: 1, minWidth: 0},
+});
+
+function ProductToastContent({
+  type,
+  body,
+  endContent,
+  DismissButton,
+}: ToastContentRenderProps) {
+  return (
+    <div {...stylex.props(customContentStyles.row)}>
+      <div
+        {...stylex.props(
+          customContentStyles.stripe,
+          type === 'error'
+            ? customContentStyles.stripeError
+            : customContentStyles.stripeInfo,
+        )}
+      />
+      <div {...stylex.props(customContentStyles.text)}>{body}</div>
+      {endContent}
+      <DismissButton />
+    </div>
+  );
+}
+
+// The same layout with the close left out. Astryx keeps it dismissible by
+// putting the close in the card's corner.
+function ForgetfulToastContent({type, body}: ToastContentRenderProps) {
+  return (
+    <div {...stylex.props(customContentStyles.row)}>
+      <div
+        {...stylex.props(
+          customContentStyles.stripe,
+          type === 'error'
+            ? customContentStyles.stripeError
+            : customContentStyles.stripeInfo,
+        )}
+      />
+      <div {...stylex.props(customContentStyles.text)}>{body}</div>
+    </div>
+  );
+}
+
+const renderProductContent = (toast: ToastContentRenderProps) => (
+  <ProductToastContent {...toast} />
+);
+
+export const CustomContent: StoryObj = {
+  name: 'Custom content (renderContent)',
+  render: function CustomContentStory() {
+    const toast = useToast();
+    return (
+      <Stack direction="horizontal" gap={2} wrap="wrap">
+        <Button
+          label="Show"
+          onClick={() => {
+            toast({
+              body: 'Your changes have been saved.',
+              renderContent: renderProductContent,
+            });
+          }}
+        />
+        <Button
+          label="With an action"
+          variant="secondary"
+          onClick={() => {
+            toast({
+              body: 'Row deleted.',
+              endContent: <Button variant="ghost" size="sm" label="Undo" />,
+              renderContent: renderProductContent,
+            });
+          }}
+        />
+        <Button
+          label="Error"
+          variant="destructive"
+          onClick={() => {
+            toast({
+              body: 'Could not reach the server.',
+              type: 'error',
+              renderContent: renderProductContent,
+            });
+          }}
+        />
+        <Button
+          label="Layout without the close"
+          variant="ghost"
+          onClick={() => {
+            toast({
+              body: 'This layout never renders DismissButton.',
+              type: 'error',
+              renderContent: toastProps => (
+                <ForgetfulToastContent {...toastProps} />
+              ),
+            });
+          }}
+        />
+        <Button
+          label="Without renderContent"
+          variant="ghost"
+          onClick={() => {
+            toast({body: 'A toast from code that knows nothing about it.'});
+          }}
+        />
+      </Stack>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "`renderContent` replaces the content of one toast's card. Astryx keeps the transport and hands over the message, `endContent` and a `DismissButton` to place. If a nested layout removes that button later, Astryx immediately restores its corner close. The last button omits `renderContent`, showing that a library-raised toast keeps the ordinary Astryx layout.",
+      },
+    },
+  },
+};
