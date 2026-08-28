@@ -3292,7 +3292,7 @@ function CardVariantsSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
         ))}
       </div>
       <h4 style={{...S.sectionTitle, marginTop: 24, fontSize: 12}}>
-        SelectableCard — every categorical selection ring
+        SelectableCard — every selection ring
       </h4>
       <div
         style={{
