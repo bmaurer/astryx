@@ -1,7 +1,7 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
 import type {Meta, StoryObj} from '@storybook/react';
-import {useState} from 'react';
+import {useRef, useState} from 'react';
 import {Drawer} from '@astryxdesign/lab';
 import {Button} from '@astryxdesign/core/Button';
 import {CheckboxInput} from '@astryxdesign/core/CheckboxInput';
@@ -31,7 +31,7 @@ const meta: Meta<typeof Drawer> = {
           '  without exceeding that budget (`isFullWidthOnMobile` makes it',
           '  edge to edge).',
           '- **Scrim optional**: modal with a scrim by default, or',
-          '  `hasScrim={false}` for a non-modal overlay that leaves the page',
+          '  `isModal={false}` for a non-modal overlay that leaves the page',
           '  behind interactive.',
           '- **Square corners** (0px radius) — the panel is flush with three',
           '  viewport edges.',
@@ -117,7 +117,7 @@ export const RowInspector: Story = {
           isOpen={selected != null}
           onOpenChange={isOpen => !isOpen && setSelectedId(null)}
           label={selected ? `Host details: ${selected.id}` : 'Host details'}
-          hasScrim={false}
+          isModal={false}
           width={360}>
           {selected != null && (
             <Section padding={4}>
@@ -145,6 +145,154 @@ export const RowInspector: Story = {
           )}
         </Drawer>
       </>
+    );
+  },
+};
+
+/**
+ * `containerRef` binds the drawer to an element instead of the viewport: the
+ * panel slides against the pane's edge, at the pane's height, and its scrim
+ * dims only that pane. `isModal` then applies to the pane rather than the
+ * page — the pane is dimmed and `inert` while the drawer is open, and the
+ * rest of the page stays live. The mechanism differs because the browser top layer is
+ * always viewport-sized, so a bounded modal is not `aria-modal` and does not
+ * lock body scroll. Give the container `position: relative`.
+ */
+export const Bounded: Story = {
+  render: () => {
+    const paneRef = useRef<HTMLDivElement>(null);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const selected = HOSTS.find(host => host.id === selectedId);
+    return (
+      <VStack gap={3}>
+        <Text type="supporting" color="secondary">
+          The drawer is bound to the bordered pane. Everything outside it stays
+          interactive while the drawer is open.
+        </Text>
+        <div
+          ref={paneRef}
+          style={{
+            position: 'relative',
+            overflow: 'hidden',
+            height: 300,
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-md)',
+          }}>
+          <Section padding={4}>
+            <VStack gap={1}>
+              <Heading level={3}>Hosts</Heading>
+              {HOSTS.map(host => (
+                <Button
+                  key={host.id}
+                  variant="ghost"
+                  label={`${host.id} / ${host.region}`}
+                  onClick={() => setSelectedId(host.id)}
+                />
+              ))}
+            </VStack>
+          </Section>
+        </div>
+        <Button
+          label="Still clickable while the drawer is open"
+          variant="secondary"
+        />
+        <Drawer
+          isOpen={selected != null}
+          onOpenChange={isOpen => !isOpen && setSelectedId(null)}
+          label={selected ? `Host details: ${selected.id}` : 'Host details'}
+          containerRef={paneRef}
+          width={260}>
+          {selected != null && (
+            <Section padding={4}>
+              <VStack gap={4}>
+                <VStack gap={1}>
+                  <Heading level={3}>{selected.id}</Heading>
+                  <Text type="supporting" color="secondary">
+                    {selected.region}
+                  </Text>
+                </VStack>
+                <Divider />
+                <VStack gap={2}>
+                  <Text type="label">Status</Text>
+                  <Text type="body">{selected.status}</Text>
+                  <Text type="label">CPU</Text>
+                  <Text type="body">{selected.cpu}</Text>
+                </VStack>
+              </VStack>
+            </Section>
+          )}
+        </Drawer>
+      </VStack>
+    );
+  },
+};
+
+/**
+ * A bounded drawer in a pane that SCROLLS. The panel is pinned to the pane's
+ * scrollport, so scrolling the host list moves the list and leaves the
+ * inspector where it is — an absolutely positioned child would ride the
+ * content out of view instead. With the scrim up, the list behind it is
+ * `inert`: it cannot be clicked, and it cannot be tabbed into either.
+ */
+export const BoundedInAScrollingPane: Story = {
+  name: 'Bounded in a scrolling pane',
+  render: () => {
+    const paneRef = useRef<HTMLDivElement>(null);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const selected = HOSTS.find(host => host.id === selectedId);
+    // Enough rows that the pane genuinely scrolls.
+    const rows = [...HOSTS, ...HOSTS, ...HOSTS, ...HOSTS];
+    return (
+      <VStack gap={3}>
+        <Text type="supporting" color="secondary">
+          Open the drawer, then scroll the pane behind it. The panel stays put.
+        </Text>
+        <div
+          ref={paneRef}
+          style={{
+            position: 'relative',
+            overflow: 'auto',
+            height: 300,
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-md)',
+          }}>
+          <Section padding={4}>
+            <VStack gap={1}>
+              <Heading level={3}>Hosts</Heading>
+              {rows.map((host, index) => (
+                <Button
+                  key={`${host.id}-${index}`}
+                  variant="ghost"
+                  label={`${host.id} / ${host.region}`}
+                  onClick={() => setSelectedId(host.id)}
+                />
+              ))}
+            </VStack>
+          </Section>
+        </div>
+        <Button
+          label="Still clickable while the drawer is open"
+          variant="secondary"
+        />
+        <Drawer
+          isOpen={selected != null}
+          onOpenChange={isOpen => !isOpen && setSelectedId(null)}
+          label={selected ? `Host details: ${selected.id}` : 'Host details'}
+          containerRef={paneRef}
+          width={260}>
+          {selected != null && (
+            <Section padding={4}>
+              <VStack gap={2}>
+                <Heading level={3}>{selected.id}</Heading>
+                <Text type="body">{selected.region}</Text>
+                <Divider />
+                <Text type="label">Status</Text>
+                <Text type="body">{selected.status}</Text>
+              </VStack>
+            </Section>
+          )}
+        </Drawer>
+      </VStack>
     );
   },
 };
@@ -322,7 +470,7 @@ export const FloatsOverContent: Story = {
           isOpen={isOpen}
           onOpenChange={setIsOpen}
           label="Deployment details"
-          hasScrim={false}>
+          isModal={false}>
           <Section padding={4}>
             <VStack gap={4}>
               <Heading level={3}>web-prod-04</Heading>
@@ -380,7 +528,7 @@ export const Scrim: Story = {
           isOpen={openWithout}
           onOpenChange={setOpenWithout}
           label="Non-modal details"
-          hasScrim={false}
+          isModal={false}
           hasCloseButton>
           <Section padding={4}>
             <VStack gap={4}>

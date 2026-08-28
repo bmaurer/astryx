@@ -10,8 +10,8 @@
  */
 
 import {describe, it, expect, vi, beforeEach, afterEach} from 'vitest';
-import {render, screen, fireEvent, act} from '@testing-library/react';
-import {useState} from 'react';
+import {render, screen, fireEvent, act, cleanup} from '@testing-library/react';
+import {Profiler, useEffect, useRef, useState} from 'react';
 import {Drawer} from './Drawer';
 
 // Mock dialog methods since they're not fully implemented in jsdom
@@ -79,7 +79,7 @@ describe('Drawer', () => {
   });
 
   describe('modal vs non-modal', () => {
-    it('opens with showModal() and aria-modal by default (hasScrim)', () => {
+    it('opens with showModal() and aria-modal by default', () => {
       render(
         <Drawer isOpen onOpenChange={() => {}} label="Details">
           Content
@@ -90,9 +90,9 @@ describe('Drawer', () => {
       expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true');
     });
 
-    it('opens with show() and no aria-modal when hasScrim is false', () => {
+    it('opens with show() and no aria-modal when isModal is false', () => {
       render(
-        <Drawer isOpen onOpenChange={() => {}} label="Details" hasScrim={false}>
+        <Drawer isOpen onOpenChange={() => {}} label="Details" isModal={false}>
           Content
         </Drawer>,
       );
@@ -121,7 +121,7 @@ describe('Drawer', () => {
           isOpen
           onOpenChange={handleOpenChange}
           label="Details"
-          hasScrim={false}>
+          isModal={false}>
           Content
         </Drawer>,
       );
@@ -218,7 +218,7 @@ describe('Drawer', () => {
           isOpen
           onOpenChange={handleOpenChange}
           label="Details"
-          hasScrim={false}>
+          isModal={false}>
           Content
         </Drawer>,
       );
@@ -466,7 +466,7 @@ describe('Drawer', () => {
           isOpen
           onOpenChange={handleOpenChange}
           label="Details"
-          hasScrim={false}>
+          isModal={false}>
           Content
         </Drawer>,
       );
@@ -495,7 +495,7 @@ describe('Drawer', () => {
           isOpen
           onOpenChange={() => {}}
           label="Details"
-          hasScrim={false}
+          isModal={false}
           hasCloseButton>
           Content
         </Drawer>,
@@ -514,14 +514,14 @@ describe('Drawer', () => {
             isOpen
             onOpenChange={closeFirst}
             label="First"
-            hasScrim={false}>
+            isModal={false}>
             First content
           </Drawer>
           <Drawer
             isOpen
             onOpenChange={closeSecond}
             label="Second"
-            hasScrim={false}>
+            isModal={false}>
             Second content
           </Drawer>
         </>,
@@ -551,14 +551,14 @@ describe('Drawer', () => {
             isOpen={outerOpen}
             onOpenChange={setOuterOpen}
             label="Outer"
-            hasScrim={false}>
+            isModal={false}>
             Outer content
           </Drawer>
           <Drawer
             isOpen={innerOpen}
             onOpenChange={setInnerOpen}
             label="Inner"
-            hasScrim={false}>
+            isModal={false}>
             Inner content
           </Drawer>
         </>
@@ -593,20 +593,16 @@ describe('Drawer', () => {
             isOpen
             onOpenChange={closeFirst}
             label="First"
-            hasScrim={false}>
+            isModal={false}>
             First content
           </Drawer>
-          <Drawer
-            isOpen
-            onOpenChange={() => {}}
-            label="Second"
-            hasScrim={false}>
+          <Drawer isOpen onOpenChange={() => {}} label="Second" isModal={false}>
             Second content
           </Drawer>
         </>,
       );
       rerender(
-        <Drawer isOpen onOpenChange={closeFirst} label="First" hasScrim={false}>
+        <Drawer isOpen onOpenChange={closeFirst} label="First" isModal={false}>
           First content
         </Drawer>,
       );
@@ -647,6 +643,356 @@ describe('Drawer', () => {
       fireEvent.keyDown(dialog, {key: 'Escape'});
       // Mid-exit: the live prop is now 'end', the anchor must still be 'start'.
       expect(dialog).toHaveAttribute('data-side', 'start');
+    });
+  });
+
+  describe('bounded to a container', () => {
+    function BoundedHarness({
+      isModal,
+      isOpen = true,
+    }: {
+      isModal?: boolean;
+      isOpen?: boolean;
+    }) {
+      const containerRef = useRef<HTMLDivElement>(null);
+      const [, force] = useState(0);
+      // One re-render so the ref is populated for the portal.
+      useEffect(() => {
+        force(1);
+      }, []);
+      // The Drawer is deliberately NOT a JSX child of the container — the
+      // point of containerRef is that the panel goes there regardless of
+      // where it is declared.
+      return (
+        <>
+          <div
+            ref={containerRef}
+            data-testid="pane"
+            style={{position: 'relative', width: 600, height: 400}}>
+            <span>pane content</span>
+          </div>
+          <Drawer
+            isOpen={isOpen}
+            onOpenChange={onOpenChange}
+            label="Row details"
+            isModal={isModal}
+            containerRef={containerRef}>
+            Bounded content
+          </Drawer>
+        </>
+      );
+    }
+
+    let onOpenChange: (isOpen: boolean) => void;
+    beforeEach(() => {
+      onOpenChange = vi.fn();
+    });
+
+    it('renders the panel inside the container, not the document body', () => {
+      render(<BoundedHarness />);
+      const pane = screen.getByTestId('pane');
+      const dialog = screen.getByRole('dialog');
+      expect(pane).toContainElement(dialog);
+    });
+
+    it('never uses the top layer, even with a scrim', () => {
+      render(<BoundedHarness />);
+      expect(HTMLDialogElement.prototype.show).toHaveBeenCalled();
+      expect(HTMLDialogElement.prototype.showModal).not.toHaveBeenCalled();
+    });
+
+    it('is not aria-modal — the page behind stays live', () => {
+      render(<BoundedHarness />);
+      expect(screen.getByRole('dialog')).not.toHaveAttribute('aria-modal');
+    });
+
+    it('renders its own scrim, because ::backdrop needs the top layer', () => {
+      const {rerender} = render(<BoundedHarness />);
+      const pane = screen.getByTestId('pane');
+      const scrim = pane.querySelector('button[aria-hidden="true"]');
+      expect(scrim).not.toBeNull();
+
+      fireEvent.click(scrim as Element);
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+
+      rerender(<BoundedHarness isModal={false} />);
+      expect(
+        screen.getByTestId('pane').querySelector('button[aria-hidden="true"]'),
+      ).toBeNull();
+    });
+
+    it('wraps the panel in a clip box, so the container is never scrolled', () => {
+      // overflow:hidden would make the container a scroll container, and the
+      // browser's focus scroll-into-view would then scroll it by exactly the
+      // entry transform — freezing the panel while the page content flies.
+      render(<BoundedHarness />);
+      const dialog = screen.getByRole('dialog');
+      const clip = dialog.parentElement as HTMLElement;
+      expect(window.getComputedStyle(clip).overflow).toBe('clip');
+      expect(screen.getByTestId('pane')).toContainElement(clip);
+    });
+
+    it('closes on Escape', () => {
+      render(<BoundedHarness />);
+      fireEvent.keyDown(screen.getByRole('dialog'), {key: 'Escape'});
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+
+    it('renders nothing before the container ref resolves', () => {
+      function Unresolved() {
+        const containerRef = useRef<HTMLDivElement>(null);
+        return (
+          <Drawer
+            isOpen
+            onOpenChange={() => {}}
+            label="Details"
+            containerRef={containerRef}>
+            Content
+          </Drawer>
+        );
+      }
+      render(<Unresolved />);
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+
+    it('pins the clip box to the scrollport, not to the scrolled content', () => {
+      // An absolutely positioned child of a scroll container resolves against
+      // the SCROLLED padding box, so `inset: 0` alone rides the content: in
+      // Chromium, scrolling the pane 0 -> 180px carried the panel from y=44
+      // to y=-136. The clip box offsets itself by the scroll position to
+      // stay put.
+      render(<BoundedHarness />);
+      const pane = screen.getByTestId('pane');
+      const clip = screen.getByRole('dialog').parentElement as HTMLElement;
+
+      // jsdom does not lay out, so drive the geometry directly — the effect
+      // reads exactly these four properties.
+      Object.defineProperty(pane, 'clientWidth', {
+        value: 600,
+        configurable: true,
+      });
+      Object.defineProperty(pane, 'clientHeight', {
+        value: 400,
+        configurable: true,
+      });
+      pane.scrollTop = 180;
+      pane.scrollLeft = 0;
+      fireEvent.scroll(pane);
+
+      expect(clip.style.transform).toBe('translate(0px, 180px)');
+      // Sized to the scrollport, so it covers what the user can see rather
+      // than the full scroll height.
+      expect(clip.style.blockSize).toBe('400px');
+      expect(clip.style.inlineSize).toBe('600px');
+    });
+
+    it('makes the container inert when modal, so keyboard matches pointer', () => {
+      // Bounded mode's half of isModal: the container is the area taken out
+      // of play. Dimming alone blocked only the pointer, so two reverse Tabs
+      // out of the panel landed on the dimmed opener and Enter fired a
+      // control no click could reach.
+      render(<BoundedHarness />);
+      const pane = screen.getByTestId('pane');
+      const content = pane.querySelector('span') as HTMLElement;
+      expect(content).toHaveAttribute('inert');
+
+      // The panel itself is inside the container and must stay live.
+      const clip = screen.getByRole('dialog').parentElement as HTMLElement;
+      expect(clip).not.toHaveAttribute('inert');
+    });
+
+    it('leaves the container live when non-modal', () => {
+      // The negative control: a non-modal bounded drawer leaves its
+      // container alone.
+      render(<BoundedHarness isModal={false} />);
+      const content = screen
+        .getByTestId('pane')
+        .querySelector('span') as HTMLElement;
+      expect(content).not.toHaveAttribute('inert');
+    });
+
+    it('inerts pane content inserted after the drawer opened', async () => {
+      // A pane is live content: a row streams in, a menu opens, a lazy panel
+      // resolves. Stamping `inert` once at open leaves every one of those
+      // focusable behind a scrim that already blocks the pointer — the same
+      // keyboard/pointer split one layer down. Reported on #5550.
+      render(<BoundedHarness />);
+      const pane = screen.getByTestId('pane');
+      expect(pane.querySelector('span')).toHaveAttribute('inert');
+
+      const late = document.createElement('button');
+      late.textContent = 'streamed in';
+      await act(async () => {
+        pane.appendChild(late);
+        // MutationObserver delivers on a microtask.
+        await Promise.resolve();
+      });
+
+      expect(late).toHaveAttribute('inert');
+    });
+
+    it('hands back only what it inerted, including the late arrivals', async () => {
+      render(<BoundedHarness />);
+      const pane = screen.getByTestId('pane');
+      // Something the drawer must not touch: already inert for its own
+      // reason before the drawer ever opened.
+      const preInert = document.createElement('div');
+      preInert.setAttribute('inert', '');
+      const late = document.createElement('button');
+      await act(async () => {
+        pane.appendChild(preInert);
+        pane.appendChild(late);
+        await Promise.resolve();
+      });
+      expect(late).toHaveAttribute('inert');
+
+      // Closing gives back the drawer's own, and leaves the other alone.
+      await act(async () => {
+        cleanup();
+      });
+      expect(late).not.toHaveAttribute('inert');
+      expect(preInert).toHaveAttribute('inert');
+    });
+
+    it('restores the container when the drawer closes', () => {
+      const {rerender} = render(<BoundedHarness isOpen />);
+      const content = screen
+        .getByTestId('pane')
+        .querySelector('span') as HTMLElement;
+      expect(content).toHaveAttribute('inert');
+
+      rerender(<BoundedHarness isOpen={false} />);
+      expect(content).not.toHaveAttribute('inert');
+    });
+
+    it('follows the container when the element behind the ref is replaced', async () => {
+      // The ref object never changes identity, so a dep array on it cannot
+      // see this. Swapping the element used to leave the drawer `isOpen`
+      // with no dialog anywhere.
+      function SwappingHarness() {
+        const containerRef = useRef<HTMLDivElement>(null);
+        const [which, setWhich] = useState<'a' | 'b'>('a');
+        const [, force] = useState(0);
+        useEffect(() => {
+          force(1);
+        }, []);
+        return (
+          <>
+            {/* Keyed, so React unmounts one and mounts the other rather
+                than reconciling a single div and swapping its attributes —
+                without the key there is no swap to survive. */}
+            <div
+              key={which}
+              ref={containerRef}
+              data-testid={`pane-${which}`}
+              style={{position: 'relative'}}
+            />
+            <button onClick={() => setWhich('b')}>swap</button>
+            <Drawer
+              isOpen
+              onOpenChange={() => {}}
+              label="Row details"
+              containerRef={containerRef}>
+              Bounded content
+            </Drawer>
+          </>
+        );
+      }
+      render(<SwappingHarness />);
+      expect(screen.getByTestId('pane-a')).toContainElement(
+        screen.getByRole('dialog'),
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByText('swap'));
+      });
+
+      // Still open, and now living in the new host.
+      const dialog = screen.getByRole('dialog');
+      expect(screen.getByTestId('pane-b')).toContainElement(dialog);
+    });
+
+    it('resolves no container while closed, so an unopened drawer costs nothing', () => {
+      // Resolving the target is a state write, and doing it on mount cost
+      // every closed bounded Drawer on the page a second commit.
+      const commits: string[] = [];
+      function CountingHarness() {
+        const containerRef = useRef<HTMLDivElement>(null);
+        return (
+          <>
+            <div
+              ref={containerRef}
+              data-testid="pane"
+              style={{position: 'relative'}}
+            />
+            <Profiler
+              id="drawer"
+              onRender={(_id, phase) => commits.push(phase)}>
+              <Drawer
+                isOpen={false}
+                onOpenChange={() => {}}
+                label="Row details"
+                containerRef={containerRef}>
+                Bounded content
+              </Drawer>
+            </Profiler>
+          </>
+        );
+      }
+      render(<CountingHarness />);
+      expect(screen.queryByRole('dialog')).toBeNull();
+      // One mount, and no update behind it. Resolving the target on mount
+      // used to add an 'update' commit to every closed bounded Drawer.
+      expect(commits).toEqual(['mount']);
+    });
+
+    it('dims and blocks the container together, or neither', () => {
+      // One prop, deliberately. A dimmed area that still takes clicks looks
+      // broken; a blocked area with no dimming gives no clue why clicks do
+      // nothing. Neither half is worth offering on its own.
+      const {rerender} = render(<BoundedHarness />);
+      const pane = screen.getByTestId('pane');
+      expect(pane.querySelector('button[aria-hidden="true"]')).not.toBeNull();
+      expect(pane.querySelector('span')).toHaveAttribute('inert');
+
+      rerender(<BoundedHarness isModal={false} />);
+      expect(pane.querySelector('button[aria-hidden="true"]')).toBeNull();
+      expect(pane.querySelector('span')).not.toHaveAttribute('inert');
+    });
+
+    it('means the same thing bounded, by a different mechanism', () => {
+      // A bounded modal cannot use the top layer, so it is not aria-modal
+      // and does not lock body scroll — but the area behind it is still out
+      // of play, which is what the word promises.
+      render(<BoundedHarness />);
+      expect(HTMLDialogElement.prototype.showModal).not.toHaveBeenCalled();
+      expect(screen.getByRole('dialog')).not.toHaveAttribute('aria-modal');
+      expect(screen.getByTestId('pane').querySelector('span')).toHaveAttribute(
+        'inert',
+      );
+    });
+  });
+
+  describe('isModal', () => {
+    it('is modal by default', () => {
+      render(
+        <Drawer isOpen onOpenChange={() => {}} label="Details">
+          Content
+        </Drawer>,
+      );
+      expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled();
+      expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true');
+    });
+
+    it('leaves the page interactive when isModal is false', () => {
+      render(
+        <Drawer isOpen onOpenChange={() => {}} label="Details" isModal={false}>
+          Content
+        </Drawer>,
+      );
+      expect(HTMLDialogElement.prototype.show).toHaveBeenCalled();
+      expect(HTMLDialogElement.prototype.showModal).not.toHaveBeenCalled();
+      expect(screen.getByRole('dialog')).not.toHaveAttribute('aria-modal');
     });
   });
 

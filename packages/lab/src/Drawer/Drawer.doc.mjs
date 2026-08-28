@@ -74,11 +74,17 @@ export const docs = {
       default: 'false',
     },
     {
-      name: 'hasScrim',
+      name: 'isModal',
       type: 'boolean',
       description:
-        'Modal scrim behind the drawer. true uses showModal() (top layer, focus trap, scroll lock; clicking the scrim closes; modal only); false uses show() for a non-modal overlay that does NOT trap focus and keeps the page behind interactive.',
+        'Whether the drawer takes the area behind it out of play: dimmed, not clickable, not tabbable, not reachable by a screen reader, and clicking the dimmed area closes. false leaves it interactive; Escape still closes while focus is inside. Dimming and blocking are deliberately one prop — a dimmed area that still takes clicks looks broken, and a blocked one with no dimming gives no clue why clicks do nothing. containerRef changes WHICH area this applies to, not what it means: a viewport drawer gets it from showModal() (top layer, focus trap, body scroll lock), a bounded one by dimming its container and making it inert, so a bounded modal is not aria-modal and does not lock body scroll.',
       default: 'true',
+    },
+    {
+      name: 'containerRef',
+      type: 'React.RefObject<HTMLElement | null>',
+      description:
+        "Bind the drawer to an element instead of the viewport: the panel is portalled into it and slides against ITS edge, at its height — the inspector that belongs to one pane rather than the whole screen. Give the container position: relative; it needs no overflow rule — the drawer clips itself to the container, and it stays put in the container's scrollport when the pane scrolls. Scope only: it narrows what isModal applies TO (the container, not the page) without changing what it means. A bounded modal dims its container and makes it inert rather than using the top layer, so the rest of the page stays live.",
     },
     {
       name: 'hasCloseButton',
@@ -90,7 +96,7 @@ export const docs = {
   ],
   usage: {
     description:
-      'A side panel that floats above page content for inspectors and detail views: the "click a table row, see its details" pattern. Unlike a docked panel it overlays the layout instead of reflowing it. Works on desktop and touch: the width budget applies on desktop and the panel preserves a 56px page reveal below 640px without exceeding the width budget. Escape closes the drawer and focus returns to the element that opened it. Entry/exit slide animation respects prefers-reduced-motion. Stacking contract: sibling drawers stack last-opened on top, Escape closes only the topmost, and closing peels innermost-first; render them as siblings, never nested.',
+      'A side panel that floats above page content for inspectors and detail views: the "click a table row, see its details" pattern. Unlike a docked panel it overlays the layout instead of reflowing it. Works on desktop and touch: the width budget applies on desktop and the panel preserves a 56px page reveal below 640px without exceeding the width budget. Escape closes the drawer and focus returns to the element that opened it. Entry/exit slide animation respects prefers-reduced-motion. Stacking contract: sibling drawers stack last-opened on top, Escape closes only the topmost, and closing peels innermost-first; render them as siblings, never nested. containerRef binds the drawer to an element instead of the viewport, for a pane-level inspector; isModal then applies to that container rather than the page, enforced with inert since a bounded panel cannot use the browser top layer.',
     bestPractices: [
       {
         guidance: true,
@@ -105,12 +111,22 @@ export const docs = {
       {
         guidance: true,
         description:
-          'Use hasScrim={false} for master-detail flows; non-modal drawers do not trap focus and the page behind stays interactive.',
+          'Use isModal={false} for master-detail flows; non-modal drawers do not trap focus and the area behind stays interactive.',
       },
       {
         guidance: true,
         description:
           'Keep the last-selected item rendered on close: children stay mounted during the exit animation, so nulling content mid-close blanks the panel while it slides out.',
+      },
+      {
+        guidance: true,
+        description:
+          'Use containerRef when the drawer belongs to one pane rather than the page — a split view, a dashboard card, a canvas. Give the container position: relative; it needs no overflow rule — the drawer clips itself to the container.',
+      },
+      {
+        guidance: false,
+        description:
+          'Expect a bounded modal to be aria-modal or to lock body scroll: the browser top layer is always viewport-sized, so a bounded drawer blocks its container with inert instead. Use the viewport drawer when the whole page must be blocked.',
       },
       {
         guidance: false,
@@ -156,18 +172,34 @@ const [lineItem, setLineItem] = useState(null);
     isOpen={order != null}
     onOpenChange={isOpen => !isOpen && setOrder(null)}
     label="Order details"
-    hasScrim={false}>
+    isModal={false}>
     <OrderDetails order={order} onSelectLineItem={setLineItem} />
   </Drawer>
   <Drawer
     isOpen={lineItem != null}
     onOpenChange={isOpen => !isOpen && setLineItem(null)}
     label="Line item"
-    hasScrim={false}>
+    isModal={false}>
     <LineItemDetails item={lineItem} />
   </Drawer>
 </>
 // Last-opened stacks on top; Escape closes the line item first.`,
+    },
+    {
+      label: 'Bounded to a pane (containerRef)',
+      code: `const paneRef = useRef(null);
+const [selected, setSelected] = useState(null);
+<div ref={paneRef} style={{position: 'relative'}}>
+  <HostTable onSelect={setSelected} />
+</div>
+<Drawer
+  isOpen={selected != null}
+  onOpenChange={isOpen => !isOpen && setSelected(null)}
+  label="Host details"
+  containerRef={paneRef}>
+  <HostDetails host={selected} />
+</Drawer>
+// The panel slides against the pane's edge, at the pane's height.`,
     },
   ],
 };
@@ -176,7 +208,7 @@ const [lineItem, setLineItem] = useState(null);
 export const docsZh = {
   usage: {
     description:
-      '浮在页面内容之上的侧边面板，用于检查器和详情视图——"点击表格行查看详情"的模式。与停靠面板不同，它覆盖在布局之上，不会挤压页面。桌面端按 width 设定宽度，宽度小于 640px 时保留 56px 的底层页面，并且不超过 width 上限。按 Escape 关闭抽屉，焦点返回到打开它的元素。滑入/滑出动画遵循 prefers-reduced-motion。堆叠约定：同级抽屉后开的在上层，Escape 只关闭最上层的，关闭顺序由内向外——请以同级方式渲染，切勿嵌套。',
+      '浮在页面内容之上的侧边面板，用于检查器和详情视图——"点击表格行查看详情"的模式。与停靠面板不同，它覆盖在布局之上，不会挤压页面。桌面端按 width 设定宽度，宽度小于 640px 时保留 56px 的底层页面，并且不超过 width 上限。按 Escape 关闭抽屉，焦点返回到打开它的元素。滑入/滑出动画遵循 prefers-reduced-motion。堆叠约定：同级抽屉后开的在上层，Escape 只关闭最上层的，关闭顺序由内向外——请以同级方式渲染，切勿嵌套。containerRef 可将抽屉绑定到某个元素而非视口，用于面板级检查器；受限抽屉是上下文式的，永远不是模态。',
     bestPractices: [
       {
         guidance: true,
@@ -191,12 +223,22 @@ export const docsZh = {
       {
         guidance: true,
         description:
-          '在主从流程中使用 hasScrim={false}——非模态抽屉不捕获焦点，抽屉后面的页面保持可交互。',
+          '在主从流程中使用 isModal={false}——非模态抽屉不捕获焦点，抽屉后面的区域保持可交互。',
       },
       {
         guidance: true,
         description:
           '关闭时保留最后选中的内容：退出动画期间子内容仍然挂载，中途置空会让面板在滑出时变为空白。',
+      },
+      {
+        guidance: true,
+        description:
+          '当抽屉属于某个面板而非整个页面（分栏视图、仪表盘卡片、画布）时使用 containerRef，并给容器设置 position: relative；无需设置 overflow，抽屉会自行裁剪到容器内。',
+      },
+      {
+        guidance: false,
+        description:
+          '不要期望受限模态抽屉具有 aria-modal 或锁定页面滚动：浏览器顶层始终是视口大小，因此受限抽屉改用 inert 阻挡其容器。需要阻挡整个页面时请使用视口抽屉。',
       },
       {
         guidance: false,
@@ -228,7 +270,7 @@ export const docsDense = {
     'side panel floating over content (native <dialog>): start/end edge, full height',
   usage: {
     description:
-      'Overlay side panel for inspectors and detail views; floats over content, never reflows it. width = desktop budget; 56px page reveal below 640px, capped by width (isFullWidthOnMobile for all of it). Escape closes topmost; focus restores to the opener. Siblings stack last-opened on top; never nest. Slide animation respects prefers-reduced-motion.',
+      'Overlay side panel for inspectors and detail views; floats over content, never reflows it. width = desktop budget; 56px page reveal below 640px, capped by width (isFullWidthOnMobile for all of it). Escape closes topmost; focus restores to the opener. Siblings stack last-opened on top; never nest. Slide animation respects prefers-reduced-motion. containerRef binds it to an element (needs position: relative) for a pane-level inspector; isModal then scopes to that container, enforced with inert.',
     bestPractices: [
       {
         guidance: true,
@@ -242,12 +284,17 @@ export const docsDense = {
       {
         guidance: true,
         description:
-          'Use hasScrim={false} for non-modal master-detail flows (no focus trap, page stays interactive).',
+          'Use isModal={false} for non-modal master-detail flows (no focus trap, area behind stays interactive).',
       },
       {
         guidance: true,
         description:
           'Keep last-selected content rendered on close (children stay mounted during exit).',
+      },
+      {
+        guidance: true,
+        description:
+          'Use containerRef for a pane-level inspector; container needs position: relative.',
       },
       {
         guidance: false,

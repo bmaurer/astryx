@@ -47,6 +47,15 @@ type UseDrawerDialogPresenceOptions = {
   isOpen: boolean;
   isModal: boolean;
   setIsRendered: Dispatch<SetStateAction<boolean>>;
+  /**
+   * The element the dialog is portalled into, when it is not rendered in
+   * place. A ref is stable, so nothing here can observe the dialog element
+   * arriving — and a bounded Drawer renders none until its container
+   * resolves, one commit after the first. Naming the host as a dependency is
+   * what makes presence re-evaluate against the dialog that now exists;
+   * without it an already-open bounded Drawer never opens at all.
+   */
+  mountHost?: HTMLElement | null;
 };
 
 /**
@@ -64,6 +73,7 @@ export function useDrawerDialogPresence({
   isOpen,
   isModal,
   setIsRendered,
+  mountHost,
 }: UseDrawerDialogPresenceOptions): void {
   // Element focused when the drawer opened — restored on close.
   const triggerElementRef = useRef<HTMLElement | null>(null);
@@ -109,7 +119,7 @@ export function useDrawerDialogPresence({
       triggerElementRef.current?.focus();
       triggerElementRef.current = null;
     });
-  }, [dialogRef, isModal, isOpen, setIsRendered]);
+  }, [dialogRef, isModal, isOpen, setIsRendered, mountHost]);
 
   // Close the native dialog on unmount if it is still open. When the drawer is
   // mounted inside an <Activity> that flips to mode="hidden", React runs effect
