@@ -115,6 +115,13 @@ export const neutralTheme = defineTheme({
 
   syntax: neutralSyntax,
 
+  // Palette strategy: this maintained reference intentionally locks the exact
+  // reviewed neutral, semantic, and categorical stops below instead of using
+  // `color`. The color scale generator is the right starting point for most
+  // themes, but it derives an accent and neutral family; it does not generate
+  // the categorical/status palette or preserve these approved exact values.
+  // Prefer `color` for a new theme, then use explicit tokens only for deliberate
+  // exceptions whose rendered light- and dark-mode relationships are audited.
   tokens: {
     // =========================================================================
     // Core — pure grayscale spine (Tailwind neutral)
@@ -550,11 +557,11 @@ export const neutralTheme = defineTheme({
     //          to a deep tinted bg + light text rather than locking the
     //          light-mode pastel.
     //
-    // The inner-header *-muted token carries the tinted background for every
-    // status, info included. A theme override that sets a plain CSS property
-    // instead lands in @layer astryx-theme, which StyleX's @layer priority4
-    // outranks, so `backgroundColor` here would silently do nothing and the
-    // info banner would paint no background at all.
+    // The inner header and its nested text, icon, and action consumers resolve
+    // their colors through semantic tokens. Rebind those public tokens here so
+    // the whole Banner subtree stays synchronized. A direct `backgroundColor`
+    // component override would win through @layer astryx-theme, but it would
+    // update only the targeted element rather than the related consumers.
     //
     // Status overrides reference --color-text-{hue} so text/icon colors
     // stay in sync with the palette anchors automatically.
