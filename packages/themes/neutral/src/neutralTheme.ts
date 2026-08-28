@@ -54,33 +54,20 @@ const neutralSyntax = defineSyntaxTheme({
 });
 
 /**
- * Status color roles keep one semantic hue family without forcing a single
- * hex value into incompatible jobs. Filled controls use `fill`, text and
- * glyphs use `foreground`, and large tinted regions use `surface`.
+ * Filled semantic colors are shared by Badge and StatusDot. ProgressBar uses
+ * the same colors except where its fill-on-track relationship needs a
+ * contrast-specific stop (light-mode warning).
  */
-const STATUS_COLOR_ROLES = {
-  fill: {
-    info: 'light-dark(#0068cc, #529fff)',
-    success: 'light-dark(#098123, #62b466)',
-    warning: 'light-dark(#f6d168, #f1d27c)',
-    error: 'light-dark(#ca3f3e, #ec746e)',
-  },
-  onFill: {
-    standard: 'light-dark(#ffffff, #1b1b1b)',
-    onBright: '#1b1b1b',
-  },
-  foreground: {
-    info: 'var(--color-text-blue)',
-    success: 'var(--color-text-green)',
-    warning: 'var(--color-text-yellow)',
-    error: 'var(--color-text-red)',
-  },
-  surface: {
-    info: 'var(--color-background-blue)',
-    success: 'var(--color-background-green)',
-    warning: 'var(--color-background-yellow)',
-    error: 'var(--color-background-red)',
-  },
+const FILLED_STATE_COLORS = {
+  info: 'light-dark(#0068cc, #529fff)',
+  success: 'light-dark(#098123, #62b466)',
+  warning: 'light-dark(#f6d168, #f1d27c)',
+  error: 'light-dark(#ca3f3e, #ec746e)',
+} as const;
+
+const FILLED_STATE_TEXT = {
+  standard: 'light-dark(#ffffff, #1b1b1b)',
+  onBright: '#1b1b1b',
 } as const;
 
 /**
@@ -435,8 +422,8 @@ export const neutralTheme = defineTheme({
       //          treatment that warning yellow uses in both modes.
       'variant:info': {
         // Blue T45 light / T60 dark.
-        backgroundColor: STATUS_COLOR_ROLES.fill.info,
-        color: STATUS_COLOR_ROLES.onFill.standard,
+        backgroundColor: FILLED_STATE_COLORS.info,
+        color: FILLED_STATE_TEXT.standard,
       },
       'variant:neutral': {
         // Mirrors the gray categorical badge — same neutral chip treatment
@@ -448,19 +435,19 @@ export const neutralTheme = defineTheme({
       },
       'variant:success': {
         // Green T45 light / T60 dark.
-        backgroundColor: STATUS_COLOR_ROLES.fill.success,
-        color: STATUS_COLOR_ROLES.onFill.standard,
+        backgroundColor: FILLED_STATE_COLORS.success,
+        color: FILLED_STATE_TEXT.standard,
       },
       'variant:warning': {
         // Yellow T85 light / T80 dark, both with dark text.
-        backgroundColor: STATUS_COLOR_ROLES.fill.warning,
-        color: STATUS_COLOR_ROLES.onFill.onBright,
+        backgroundColor: FILLED_STATE_COLORS.warning,
+        color: FILLED_STATE_TEXT.onBright,
       },
       'variant:error': {
         // Red T50 light / T60 dark. The light stop is the brightest red that
         // still clears AA with the badge's white label.
-        backgroundColor: STATUS_COLOR_ROLES.fill.error,
-        color: STATUS_COLOR_ROLES.onFill.standard,
+        backgroundColor: FILLED_STATE_COLORS.error,
+        color: FILLED_STATE_TEXT.standard,
       },
 
       // Categorical — bg + text reference the per-hue tokens, so behavior
@@ -549,16 +536,16 @@ export const neutralTheme = defineTheme({
     // not among the "too dark" cases.
     // =========================================================================
     'status-dot': {
-      'variant:success': {backgroundColor: STATUS_COLOR_ROLES.fill.success},
-      'variant:warning': {backgroundColor: STATUS_COLOR_ROLES.fill.warning},
-      'variant:error': {backgroundColor: STATUS_COLOR_ROLES.fill.error},
-      'variant:accent': {backgroundColor: STATUS_COLOR_ROLES.fill.info},
+      'variant:success': {backgroundColor: FILLED_STATE_COLORS.success},
+      'variant:warning': {backgroundColor: FILLED_STATE_COLORS.warning},
+      'variant:error': {backgroundColor: FILLED_STATE_COLORS.error},
+      'variant:accent': {backgroundColor: FILLED_STATE_COLORS.info},
     },
 
     // AvatarStatusDot shares the same filled state language as StatusDot.
     'avatar-status-dot': {
-      'variant:success': {backgroundColor: STATUS_COLOR_ROLES.fill.success},
-      'variant:error': {backgroundColor: STATUS_COLOR_ROLES.fill.error},
+      'variant:success': {backgroundColor: FILLED_STATE_COLORS.success},
+      'variant:error': {backgroundColor: FILLED_STATE_COLORS.error},
     },
 
     // =========================================================================
@@ -589,59 +576,28 @@ export const neutralTheme = defineTheme({
         '--color-overlay-pressed': 'light-dark(#FFFFFF33, #00000033)',
       },
       'status:info': {
-        '--color-accent-muted': STATUS_COLOR_ROLES.surface.info,
-        '--color-text-primary': STATUS_COLOR_ROLES.foreground.info,
-        '--color-text-secondary': STATUS_COLOR_ROLES.foreground.info,
-        '--color-accent': STATUS_COLOR_ROLES.foreground.info,
+        '--color-accent-muted': 'var(--color-background-blue)',
+        '--color-text-primary': 'var(--color-text-blue)',
+        '--color-text-secondary': 'var(--color-text-blue)',
+        '--color-accent': 'var(--color-text-blue)',
       },
       // success/warning/error banner bgs come from --color-{X}-muted, which
       // already carries the correct light/dark tinted values. We only need
       // to redirect the text/icon to the palette colored stop.
       'status:success': {
-        '--color-success-muted': STATUS_COLOR_ROLES.surface.success,
-        '--color-text-primary': STATUS_COLOR_ROLES.foreground.success,
-        '--color-text-secondary': STATUS_COLOR_ROLES.foreground.success,
-        '--color-success': STATUS_COLOR_ROLES.foreground.success,
+        '--color-text-primary': 'var(--color-text-green)',
+        '--color-text-secondary': 'var(--color-text-green)',
+        '--color-success': 'var(--color-text-green)',
       },
       'status:warning': {
-        '--color-warning-muted': STATUS_COLOR_ROLES.surface.warning,
-        '--color-text-primary': STATUS_COLOR_ROLES.foreground.warning,
-        '--color-text-secondary': STATUS_COLOR_ROLES.foreground.warning,
-        '--color-warning': STATUS_COLOR_ROLES.foreground.warning,
+        '--color-text-primary': 'var(--color-text-yellow)',
+        '--color-text-secondary': 'var(--color-text-yellow)',
+        '--color-warning': 'var(--color-text-yellow)',
       },
       'status:error': {
-        '--color-error-muted': STATUS_COLOR_ROLES.surface.error,
-        '--color-text-primary': STATUS_COLOR_ROLES.foreground.error,
-        '--color-text-secondary': STATUS_COLOR_ROLES.foreground.error,
-        '--color-error': STATUS_COLOR_ROLES.foreground.error,
-      },
-    },
-
-    // Stepper status glyphs are foreground marks, not filled badges. Map them
-    // to the shared foreground role so their hue stays aligned without using a
-    // fill stop directly on the page surface.
-    'step-indicator': {
-      'status:accent': {'--color-accent': STATUS_COLOR_ROLES.foreground.info},
-      'status:success': {
-        '--color-success': STATUS_COLOR_ROLES.foreground.success,
-      },
-      'status:warning': {
-        '--color-warning': STATUS_COLOR_ROLES.foreground.warning,
-      },
-      'status:error': {'--color-error': STATUS_COLOR_ROLES.foreground.error},
-    },
-
-    // Chat statuses are also foreground content. ChatMessageMetadata only
-    // recolors errors; ChatToolCalls additionally exposes running and complete
-    // states, so both receive the same shared foreground role aliases.
-    'chat-message-metadata': {
-      base: {'--color-error': STATUS_COLOR_ROLES.foreground.error},
-    },
-    'chat-tool-calls': {
-      base: {
-        '--color-accent': STATUS_COLOR_ROLES.foreground.info,
-        '--color-success': STATUS_COLOR_ROLES.foreground.success,
-        '--color-error': STATUS_COLOR_ROLES.foreground.error,
+        '--color-text-primary': 'var(--color-text-red)',
+        '--color-text-secondary': 'var(--color-text-red)',
+        '--color-error': 'var(--color-text-red)',
       },
     },
 
@@ -672,16 +628,16 @@ export const neutralTheme = defineTheme({
       // Vivid stops match the filled semantic badge colors except light-mode
       // warning, which moves darker so every variant can share one gray track.
       'variant:accent': {
-        '--color-accent': STATUS_COLOR_ROLES.fill.info,
+        '--color-accent': FILLED_STATE_COLORS.info,
       },
       'variant:success': {
-        '--color-success': STATUS_COLOR_ROLES.fill.success,
+        '--color-success': FILLED_STATE_COLORS.success,
       },
       'variant:warning': {
         '--color-warning': PROGRESS_WARNING_FILL,
       },
       'variant:error': {
-        '--color-error': STATUS_COLOR_ROLES.fill.error,
+        '--color-error': FILLED_STATE_COLORS.error,
       },
     },
     // The live neutral variant carries the same high-emphasis neutral color as
