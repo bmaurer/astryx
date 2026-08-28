@@ -134,7 +134,9 @@ describe('neutral theme component-pair contrast', () => {
       };
 
       for (const [variant, token] of Object.entries(backgrounds)) {
-        const background = token ? composite(resolve(token, index), body) : body;
+        const background = token
+          ? composite(resolve(token, index), body)
+          : body;
         expect(
           contrastRatio(foreground, background),
           `${variant} Card text should contrast with ${background}`,
@@ -294,7 +296,7 @@ describe('neutral theme component-pair contrast', () => {
   it('uses one ProgressBar track and a contrast-specific warning fill', () => {
     const progress = neutralTheme.components['progress-bar'];
     expect(progress.base['--color-background-muted']).toBe(
-      'light-dark(#d4d4d4, #404040)',
+      'light-dark(#d4d4d4, #3b3b3b)',
     );
     expect(
       progress['variant:warning']['--color-background-muted'],
