@@ -620,38 +620,50 @@ export const neutralTheme = defineTheme({
       },
     },
 
-    // SelectableCard's ring communicates selected state, so use the stronger
-    // same-hue icon stops instead of the intentionally subtle border stops.
+    // SelectableCard's ring communicates selected state, so use the lightest
+    // same-hue palette stop that clears 3:1 against each Card surface.
     'selectable-card': {
+      base: {
+        '--selectable-card-ring-color': 'light-dark(#848484, #6a6a6a)',
+      },
       'variant:red': {
-        '--selectable-card-ring-color': 'var(--color-icon-red)',
+        '--selectable-card-ring-color':
+          'light-dark(#ca3f3e, var(--color-border-red))',
       },
       'variant:orange': {
-        '--selectable-card-ring-color': 'var(--color-icon-orange)',
+        '--selectable-card-ring-color':
+          'light-dark(#aa6400, var(--color-border-orange))',
       },
       'variant:yellow': {
-        '--selectable-card-ring-color': 'var(--color-icon-yellow)',
+        '--selectable-card-ring-color':
+          'light-dark(#927300, var(--color-border-yellow))',
       },
       'variant:green': {
-        '--selectable-card-ring-color': 'var(--color-icon-green)',
+        '--selectable-card-ring-color':
+          'light-dark(#098123, var(--color-border-green))',
       },
       'variant:teal': {
-        '--selectable-card-ring-color': 'var(--color-icon-teal)',
+        '--selectable-card-ring-color':
+          'light-dark(#007c6d, var(--color-border-teal))',
       },
       'variant:cyan': {
-        '--selectable-card-ring-color': 'var(--color-icon-cyan)',
+        '--selectable-card-ring-color':
+          'light-dark(#00788c, var(--color-border-cyan))',
       },
       'variant:blue': {
-        '--selectable-card-ring-color': 'var(--color-icon-blue)',
+        '--selectable-card-ring-color':
+          'light-dark(#0074e2, var(--color-border-blue))',
       },
       'variant:purple': {
-        '--selectable-card-ring-color': 'var(--color-icon-purple)',
+        '--selectable-card-ring-color':
+          'light-dark(#a051b1, var(--color-border-purple))',
       },
       'variant:pink': {
-        '--selectable-card-ring-color': 'var(--color-icon-pink)',
+        '--selectable-card-ring-color':
+          'light-dark(#bc457c, var(--color-border-pink))',
       },
       'variant:gray': {
-        '--selectable-card-ring-color': 'var(--color-icon-gray)',
+        '--selectable-card-ring-color': 'light-dark(#777777, #848484)',
       },
     },
 
