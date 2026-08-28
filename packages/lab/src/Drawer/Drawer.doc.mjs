@@ -20,6 +20,32 @@ export const docs = {
   ],
   theming: {
     targets: [{className: 'astryx-drawer', visualProps: ['side']}],
+    vars: [
+      {
+        name: '--drawer-stack-peek',
+        description:
+          "How far a buried drawer slides away from its own closing edge per level stacked on top of it, so its leading edge stays visible beside the drawer in front. Larger values fan the stack out further, e.g. drawer: { base: { '--drawer-stack-peek': '24px' } }. Any length works.",
+        default: '40px',
+      },
+      {
+        name: '--drawer-stack-scale-step',
+        description:
+          'How much a buried drawer shrinks per level stacked on top of it, as a unitless ratio (0.04 = 4% per level). A ratio rather than an inset in px, so the recede looks the same on a short viewport as on a tall one and needs no measurement. Set 0 to shrink nothing and let the peek alone separate the layers.',
+        default: '0.04',
+      },
+      {
+        name: '--drawer-stack-min-scale',
+        description:
+          'Floor for the cumulative shrink, so a deep stack levels off instead of collapsing toward nothing. Unitless.',
+        default: '0.8',
+      },
+      {
+        name: '--drawer-stack-radius',
+        description:
+          'Corner radius a drawer takes while it is buried, so it reads as a card sitting behind the one in front. A drawer at the top of the stack keeps its square edge-flush corners.',
+        default: 'var(--radius-element)',
+      },
+    ],
   },
   description:
     'Side panel that floats above page content, using the native <dialog> element. Slides in from the inline start or end edge; full height, never reflows the layout underneath.',
@@ -98,6 +124,13 @@ export const docs = {
       type: 'boolean',
       description:
         'Built-in close button in the top-trailing corner. Enabled by default for both modal and non-modal drawers so every overlay has an obvious dismissal affordance.',
+      default: 'true',
+    },
+    {
+      name: 'hasStackRecede',
+      type: 'boolean',
+      description:
+        'Whether this drawer recedes when another opens on top of it. Sibling drawers stack last-opened-on-top; by default a buried drawer withdraws toward its own edge and shrinks per level, so the stack reads as layered pages with each leading edge still visible instead of one panel silently replacing another. Depth comes from the drawer stack itself, so it works for the documented sibling pattern and needs no nesting. Set false to keep the panel at rest. Retune the geometry on the theme, not per call: --drawer-stack-peek, --drawer-stack-scale-step, --drawer-stack-min-scale, --drawer-stack-radius.',
       default: 'true',
     },
   ],

@@ -57,6 +57,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from 'react';
 import {createPortal} from 'react-dom';
@@ -67,6 +68,7 @@ import {
   colorVars,
   durationVars,
   easeVars,
+  radiusVars,
   shadowVars,
   spacingVars,
 } from '@astryxdesign/core/theme/tokens.stylex';
@@ -102,9 +104,40 @@ const NON_MODAL_BASE_Z = 1000;
 const openDrawerStack: DrawerRegistryEntry[] = [];
 let registrationCounter = 0;
 
+// Subscribers to stack membership. Nested stacking needs every drawer to know
+// how many drawers sit ON TOP of it, and that answer changes when a sibling
+// opens or closes rather than when this drawer re-renders — so the registry
+// publishes changes instead of each drawer polling. `useSyncExternalStore`
+// then keeps depth in sync without a render-phase read of module state.
+const stackListeners = new Set<() => void>();
+
+function notifyStackChanged(): void {
+  for (const listener of stackListeners) {
+    listener();
+  }
+}
+
+function subscribeToDrawerStack(listener: () => void): () => void {
+  stackListeners.add(listener);
+  return () => {
+    stackListeners.delete(listener);
+  };
+}
+
+/**
+ * How many drawers are stacked above `id`. 0 for the top of the stack, and for
+ * a drawer that is not open. This is the nesting depth the recede transform
+ * keys off: the deeper a drawer is buried, the further it withdraws.
+ */
+function countDrawersAbove(id: string): number {
+  const index = openDrawerStack.findIndex(entry => entry.id === id);
+  return index === -1 ? 0 : openDrawerStack.length - 1 - index;
+}
+
 function registerDrawer(id: string, close: () => void): number {
   openDrawerStack.push({id, close});
   registrationCounter += 1;
+  notifyStackChanged();
   return NON_MODAL_BASE_Z + registrationCounter - 1;
 }
 
@@ -116,6 +149,7 @@ function unregisterDrawer(id: string): void {
   if (openDrawerStack.length === 0) {
     registrationCounter = 0;
   }
+  notifyStackChanged();
 }
 
 function isTopDrawer(id: string): boolean {
@@ -165,6 +199,20 @@ const styles = stylex.create({
     overflow: 'hidden',
     overscrollBehavior: 'contain',
     outline: 'none',
+    // The public geometry of the nested stack, declared on the element that
+    // carries the `drawer` theme target so a theme can retune the effect
+    // without forking the component — the same door `--spinner-diameter`
+    // opens, e.g. drawer: { base: { '--drawer-stack-peek': '24px' } }.
+    //
+    // The scale step is unitless per level rather than a px inset like the
+    // EPS Sheet this is lifted from. An inset in px has to be divided by the
+    // measured panel size to become a scale, which costs a ResizeObserver and
+    // makes the recede shallower on tall screens than on short ones; a ratio
+    // is resolution-independent and needs no measurement.
+    '--drawer-stack-peek': '40px',
+    '--drawer-stack-scale-step': '0.04',
+    '--drawer-stack-min-scale': '0.8',
+    '--drawer-stack-radius': radiusVars['--radius-element'],
     // Full-height side panel, pinned across the block axis.
     insetBlockStart: 0,
     insetBlockEnd: 0,
@@ -172,7 +220,10 @@ const styles = stylex.create({
     // Closed state. `display` is owned by React (see `rendered`), not by a
     // discrete `display` transition, so only `transform` animates here.
     display: 'none',
-    transitionProperty: 'transform',
+    // `border-radius` rides along because a drawer that recedes behind a
+    // child rounds its corners on the way back, and snapping that corner
+    // would read as a different panel rather than the same one moving.
+    transitionProperty: 'transform, border-radius',
     transitionDuration: durationVars['--duration-medium'],
     transitionTimingFunction: easeVars['--ease-standard'],
     '@media (prefers-reduced-motion: reduce)': {
@@ -388,6 +439,26 @@ const dynamicStyles = stylex.create({
   stackZ: (z: number) => ({
     zIndex: z,
   }),
+  // The recede: a drawer with `depth` drawers stacked on top withdraws toward
+  // its own edge and shrinks, so the stack reads as layered pages rather than
+  // one panel replacing another.
+  //
+  // The panel slides AWAY from its own closing edge, so the leading edge of
+  // each buried page stays visible beside the one in front, and the origin is
+  // pinned to that same edge so the shrink reads as withdrawal into the page
+  // rather than a panel floating free of it. Both flip under RTL, where the
+  // closing edge is the other side of the screen.
+  stackRecede: (depth: number, isEnd: boolean) => ({
+    transform: {
+      default: `translateX(calc(var(--drawer-stack-peek) * ${isEnd ? -depth : depth})) scale(max(var(--drawer-stack-min-scale), calc(1 - var(--drawer-stack-scale-step) * ${depth})))`,
+      ':is([dir="rtl"] *)': `translateX(calc(var(--drawer-stack-peek) * ${isEnd ? depth : -depth})) scale(max(var(--drawer-stack-min-scale), calc(1 - var(--drawer-stack-scale-step) * ${depth})))`,
+    },
+    transformOrigin: {
+      default: isEnd ? 'right center' : 'left center',
+      ':is([dir="rtl"] *)': isEnd ? 'left center' : 'right center',
+    },
+    borderRadius: 'var(--drawer-stack-radius)',
+  }),
 });
 
 // =============================================================================
@@ -502,6 +573,23 @@ export interface DrawerProps extends BaseProps<HTMLDialogElement> {
   hasCloseButton?: boolean;
 
   /**
+   * Whether this drawer recedes when another drawer opens on top of it.
+   *
+   * Sibling drawers stack last-opened-on-top (see the stacking contract). By
+   * default a buried drawer withdraws toward its own edge and shrinks a
+   * little per level, so the stack reads as layered pages with each one's
+   * leading edge still visible — the user can see what they came from and how
+   * deep they are, instead of one panel silently replacing another.
+   *
+   * Set `false` to keep the panel at rest while children open over it. The
+   * geometry is themeable rather than per-call: `--drawer-stack-peek`,
+   * `--drawer-stack-scale-step`, `--drawer-stack-min-scale` and
+   * `--drawer-stack-radius` on the `drawer` theme target.
+   * @default true
+   */
+  hasStackRecede?: boolean;
+
+  /**
    * Drawer content. Rendered inside a full-height scrollable area.
    * Focus the element with `data-autofocus` on open, if present.
    */
@@ -550,6 +638,7 @@ export function Drawer({
   modality = 'modal',
   hasScrim,
   hasCloseButton = true,
+  hasStackRecede = true,
   containerRef,
   children,
   xstyle,
@@ -762,6 +851,18 @@ export function Drawer({
     return () => unregisterDrawer(drawerId);
   }, [isOpen, drawerId]);
 
+  // How many drawers sit on top of this one. Read from the same registry that
+  // already orders the stack, rather than from React nesting: the documented
+  // contract is that sibling drawers stack (never nest them), so a context
+  // walking the tree would find nothing to walk. The server snapshot is 0 —
+  // nothing is open during SSR, so the first client paint matches the markup.
+  const stackDepth = useSyncExternalStore(
+    subscribeToDrawerStack,
+    () => countDrawersAbove(drawerId),
+    () => 0,
+  );
+  const recedeDepth = hasStackRecede && isOpen ? stackDepth : 0;
+
   // Lock body scroll while a modal drawer is open (iOS Safari workaround).
   // A bounded drawer blocks its container, not the page.
   useScrollLock(isOpen && isTopLayerModal);
@@ -851,6 +952,8 @@ export function Drawer({
           isBounded && styles.boundedInteractive,
           isRendered && styles.rendered,
           isOpen && sideOpenStyle,
+          recedeDepth > 0 &&
+            dynamicStyles.stackRecede(recedeDepth, anchoredSide === 'end'),
           isTopLayerModal ? styles.scrim : dynamicStyles.stackZ(stackZ),
           isTopLayerModal && showsScrim && isOpen && styles.scrimOpen,
           xstyle,
@@ -859,6 +962,10 @@ export function Drawer({
         style,
       )}
       {...safeProps}
+      // How many drawers are stacked on top of this one, mirrored onto the DOM
+      // so the recede is inspectable and an app can hang its own rules off it.
+      // Absent at rest, so the common single drawer carries no extra state.
+      data-stack-depth={recedeDepth > 0 ? recedeDepth : undefined}
       aria-label={label}
       aria-modal={isTopLayerModal ? 'true' : undefined}
       onClick={composeEventHandlers(onClickProp, handleClick)}

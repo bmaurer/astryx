@@ -551,3 +551,57 @@ export const Scrim: Story = {
     );
   },
 };
+
+/**
+ * Sibling drawers stack last-opened-on-top, and a buried drawer recedes: it
+ * withdraws toward its own edge and shrinks a little per level, so the stack
+ * reads as layered pages with each leading edge still visible. The user can
+ * see what they came from and how deep they are.
+ *
+ * Depth comes from the drawer stack itself, so this works with the documented
+ * sibling pattern — no nesting. Retune the geometry on the theme
+ * (`--drawer-stack-peek`, `--drawer-stack-scale-step`,
+ * `--drawer-stack-min-scale`, `--drawer-stack-radius`), or set
+ * `hasStackRecede={false}` to keep a panel at rest.
+ */
+export const NestedStack: Story = {
+  render: () => {
+    const [depth, setDepth] = useState(0);
+    const levels = [1, 2, 3];
+    return (
+      <>
+        <VStack gap={3}>
+          <Button label="Open level 1" onClick={() => setDepth(1)} />
+          <Text type="supporting" color="secondary">
+            Open another level from inside the drawer to see the stack fan back.
+          </Text>
+        </VStack>
+        {levels.map(level => (
+          <Drawer
+            key={level}
+            isOpen={depth >= level}
+            onOpenChange={isOpen => !isOpen && setDepth(level - 1)}
+            label={`Level ${level}`}
+            width={360}>
+            <Section padding={4}>
+              <VStack gap={4}>
+                <Heading level={3}>Level {level}</Heading>
+                <Text type="body">
+                  {level < levels.length
+                    ? 'Open the next level: this panel stays visible behind it.'
+                    : 'The deepest level. Close it to bring the one behind forward.'}
+                </Text>
+                {level < levels.length && (
+                  <Button
+                    label={`Open level ${level + 1}`}
+                    onClick={() => setDepth(level + 1)}
+                  />
+                )}
+              </VStack>
+            </Section>
+          </Drawer>
+        ))}
+      </>
+    );
+  },
+};

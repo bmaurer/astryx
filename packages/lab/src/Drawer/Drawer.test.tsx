@@ -480,6 +480,116 @@ describe('Drawer', () => {
     });
   });
 
+  describe('stack recede', () => {
+    function ThreeDeep({
+      openCount,
+      hasStackRecede,
+    }: {
+      openCount: number;
+      hasStackRecede?: boolean;
+    }) {
+      return (
+        <>
+          {['First', 'Second', 'Third'].map((label, index) => (
+            <Drawer
+              key={label}
+              isOpen={index < openCount}
+              onOpenChange={() => {}}
+              label={label}
+              hasStackRecede={hasStackRecede}
+              modality="nonModal">
+              {label} content
+            </Drawer>
+          ))}
+        </>
+      );
+    }
+
+    it('recedes each buried drawer by how deep it is, and never the top one', () => {
+      // The pages-in-a-book read: the drawer in front sits at rest and every
+      // one behind it withdraws further, so the user can see what they came
+      // from and how deep they are.
+      const {rerender} = render(<ThreeDeep openCount={1} />);
+      expect(screen.getByRole('dialog', {name: 'First'})).not.toHaveAttribute(
+        'data-stack-depth',
+      );
+
+      rerender(<ThreeDeep openCount={2} />);
+      expect(screen.getByRole('dialog', {name: 'First'})).toHaveAttribute(
+        'data-stack-depth',
+        '1',
+      );
+      expect(screen.getByRole('dialog', {name: 'Second'})).not.toHaveAttribute(
+        'data-stack-depth',
+      );
+
+      rerender(<ThreeDeep openCount={3} />);
+      expect(screen.getByRole('dialog', {name: 'First'})).toHaveAttribute(
+        'data-stack-depth',
+        '2',
+      );
+      expect(screen.getByRole('dialog', {name: 'Second'})).toHaveAttribute(
+        'data-stack-depth',
+        '1',
+      );
+      expect(screen.getByRole('dialog', {name: 'Third'})).not.toHaveAttribute(
+        'data-stack-depth',
+      );
+    });
+
+    it('brings a drawer back as the stack above it closes', () => {
+      const {rerender} = render(<ThreeDeep openCount={3} />);
+      expect(screen.getByRole('dialog', {name: 'First'})).toHaveAttribute(
+        'data-stack-depth',
+        '2',
+      );
+
+      rerender(<ThreeDeep openCount={2} />);
+      expect(screen.getByRole('dialog', {name: 'First'})).toHaveAttribute(
+        'data-stack-depth',
+        '1',
+      );
+
+      rerender(<ThreeDeep openCount={1} />);
+      expect(screen.getByRole('dialog', {name: 'First'})).not.toHaveAttribute(
+        'data-stack-depth',
+      );
+    });
+
+    it('stays at rest when the drawer opts out', () => {
+      render(<ThreeDeep openCount={3} hasStackRecede={false} />);
+      expect(screen.getByRole('dialog', {name: 'First'})).not.toHaveAttribute(
+        'data-stack-depth',
+      );
+      expect(screen.getByRole('dialog', {name: 'Second'})).not.toHaveAttribute(
+        'data-stack-depth',
+      );
+    });
+
+    it('declares the stack geometry as themeable custom properties', () => {
+      // The recede is retuned on the theme, not per call, so the vars have to
+      // be declared on the element carrying the `drawer` theme target.
+      render(
+        <Drawer isOpen onOpenChange={() => {}} label="Details">
+          Content
+        </Drawer>,
+      );
+      const computed = window.getComputedStyle(screen.getByRole('dialog'));
+      expect(computed.getPropertyValue('--drawer-stack-peek')).toBe('40px');
+      // Parsed, not string-compared: the CSSOM normalises a leading zero away
+      // ('0.04' round-trips as '.04'), and the value is what matters.
+      expect(
+        Number(computed.getPropertyValue('--drawer-stack-scale-step')),
+      ).toBeCloseTo(0.04);
+      expect(
+        Number(computed.getPropertyValue('--drawer-stack-min-scale')),
+      ).toBeCloseTo(0.8);
+      expect(
+        computed.getPropertyValue('--drawer-stack-radius').trim(),
+      ).not.toBe('');
+    });
+  });
+
   describe('LIFO stacking', () => {
     it('Escape only closes the last-opened drawer', () => {
       const closeFirst = vi.fn();
