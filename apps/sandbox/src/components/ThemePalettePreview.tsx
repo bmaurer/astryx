@@ -658,6 +658,13 @@ const BUTTON_VARIANTS = [
   'destructive',
 ] as const;
 
+const BUTTON_END_BADGES = {
+  primary: 'info',
+  secondary: 'neutral',
+  ghost: 'info',
+  destructive: 'error',
+} as const;
+
 function splitColorArgs(input: string): string[] {
   const parts: string[] = [];
   let current = '';
@@ -807,6 +814,20 @@ function getButtonContrast(theme: DefinedTheme, mode: Mode) {
       color: 'var(--color-on-error)',
     },
   } as const;
+  const badgeDefaults = {
+    info: {
+      backgroundColor: 'var(--color-accent)',
+      color: 'var(--color-on-accent)',
+    },
+    neutral: {
+      backgroundColor: 'var(--color-neutral)',
+      color: 'var(--color-text-primary)',
+    },
+    error: {
+      backgroundColor: 'var(--color-error)',
+      color: 'var(--color-on-error)',
+    },
+  } as const;
 
   const rows = BUTTON_VARIANTS.map(variant => {
     const override = theme.components?.button?.[`variant:${variant}`] ?? {};
@@ -842,6 +863,39 @@ function getButtonContrast(theme: DefinedTheme, mode: Mode) {
         return contrastRatio(foreground, base);
       }),
     );
+    const badgeVariant = BUTTON_END_BADGES[variant];
+    const badgeOverride =
+      theme.components?.badge?.[`variant:${badgeVariant}`] ?? {};
+    let badge: number | undefined;
+    try {
+      const badgeForeground = resolveThemeColor(
+        theme,
+        String(badgeOverride.color ?? badgeDefaults[badgeVariant].color),
+        mode,
+      );
+      const badgeBackground = resolveThemeColor(
+        theme,
+        String(
+          badgeOverride.backgroundColor ??
+            badgeDefaults[badgeVariant].backgroundColor,
+        ),
+        mode,
+      );
+      badge = Math.min(
+        ...surfaces.map(parent => {
+          const buttonBackground = resolvedBackground(parent);
+          return contrastRatio(
+            badgeForeground,
+            compositeColor(badgeBackground, buttonBackground),
+          );
+        }),
+      );
+    } catch {
+      // Diagnostic themes may intentionally use CSS color functions this
+      // lightweight audit cannot resolve. Keep the preview visible without
+      // claiming a numeric badge result.
+      badge = undefined;
+    }
 
     return {
       name: variant[0].toUpperCase() + variant.slice(1),
@@ -849,6 +903,7 @@ function getButtonContrast(theme: DefinedTheme, mode: Mode) {
       hover: worst(hover),
       pressed: worst(pressed),
       spinner,
+      badge,
     };
   });
   return rows;
@@ -913,6 +968,38 @@ function ButtonSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
           </HStack>
         </div>
         <div>
+          <div style={buttonRowLabelStyle}>Common end content</div>
+          <HStack gap={3} vAlign="center" wrap="wrap">
+            <Button
+              label="Messages"
+              variant="primary"
+              endContent={<Badge variant="info" label={3} />}
+            />
+            <Button
+              label="Notifications"
+              variant="secondary"
+              endContent={<Badge variant="neutral" label="New" />}
+            />
+            <Button
+              label="Updates"
+              variant="ghost"
+              endContent={<Badge variant="info" label={5} />}
+            />
+            <Button
+              label="Delete"
+              variant="destructive"
+              endContent={<Badge variant="error" label={5} />}
+            />
+            <Button
+              label="Continue"
+              variant="secondary"
+              endContent={
+                <Icon icon="chevronRight" size="sm" color="inherit" />
+              }
+            />
+          </HStack>
+        </div>
+        <div>
           <div style={buttonRowLabelStyle}>Sizes and links</div>
           <HStack gap={3} vAlign="center" wrap="wrap">
             <Button label="Small" variant="primary" size="sm" />
@@ -965,6 +1052,7 @@ function ButtonSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
                     'Hover',
                     'Pressed',
                     'Spinner',
+                    'End badge',
                     'WCAG',
                   ].map(label => (
                     <th
@@ -983,19 +1071,24 @@ function ButtonSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
                 {audit.map(row => {
                   const passes =
                     Math.min(row.rest, row.hover, row.pressed) >= 4.5 &&
-                    row.spinner >= 3;
+                    row.spinner >= 3 &&
+                    (row.badge == null || row.badge >= 4.5);
                   return (
                     <tr key={row.name}>
                       <td style={{padding: '7px 8px'}}>{row.name}</td>
-                      {[row.rest, row.hover, row.pressed, row.spinner].map(
-                        (ratio, index) => (
-                          <td
-                            key={index}
-                            style={{padding: '7px 8px', textAlign: 'right'}}>
-                            {ratio.toFixed(2)}:1
-                          </td>
-                        ),
-                      )}
+                      {[
+                        row.rest,
+                        row.hover,
+                        row.pressed,
+                        row.spinner,
+                        row.badge,
+                      ].map((ratio, index) => (
+                        <td
+                          key={index}
+                          style={{padding: '7px 8px', textAlign: 'right'}}>
+                          {ratio == null ? '—' : `${ratio.toFixed(2)}:1`}
+                        </td>
+                      ))}
                       <td
                         style={{
                           padding: '7px 8px',
@@ -1021,8 +1114,9 @@ function ButtonSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
               lineHeight: 1.5,
             }}>
             Labels require 4.5:1. Spinner measures the meaningful arc against
-            the button background; 3:1 is required. Its faint track is
-            decorative. Disabled controls are exempt.
+            the button background; 3:1 is required. End badge measures its label
+            against its composited badge surface; 4.5:1 is required. Trailing
+            icons inherit the button foreground. Disabled controls are exempt.
           </p>
         </div>
       </VStack>

@@ -254,6 +254,54 @@ describe('neutral theme component-pair contrast', () => {
   );
 
   it.each(MODES)(
+    'keeps common Button end-content badges readable in $name mode',
+    ({index}) => {
+      const backgrounds = [
+        resolve('var(--color-background-body)', index),
+        resolve('var(--color-background-surface)', index),
+      ];
+      const destructive = neutralTheme.components.button['variant:destructive'];
+      const combinations = [
+        {
+          name: 'primary + info',
+          buttonBackground: () => resolve('var(--color-accent)', index),
+          badge: neutralTheme.components.badge['variant:info'],
+        },
+        {
+          name: 'secondary + neutral',
+          buttonBackground: parent =>
+            composite(resolve('var(--color-neutral)', index), parent),
+          badge: neutralTheme.components.badge['variant:neutral'],
+        },
+        {
+          name: 'ghost + info',
+          buttonBackground: parent => parent,
+          badge: neutralTheme.components.badge['variant:info'],
+        },
+        {
+          name: 'destructive + error',
+          buttonBackground: parent =>
+            composite(resolve(destructive.backgroundColor, index), parent),
+          badge: neutralTheme.components.badge['variant:error'],
+        },
+      ];
+
+      for (const combination of combinations) {
+        const foreground = resolve(combination.badge.color, index);
+        const background = resolve(combination.badge.backgroundColor, index);
+        for (const parent of backgrounds) {
+          const buttonBackground = combination.buttonBackground(parent);
+          const badgeBackground = composite(background, buttonBackground);
+          expect(
+            contrastRatio(foreground, badgeBackground),
+            `${combination.name}: ${foreground} on ${badgeBackground}`,
+          ).toBeGreaterThanOrEqual(AA_TEXT);
+        }
+      }
+    },
+  );
+
+  it.each(MODES)(
     'keeps Button focus indicators distinct from adjacent surfaces in $name mode',
     ({index}) => {
       const backgrounds = [
