@@ -987,7 +987,7 @@ export default function TemplatesPage() {
             ? selectedRow.name + ' template audit details'
             : 'Template audit details'
         }
-        hasScrim={false}
+        isModal={false}
         hasCloseButton
         width={560}>
         {selectedRow ? <TemplateAuditDetails row={selectedRow} /> : null}
