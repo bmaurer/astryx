@@ -6,7 +6,8 @@ export const docs = {
   name: 'ChatComposer',
   subComponentOf: 'Chat',
   displayName: 'Chat Composer',
-  description: 'Layout shell for a chat composer. Arranges named slots (drawer, header, input, footer, send) with page-radius container, hover/focus shadows, and concentric inner radius for child elements.',
+  description:
+    'Layout shell for a chat composer. Arranges named slots (drawer, header, input, footer, send) with page-radius container, elevation, a keyboard-only editor focus ring, and concentric inner radius for child elements.',
   playground: {
     wrapper: {component: 'Stack', props: {width: 480}},
   },
@@ -25,7 +26,8 @@ export const docs = {
     {
       name: 'isStopShown',
       type: 'boolean',
-      description: 'Whether the stop button is shown instead of the send button.',
+      description:
+        'Whether the stop button is shown instead of the send button.',
       default: 'false',
     },
     {
@@ -60,13 +62,14 @@ export const docs = {
       name: 'elevation',
       type: "'none' | 'low'",
       description:
-        "Resting elevation of the composer body. `low` (the default) keeps today's raised look: low at rest, bumping to med on hover / focus. `none` flattens it and draws a border with the same rest / hover / focus treatment as a text input (emphasized border → accent on focus, matching inset rings).",
+        "Resting elevation of the composer body. `low` (the default) keeps today's raised look: low at rest, bumping to med on hover / focus. `none` flattens it and draws a border. Keyboard focus in the editor adds the shared focus ring in either presentation; pointer focus does not add that ring.",
       default: "'low'",
     },
     {
       name: 'drawer',
       type: 'ReactNode',
-      description: 'Slot: collapsible drawer above the input: attachments, context chips, etc. Use ChatComposerDrawer.',
+      description:
+        'Slot: collapsible drawer above the input: attachments, context chips, etc. Use ChatComposerDrawer.',
       slotElements: [
         {
           __element: 'Text',
@@ -80,7 +83,8 @@ export const docs = {
     {
       name: 'headerActions',
       type: 'ReactNode',
-      description: 'Slot: left-aligned header actions (attach, mention buttons). Use icon-only size="sm" buttons.',
+      description:
+        'Slot: left-aligned header actions (attach, mention buttons). Use icon-only size="sm" buttons.',
       slotElements: [
         {
           __element: 'Button',
@@ -95,7 +99,8 @@ export const docs = {
     {
       name: 'headerContext',
       type: 'ReactNode',
-      description: 'Slot: right-aligned contextual info in the header (context window usage, ProgressBar, supporting text).',
+      description:
+        'Slot: right-aligned contextual info in the header (context window usage, ProgressBar, supporting text).',
       slotElements: [
         {
           __element: 'Text',
@@ -109,7 +114,8 @@ export const docs = {
     {
       name: 'input',
       type: 'ReactNode',
-      description: 'Slot: custom input element. Replaces the default input. Use ChatComposerInput for trigger menus/tokens, or wire any input (plain textarea, rich editor) to the composition contract via useChatComposerContext(): read value/onChange/onSubmit/canSend and register a focus control on inputControlRef so body-click-to-focus works.',
+      description:
+        'Slot: custom input element. Replaces the default input. Use ChatComposerInput for trigger menus/tokens, or wire any input (plain textarea, rich editor) to the composition contract via useChatComposerContext(): read value/onChange/onSubmit/canSend and register a focus control on inputControlRef so body-click-to-focus works.',
       slotElements: [
         {
           __element: 'TextInput',
@@ -153,7 +159,8 @@ export const docs = {
     {
       name: 'sendButton',
       type: 'ReactNode',
-      description: 'Slot: custom send button. Replaces the default send/stop button.',
+      description:
+        'Slot: custom send button. Replaces the default send/stop button.',
       slotElements: [
         {
           __element: 'Button',
@@ -182,7 +189,8 @@ export const docs = {
 export const docsZh = {
   name: 'ChatComposer',
   displayName: 'Chat Composer',
-  description: '聊天编写器布局外壳。排列命名插槽（附件、标题栏、输入、页脚、发送），带有页面圆角容器和同心内圆角。',
+  description:
+    '聊天编写器布局外壳。排列命名插槽（附件、标题栏、输入、页脚、发送），带有页面圆角容器和同心内圆角。',
   propDescriptions: {
     onSubmit: '用户提交消息时调用。',
     onStop: '用户请求停止生成时调用。',
@@ -192,11 +200,16 @@ export const docsZh = {
     placeholder: '输入为空时显示的占位文本。',
     isDisabled: '禁用编写器。',
     density: '视觉密度。',
-    elevation: "编写器主体的静止高度。low（默认）保持当前的抬起外观——静止时 low，悬停/聚焦时升至 med。none 则扁平化。",
-    drawer: '插槽：输入上方的可折叠抽屉——附件、上下文标签等。使用 ChatComposerDrawer。',
-    headerActions: '插槽：标题左侧操作按钮（附件、提及按钮）。使用仅图标 size="sm" 按钮。',
-    headerContext: '插槽：标题右侧上下文信息（上下文窗口使用情况、ProgressBar、辅助文本）。',
-    input: '插槽：自定义输入元素。替换默认输入。使用 ChatComposerInput 实现触发菜单/标记，或通过 useChatComposerContext() 将任意输入（纯 textarea、富文本编辑器）接入组合契约——读取 value/onChange/onSubmit/canSend，并在 inputControlRef 上注册聚焦控制，使点击空白处聚焦生效。',
+    elevation:
+      '编写器主体的静止高度。low（默认）保持当前的抬起外观——静止时 low，悬停/聚焦时升至 med。none 则扁平化。',
+    drawer:
+      '插槽：输入上方的可折叠抽屉——附件、上下文标签等。使用 ChatComposerDrawer。',
+    headerActions:
+      '插槽：标题左侧操作按钮（附件、提及按钮）。使用仅图标 size="sm" 按钮。',
+    headerContext:
+      '插槽：标题右侧上下文信息（上下文窗口使用情况、ProgressBar、辅助文本）。',
+    input:
+      '插槽：自定义输入元素。替换默认输入。使用 ChatComposerInput 实现触发菜单/标记，或通过 useChatComposerContext() 将任意输入（纯 textarea、富文本编辑器）接入组合契约——读取 value/onChange/onSubmit/canSend，并在 inputControlRef 上注册聚焦控制，使点击空白处聚焦生效。',
     footerActions: '插槽：左对齐的页脚操作（模型选择器等）。',
     sendActions: '插槽：发送按钮左侧的操作。',
     sendButton: '插槽：自定义发送按钮。替换默认的发送/停止按钮。',
@@ -208,7 +221,8 @@ export const docsZh = {
 export const docsDense = {
   name: 'ChatComposer',
   displayName: 'Chat Composer',
-  description: 'composer layout shell; named slots (drawer/header/input/footer/send) w/ page-radius + concentric inner radius',
+  description:
+    'composer layout shell; named slots (drawer/header/input/footer/send) w/ page-radius + concentric inner radius',
   propDescriptions: {
     onSubmit: 'submit msg handler',
     onStop: 'stop generation handler',
@@ -218,11 +232,16 @@ export const docsDense = {
     placeholder: 'placeholder when empty',
     isDisabled: 'disabled; use during streaming or unmet prereqs',
     density: 'visual density',
-    elevation: "resting elevation of composer body: low (default; low→med on hover/focus) | none (flat)",
-    drawer: 'slot: collapsible drawer above input: attachments, context chips, etc.; use ChatComposerDrawer',
-    headerActions: 'slot: left header actions (attach, mention); icon-only sm buttons',
-    headerContext: 'slot: right header context info (window usage, ProgressBar, text)',
-    input: 'slot: custom input; replaces default. use ChatComposerInput for triggers/tokens, or wire any input via useChatComposerContext() (value/onChange/onSubmit/canSend + register focus on inputControlRef)',
+    elevation:
+      'resting elevation of composer body: low (default; low→med on hover/focus) | none (flat)',
+    drawer:
+      'slot: collapsible drawer above input: attachments, context chips, etc.; use ChatComposerDrawer',
+    headerActions:
+      'slot: left header actions (attach, mention); icon-only sm buttons',
+    headerContext:
+      'slot: right header context info (window usage, ProgressBar, text)',
+    input:
+      'slot: custom input; replaces default. use ChatComposerInput for triggers/tokens, or wire any input via useChatComposerContext() (value/onChange/onSubmit/canSend + register focus on inputControlRef)',
     footerActions: 'slot: left footer actions (model selector etc)',
     sendActions: 'slot: actions left of send btn',
     sendButton: 'slot: custom send btn; replaces default',
