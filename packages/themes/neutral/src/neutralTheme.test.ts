@@ -32,11 +32,20 @@ describe('neutral theme palette contract', () => {
     expect(neutralTheme.tokens['--color-background-body']).toBe(
       `light-dark(${neutralPalettes.neutral.light[95]}, ${neutralPalettes.neutral.dark[5]})`,
     );
+    expect(neutralTheme.tokens['--color-background-blue']).toBe(
+      `light-dark(${neutralPalettes.blue.light[85]}, ${neutralPalettes.blue.dark[70]}3D)`,
+    );
+  });
+
+  it('keeps semantic status colors mapped independently of status icon shapes', () => {
     expect(neutralTheme.tokens['--color-success']).toBe(
       `light-dark(${neutralPalettes.green.light[30]}, ${neutralPalettes.green.dark[80]})`,
     );
-    expect(neutralTheme.tokens['--color-background-blue']).toBe(
-      `light-dark(${neutralPalettes.blue.light[85]}, ${neutralPalettes.blue.dark[70]}3D)`,
+    expect(neutralTheme.tokens['--color-warning']).toBe(
+      `light-dark(${neutralPalettes.yellow.light[30]}, ${neutralPalettes.yellow.dark[80]})`,
+    );
+    expect(neutralTheme.tokens['--color-error']).toBe(
+      `light-dark(${neutralPalettes.red.light[25]}, ${neutralPalettes.red.dark[85]})`,
     );
   });
 });
