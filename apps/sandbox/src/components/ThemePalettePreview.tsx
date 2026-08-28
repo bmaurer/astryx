@@ -984,6 +984,56 @@ function StatusIndicatorSection({
         darker or lighter foreground stops chosen for their adjacent surface.
       </p>
 
+      <h4 style={{margin: '0 0 10px', fontSize: 14}}>Semantic color roles</h4>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: 10,
+          marginBottom: 24,
+        }}>
+        {[
+          {
+            role: 'Fill',
+            consumers: 'Badge, StatusDot, filled AvatarStatusDot',
+            rule: 'The semantic color is the component’s solid plate.',
+          },
+          {
+            role: 'Foreground',
+            consumers: 'Banner, Stepper, Table icons, chat status',
+            rule: 'A darker or lighter semantic stop sits directly on a surface.',
+          },
+          {
+            role: 'Surface',
+            consumers: 'Banner and FieldStatus containers',
+            rule: 'A low-emphasis tint supports semantic foreground content.',
+          },
+        ].map(item => (
+          <div
+            key={item.role}
+            style={{
+              padding: 12,
+              border: '1px solid var(--color-border)',
+              borderRadius: 10,
+              background: 'var(--color-background-card)',
+            }}>
+            <div style={{fontSize: 12, fontWeight: 700, marginBottom: 4}}>
+              {item.role}
+            </div>
+            <div
+              style={{
+                color: 'var(--color-text-secondary)',
+                fontSize: 10,
+                lineHeight: 1.45,
+              }}>
+              {item.consumers}
+              <br />
+              {item.rule}
+            </div>
+          </div>
+        ))}
+      </div>
+
       <h4 style={{margin: '0 0 10px', fontSize: 14}}>Component previews</h4>
       <div
         style={{
@@ -1299,9 +1349,9 @@ function StatusIndicatorSection({
         StatusDot or Badge is supplied through Button, Tab, SideNavHeading, or
         TopNavHeading end content, remeasure it against every host background
         and interaction state; slot ownership is not a contrast exception. The
-        table-row plugin still owns an older icon-token mapping rather than the
-        shared status foreground role; aligning that mapping requires a core
-        component change rather than a neutral-theme override.
+        table-row plugin exposes separate dot and icon theme targets: semantic
+        dots use the shared fill role, while semantic icons use the shared
+        foreground role.
       </p>
     </div>
   );
@@ -1865,14 +1915,30 @@ function getStatusIndicatorContrast(theme: DefinedTheme, mode: Mode) {
   });
   const stepperRatio = Math.min(...stepIndicatorRatios);
 
+  const tableStatusBlock = theme.components?.['table-row-status'] ?? {};
   const tableStatusRatio = Math.min(
-    ...[
-      '--color-accent',
-      '--color-success',
-      '--color-warning',
-      '--color-error',
-      '--color-icon-gray',
-    ].map(token => minimumAgainstParents(resolveToken(theme, token, mode))),
+    ...(
+      [
+        ['accent', '--color-accent'],
+        ['success', '--color-success'],
+        ['warning', '--color-warning'],
+        ['error', '--color-error'],
+        ['gray', '--color-icon-gray'],
+      ] as const
+    ).map(([color, token]) => {
+      const local = Object.fromEntries(
+        Object.entries({
+          ...(tableStatusBlock.base ?? {}),
+          ...(tableStatusBlock[`color:${color}+presentation:icon`] ?? {}),
+        }).filter(
+          (entry): entry is [string, string] =>
+            entry[0].startsWith('--') && typeof entry[1] === 'string',
+        ),
+      );
+      return minimumAgainstParents(
+        resolveThemeColor(theme, `var(${token})`, mode, local),
+      );
+    }),
   );
 
   const chatMetadataBlock = theme.components?.['chat-message-metadata'] ?? {};
