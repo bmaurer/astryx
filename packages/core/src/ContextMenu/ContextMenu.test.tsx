@@ -9,7 +9,7 @@
  */
 
 import {describe, it, expect, vi, beforeEach} from 'vitest';
-import {render, screen, fireEvent, act} from '@testing-library/react';
+import {render, screen, fireEvent, act, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {ContextMenu} from './ContextMenu';
 import {
@@ -23,6 +23,30 @@ import {DropdownMenuItem} from '../DropdownMenu/DropdownMenuItem';
 import {Divider} from '../Divider';
 
 beforeEach(() => {
+  HTMLDialogElement.prototype.showModal = vi.fn(function (
+    this: HTMLDialogElement,
+  ) {
+    this.setAttribute('open', '');
+  });
+  HTMLDialogElement.prototype.show = vi.fn(function (this: HTMLDialogElement) {
+    this.setAttribute('open', '');
+  });
+  HTMLDialogElement.prototype.close = vi.fn(function (this: HTMLDialogElement) {
+    this.removeAttribute('open');
+  });
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  );
   HTMLElement.prototype.showPopover = vi.fn(function (this: HTMLElement) {
     this.setAttribute('popover-open', '');
     const event = new Event('toggle', {bubbles: false});
@@ -121,6 +145,53 @@ describe('ContextMenu', () => {
 
     fireEvent.contextMenu(screen.getByText('Right-click me'));
     expect(HTMLElement.prototype.showPopover).toHaveBeenCalled();
+  });
+
+  it('opens the real menu content in a BottomSheet when requested', async () => {
+    render(
+      <ContextMenu
+        presentation="bottom-sheet"
+        label="Row actions"
+        items={[{label: 'Edit'}]}>
+        <div>Right-click me</div>
+      </ContextMenu>,
+    );
+
+    fireEvent.contextMenu(screen.getByText('Right-click me'));
+    await waitFor(() =>
+      expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalledOnce(),
+    );
+    expect(
+      screen.getByRole('menu', {name: 'Row actions', hidden: true}),
+    ).toHaveAttribute('data-autofocus');
+    expect(HTMLElement.prototype.showPopover).not.toHaveBeenCalled();
+  });
+
+  it('uses the BottomSheet for adaptive presentation on compact touch', async () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockImplementation((query: string) => ({
+        matches: query === '(max-width: 768px) and (pointer: coarse)',
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    );
+    render(
+      <ContextMenu presentation="adaptive" items={[{label: 'Edit'}]}>
+        <div>Right-click me</div>
+      </ContextMenu>,
+    );
+
+    fireEvent.contextMenu(screen.getByText('Right-click me'));
+    await waitFor(() =>
+      expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalledOnce(),
+    );
+    expect(HTMLElement.prototype.showPopover).not.toHaveBeenCalled();
   });
 
   it('closes on Escape even when opened without auto-focus', () => {

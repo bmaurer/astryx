@@ -4,9 +4,9 @@
 
 /**
  * @file DropdownMenu.tsx
- * @input Uses React, StyleX, usePopover, Button, Icon, useListFocus, and the
- *   shared viewport-safe menu-width resolver
- * @output Exports DropdownMenu with anchored responsive sizing and menu behavior
+ * @input Uses React, StyleX, usePopover, BottomSheet, Button, Icon,
+ *   useListFocus, and the shared menu-presentation and viewport-fit helpers
+ * @output Exports DropdownMenu with anchored and adaptive touch presentations
  * @position Core implementation; consumed by index.ts
  *
  * Supports two modes with a single keyboard/focus path:
@@ -57,6 +57,11 @@ import {useListFocus} from '../hooks/useListFocus';
 import {useTypeahead} from '../hooks/useTypeahead';
 import {useMenuOverflow} from './useMenuOverflow';
 import {resolveMenuWidth} from './menuWidth';
+import {MenuBottomSheet} from './MenuBottomSheet';
+import {
+  useResolvedMenuPresentation,
+  type MenuPresentation,
+} from './menuPresentation';
 import {layerAnimations} from '../Layer/layerAnimations.stylex';
 import type {LayerAlignment, LayerPlacement} from '../Layer/useLayer';
 import {
@@ -165,6 +170,18 @@ const styles = stylex.create({
   popoverCustomIntrinsicWidth: (width: string) => ({
     inlineSize: width,
   }),
+  sheetMenu: {
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacingVars['--spacing-0-5'],
+    width: '100%',
+    '--_dropdown-menu-radius': radiusVars['--radius-container'],
+    '--_dropdown-menu-padding': spacingVars['--spacing-1'],
+    padding: spacingVars['--spacing-1'],
+    borderRadius: 'var(--_dropdown-menu-radius)',
+    outline: 'none',
+  },
 });
 
 // =============================================================================
@@ -257,6 +274,16 @@ interface DropdownMenuBaseProps extends BaseProps {
    */
   alignment?: LayerAlignment;
 
+  /**
+   * Presentation policy for the menu.
+   * - `popover`: always use the anchored menu.
+   * - `bottom-sheet`: always use an action-sheet-style BottomSheet.
+   * - `adaptive`: use a BottomSheet on compact coarse-pointer viewports and
+   *   the anchored popover elsewhere.
+   * @default 'popover'
+   */
+  presentation?: MenuPresentation;
+
   'data-testid'?: string;
 }
 
@@ -311,6 +338,7 @@ export function DropdownMenu({
   hasChevron = true,
   placement = 'below',
   alignment = 'start',
+  presentation = 'popover',
   className,
   style,
   xstyle,
@@ -334,6 +362,8 @@ export function DropdownMenu({
   const menuId = useId();
   const menuSize = button.size ?? 'md';
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const resolvedPresentation = useResolvedMenuPresentation(presentation);
+  const usesBottomSheet = resolvedPresentation === 'bottom-sheet';
 
   // Open state
   const [internalIsOpen, setInternalIsOpen] = useState(false);
@@ -373,6 +403,16 @@ export function DropdownMenu({
     }
   }, [isControlled, onOpenChange]);
 
+  const updateOpenState = useCallback(
+    (nextIsOpen: boolean) => {
+      onOpenChange?.(nextIsOpen);
+      if (!isControlled) {
+        setInternalIsOpen(nextIsOpen);
+      }
+    },
+    [isControlled, onOpenChange],
+  );
+
   const popover = usePopover({
     onHide: handleLayerHide,
     onShow: handleLayerShow,
@@ -385,8 +425,12 @@ export function DropdownMenu({
   });
 
   const closeMenu = useCallback(() => {
-    popover.hide();
-  }, [popover]);
+    if (usesBottomSheet) {
+      updateOpenState(false);
+    } else {
+      popover.hide();
+    }
+  }, [popover, updateOpenState, usesBottomSheet]);
 
   // Single keyboard navigation path for both modes.
   // The selector matches plain items plus selectable items
@@ -421,7 +465,7 @@ export function DropdownMenu({
 
   // Sync controlled open state → popover.
   useEffect(() => {
-    if (isControlled) {
+    if (isControlled && !usesBottomSheet) {
       if (controlledIsOpen && !popover.isOpen) {
         shouldFocusOnOpenRef.current = true;
         popover.show();
@@ -429,7 +473,7 @@ export function DropdownMenu({
         popover.hide();
       }
     }
-  }, [controlledIsOpen, isControlled, popover]);
+  }, [controlledIsOpen, isControlled, popover, usesBottomSheet]);
 
   // Move focus into the menu only after the layer has committed open,
   // honoring the input modality: keyboard (and programmatic) opens land on
@@ -494,9 +538,13 @@ export function DropdownMenu({
     (modality: 'keyboard' | 'pointer' = 'keyboard') => {
       openModalityRef.current = modality;
       shouldFocusOnOpenRef.current = true;
-      popover.show();
+      if (usesBottomSheet) {
+        updateOpenState(true);
+      } else {
+        popover.show();
+      }
     },
-    [popover],
+    [popover, updateOpenState, usesBottomSheet],
   );
 
   const handleButtonClick = useCallback(
@@ -519,8 +567,8 @@ export function DropdownMenu({
         }
         onOpenChange?.(!controlledIsOpen);
       } else {
-        if (popover.isOpen) {
-          popover.hide();
+        if (isOpen) {
+          closeMenu();
         } else {
           openAndFocus(modality);
         }
@@ -531,14 +579,15 @@ export function DropdownMenu({
       isControlled,
       onOpenChange,
       controlledIsOpen,
-      popover,
+      isOpen,
+      closeMenu,
       openAndFocus,
     ],
   );
 
   const handleButtonKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (!popover.isOpen) {
+      if (!isOpen) {
         if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           openAndFocus();
@@ -546,7 +595,7 @@ export function DropdownMenu({
       }
       // When open, key events go to the menu container via useListFocus
     },
-    [popover.isOpen, openAndFocus],
+    [isOpen, openAndFocus],
   );
 
   // Icon-only
@@ -582,6 +631,32 @@ export function DropdownMenu({
     props.items !== undefined ? renderDropdownItems(items) : children;
   const hasOverflow = useMenuOverflow(listRef, menuContent, popover.isOpen);
 
+  const renderedMenu = (
+    <div
+      {...rest}
+      ref={listRef}
+      id={menuId}
+      role="menu"
+      data-autofocus={usesBottomSheet ? '' : undefined}
+      tabIndex={usesBottomSheet || hasOverflow ? 0 : -1}
+      aria-label={button.label}
+      onKeyDown={listKeyDown}
+      {...mergeProps(
+        themeProps('dropdown-menu'),
+        stylex.props(
+          usesBottomSheet ? styles.sheetMenu : styles.dropdown,
+          !usesBottomSheet && hasOverflow && styles.scrollable,
+          xstyle,
+        ),
+        className,
+        style,
+      )}>
+      <DropdownMenuContext value={contextValue}>
+        {menuContent}
+      </DropdownMenuContext>
+    </div>
+  );
+
   return (
     <>
       <Button
@@ -608,37 +683,15 @@ export function DropdownMenu({
         data-testid={testId}
       />
 
-      {popover.render(
-        <div
-          {...rest}
-          ref={listRef}
-          id={menuId}
-          role="menu"
-          // Pointer opens focus the container so arrows, typeahead, Escape and
-          // Tab remain owned by the menu without pre-highlighting an item.
-          // An overflowing menu joins the Tab order so its scrollable region is
-          // keyboard-accessible; Tab still dismisses through listKeyDown.
-          tabIndex={hasOverflow ? 0 : -1}
-          // Give the menu an accessible name from its trigger's label, so
-          // screen readers announce e.g. "Actions menu" rather than an unnamed
-          // menu (menus-13).
-          aria-label={button.label}
-          onKeyDown={listKeyDown}
-          {...mergeProps(
-            themeProps('dropdown-menu'),
-            stylex.props(
-              styles.dropdown,
-              hasOverflow && styles.scrollable,
-              xstyle,
-            ),
-            className,
-            style,
-          )}>
-          <DropdownMenuContext value={contextValue}>
-            {menuContent}
-          </DropdownMenuContext>
-        </div>,
-        {
+      {usesBottomSheet ? (
+        <MenuBottomSheet
+          isOpen={isOpen}
+          onOpenChange={updateOpenState}
+          label={button.label}>
+          {renderedMenu}
+        </MenuBottomSheet>
+      ) : (
+        popover.render(renderedMenu, {
           placement,
           alignment,
           offset: spacingVars['--spacing-1'],
@@ -655,7 +708,7 @@ export function DropdownMenu({
             popoverXstyle,
             layerAnimations[placement],
           ],
-        },
+        })
       )}
     </>
   );

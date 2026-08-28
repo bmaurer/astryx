@@ -3,12 +3,7 @@
 import type {Meta, StoryObj} from '@storybook/react';
 import * as stylex from '@stylexjs/stylex';
 import {Badge} from '@astryxdesign/core/Badge';
-import {BottomSheet} from '@astryxdesign/core/BottomSheet';
-import {Button} from '@astryxdesign/core/Button';
-import {Heading} from '@astryxdesign/core/Heading';
-import {List, ListItem} from '@astryxdesign/core/List';
-import {Section} from '@astryxdesign/core/Section';
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
 import {
   DropdownMenu,
   DropdownMenuItem,
@@ -67,6 +62,12 @@ const meta: Meta<typeof DropdownMenu> = {
       options: ['start', 'center', 'end'],
       description: 'Menu alignment along the placement axis',
     },
+    presentation: {
+      control: 'select',
+      options: ['popover', 'bottom-sheet', 'adaptive'],
+      description:
+        'Popover, BottomSheet, or adaptive compact-touch presentation',
+    },
     'data-testid': {
       control: 'text',
       description: 'Test ID for testing frameworks',
@@ -92,9 +93,6 @@ const readinessStyles = stylex.create({
     display: 'flex',
     justifyContent: 'flex-end',
   },
-  actionList: {
-    inlineSize: '100%',
-  },
 });
 
 const PROJECT_ACTIONS = [
@@ -103,153 +101,6 @@ const PROJECT_ACTIONS = [
   'Share project',
   'Archive project',
 ] as const;
-
-type ProjectAction = (typeof PROJECT_ACTIONS)[number];
-type ActionPresentation = 'dropdown-menu' | 'action-sheet';
-
-function useCompactTouchSurface(): boolean {
-  const [matches, setMatches] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) {
-      return;
-    }
-    const query = window.matchMedia(
-      '(max-width: 639px) and (pointer: coarse) and (hover: none)',
-    );
-    const sync = () => setMatches(query.matches);
-    sync();
-    query.addEventListener('change', sync);
-    return () => query.removeEventListener('change', sync);
-  }, []);
-
-  return matches;
-}
-
-function ProjectActionPresentation({
-  forcePresentation,
-}: {
-  forcePresentation?: ActionPresentation;
-}) {
-  const isCompactTouchSurface = useCompactTouchSurface();
-  const presentation =
-    forcePresentation ??
-    (isCompactTouchSurface ? 'action-sheet' : 'dropdown-menu');
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
-
-  const selectAction = (action: ProjectAction) => {
-    console.log(`${action} selected`);
-    setIsSheetOpen(false);
-  };
-
-  if (presentation === 'action-sheet') {
-    return (
-      <>
-        <Button label="Project actions" onClick={() => setIsSheetOpen(true)}>
-          Project actions
-        </Button>
-        <BottomSheet
-          isOpen={isSheetOpen}
-          onOpenChange={setIsSheetOpen}
-          label="Project actions"
-          height="hug">
-          <Section padding={4}>
-            <List
-              hasDividers
-              header={<Heading level={3}>Project actions</Heading>}
-              xstyle={readinessStyles.actionList}>
-              {PROJECT_ACTIONS.map(action => (
-                <ListItem
-                  key={action}
-                  label={action}
-                  onClick={() => selectAction(action)}
-                />
-              ))}
-            </List>
-          </Section>
-        </BottomSheet>
-      </>
-    );
-  }
-
-  return (
-    <DropdownMenu
-      button={{label: 'Project actions'}}
-      items={PROJECT_ACTIONS.map(action => ({
-        label: action,
-        onClick: () => selectAction(action),
-      }))}
-    />
-  );
-}
-
-function CompactDrillInActionSheet() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [view, setView] = useState<'actions' | 'projects'>('actions');
-
-  const close = () => {
-    setIsOpen(false);
-    setView('actions');
-  };
-
-  return (
-    <>
-      <Button label="Project actions" onClick={() => setIsOpen(true)}>
-        Project actions
-      </Button>
-      <BottomSheet
-        isOpen={isOpen}
-        onOpenChange={nextIsOpen => {
-          setIsOpen(nextIsOpen);
-          if (!nextIsOpen) {
-            setView('actions');
-          }
-        }}
-        label={view === 'actions' ? 'Project actions' : 'Move to project'}
-        height="hug">
-        <Section padding={4}>
-          {view === 'actions' ? (
-            <List
-              hasDividers
-              header={<Heading level={3}>Project actions</Heading>}
-              xstyle={readinessStyles.actionList}>
-              <ListItem label="Rename project" onClick={close} />
-              <ListItem
-                label="Move to project"
-                onClick={() => setView('projects')}
-              />
-              <ListItem label="Archive project" onClick={close} />
-            </List>
-          ) : (
-            <List
-              hasDividers
-              header={
-                <div>
-                  <Button
-                    label="Back to project actions"
-                    variant="ghost"
-                    onClick={() => setView('actions')}>
-                    Back
-                  </Button>
-                  <Heading level={3}>Move to project</Heading>
-                </div>
-              }
-              xstyle={readinessStyles.actionList}>
-              {PROJECT_DESTINATIONS.slice(0, 4).map(([label, team]) => (
-                <ListItem
-                  key={label}
-                  label={label}
-                  description={team}
-                  onClick={close}
-                />
-              ))}
-            </List>
-          )}
-        </Section>
-      </BottomSheet>
-    </>
-  );
-}
 
 const PROJECT_DESTINATIONS = [
   ['Apollo launch', 'Marketing'],
@@ -1078,13 +929,20 @@ export const ActionSheetPresentation: Story = {
       story: {inline: false, height: '560px'},
       description: {
         story:
-          'An explicit action-sheet presentation for a short, flat set of actions. It uses BottomSheet behavior—dialog focus, scrim, Escape, and swipe dismissal—rather than changing DropdownMenu itself.',
+          'The real DropdownMenu component forced to its BottomSheet presentation. The same item model, callbacks, disabled states, and destructive styling are used in both surfaces.',
       },
     },
   },
   render: () => (
     <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
-      <ProjectActionPresentation forcePresentation="action-sheet" />
+      <DropdownMenu
+        presentation="bottom-sheet"
+        button={{label: 'Project actions'}}
+        items={PROJECT_ACTIONS.map(action => ({
+          label: action,
+          onClick: () => console.log(`${action} selected`),
+        }))}
+      />
     </div>
   ),
   play: async ({canvasElement}) => {
@@ -1104,39 +962,20 @@ export const AdaptiveActionPresentation: Story = {
       story: {inline: false, height: '560px'},
       description: {
         story:
-          'A product-owned example using the same actions in both presentations. This example policy chooses the action sheet only when the real environment is compact, coarse-pointer, and hover-free; it is not a DropdownMenu default or a universal breakpoint rule. Storybook viewport size alone does not pretend to change pointer or hover capability.',
+          'The real DropdownMenu adaptive policy: BottomSheet at 768px and below when the primary pointer is coarse, anchored popover otherwise. The default remains popover for compatibility.',
       },
     },
   },
   render: () => (
     <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
-      <ProjectActionPresentation />
-    </div>
-  ),
-  play: async ({canvasElement}) => {
-    const trigger = canvasElement.querySelector('button');
-    if (trigger instanceof HTMLElement) {
-      trigger.click();
-    }
-  },
-};
-
-export const CompactDrillInPresentation: Story = {
-  name: 'Presentation / compact drill-in hierarchy',
-  parameters: {
-    layout: 'fullscreen',
-    viewport: {defaultViewport: 'mobile1'},
-    docs: {
-      story: {inline: false, height: '560px'},
-      description: {
-        story:
-          'An explicit product-owned alternative when a cascading submenu cannot fit beside its parent on a compact touch surface. BottomSheet owns the modal contract, and Move to project drills into a second list with a Back action. Core DropdownMenu does not switch to this automatically.',
-      },
-    },
-  },
-  render: () => (
-    <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
-      <CompactDrillInActionSheet />
+      <DropdownMenu
+        presentation="adaptive"
+        button={{label: 'Project actions'}}
+        items={PROJECT_ACTIONS.map(action => ({
+          label: action,
+          onClick: () => console.log(`${action} selected`),
+        }))}
+      />
     </div>
   ),
   play: async ({canvasElement}) => {

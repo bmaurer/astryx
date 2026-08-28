@@ -3,8 +3,9 @@
 
 /**
  * @file ContextMenu.tsx
- * @input Uses React, StyleX, useLayer (context mode), useListFocus
- * @output Exports ContextMenu component
+ * @input Uses React, StyleX, useLayer, BottomSheet, useListFocus, and the
+ *   shared menu-presentation resolver
+ * @output Exports ContextMenu with cursor-popover and touch-sheet presentations
  * @position Core implementation; consumed by index.ts
  *
  * Right-click context menu positioned at the cursor. The cursor point is
@@ -76,6 +77,11 @@ import type {
 } from '../DropdownMenu/DropdownMenu';
 
 import {useMergedRefs} from '../hooks/useMergedRefs';
+import {MenuBottomSheet} from '../DropdownMenu/MenuBottomSheet';
+import {
+  useResolvedMenuPresentation,
+  type MenuPresentation,
+} from '../DropdownMenu/menuPresentation';
 const styles = stylex.create({
   // Trigger wrapper: suppress the iOS long-press callout/selection so the
   // long-press opens our context menu instead of the native text/callout UI.
@@ -121,6 +127,20 @@ const styles = stylex.create({
   popoverCustomWidth: (width: string | number) => ({
     minWidth: typeof width === 'number' ? `${width}px` : width,
   }),
+  sheetMenu: {
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacingVars['--spacing-0-5'],
+    width: '100%',
+    '--_dropdown-menu-radius': radiusVars['--radius-container'],
+    '--_dropdown-menu-padding': spacingVars['--spacing-1'],
+    padding: spacingVars['--spacing-1'],
+    borderRadius: 'var(--_dropdown-menu-radius)',
+    backgroundColor: colorVars['--color-background-surface'],
+    outline: 'none',
+    userSelect: 'none',
+  },
 });
 
 // =============================================================================
@@ -164,6 +184,15 @@ interface ContextMenuBaseProps extends BaseProps {
   isDisabled?: boolean;
   /** Called when the menu opens or closes. */
   onOpenChange?: (isOpen: boolean) => void;
+  /**
+   * Presentation policy for the menu.
+   * - `popover`: open beside the pointer position.
+   * - `bottom-sheet`: open as an action sheet.
+   * - `adaptive`: use a BottomSheet on compact coarse-pointer viewports and
+   *   the cursor-positioned popover elsewhere.
+   * @default 'popover'
+   */
+  presentation?: MenuPresentation;
   'data-testid'?: string;
 }
 
@@ -215,6 +244,7 @@ export function ContextMenu({
   label: labelFromProps,
   isDisabled = false,
   onOpenChange,
+  presentation = 'popover',
   ref,
   className,
   style,
@@ -225,6 +255,8 @@ export function ContextMenu({
 }: ContextMenuProps) {
   const t = useTranslator();
   const label = labelFromProps ?? t('@astryx.contextMenu.label');
+  const resolvedPresentation = useResolvedMenuPresentation(presentation);
+  const usesBottomSheet = resolvedPresentation === 'bottom-sheet';
   // Separate content props (union discriminant) from DOM pass-through attrs.
   // The union means exactly one of items/menuContent exists in rest; destructure
   // both so triggerProps contains only DOM-safe attributes.
@@ -253,6 +285,14 @@ export function ContextMenu({
 
   const [isOpen, setIsOpen] = useState(false);
 
+  const updateOpenState = useCallback(
+    (nextIsOpen: boolean) => {
+      setIsOpen(nextIsOpen);
+      onOpenChange?.(nextIsOpen);
+    },
+    [onOpenChange],
+  );
+
   const layer = useLayer({
     mode: 'context',
     onHide: useCallback(() => {
@@ -273,8 +313,12 @@ export function ContextMenu({
   });
 
   const closeMenu = useCallback(() => {
-    layer.hide();
-  }, [layer]);
+    if (usesBottomSheet) {
+      updateOpenState(false);
+    } else {
+      layer.hide();
+    }
+  }, [layer, updateOpenState, usesBottomSheet]);
 
   const {
     listRef,
@@ -308,7 +352,7 @@ export function ContextMenu({
   // opening right-click as a dismiss event. Handling it ourselves via
   // mousedown avoids that race.
   useEffect(() => {
-    if (!isOpen) {
+    if (!isOpen || usesBottomSheet) {
       return;
     }
     const handleClickOutside = (e: MouseEvent) => {
@@ -321,14 +365,14 @@ export function ContextMenu({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen, closeMenu, listRef]);
+  }, [isOpen, closeMenu, listRef, usesBottomSheet]);
 
   // Dismiss on Escape from anywhere while open. The menu div's own onKeyDown
   // only fires when focus is inside the menu; a document-level listener is
   // kept as a reliable fallback Escape path (e.g. if focus has moved out of
   // the menu). Guards against IME composition-cancel.
   useEffect(() => {
-    if (!isOpen) {
+    if (!isOpen || usesBottomSheet) {
       return;
     }
     const handleEscape = (e: KeyboardEvent) => {
@@ -347,7 +391,7 @@ export function ContextMenu({
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen, closeMenu]);
+  }, [isOpen, closeMenu, usesBottomSheet]);
 
   const listKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -404,10 +448,14 @@ export function ContextMenu({
         document.activeElement instanceof HTMLElement
           ? document.activeElement
           : focusEl;
-      layer.show();
-      requestAnimationFrame(() => focusFirst());
+      if (usesBottomSheet) {
+        updateOpenState(true);
+      } else {
+        layer.show();
+        requestAnimationFrame(() => focusFirst());
+      }
     },
-    [layer, focusFirst],
+    [layer, focusFirst, updateOpenState, usesBottomSheet],
   );
 
   const handleContextMenu = useCallback(
@@ -465,6 +513,28 @@ export function ContextMenu({
   const resolvedMenuContent =
     itemsProp !== undefined ? renderDropdownItems(items) : menuContent;
 
+  const renderedMenu = (
+    <div
+      ref={listRef}
+      id={menuId}
+      role="menu"
+      data-autofocus={usesBottomSheet ? '' : undefined}
+      tabIndex={usesBottomSheet ? 0 : -1}
+      aria-label={label}
+      onKeyDown={listKeyDown}
+      onContextMenu={e => e.preventDefault()}
+      {...mergeProps(
+        themeProps('context-menu'),
+        stylex.props(usesBottomSheet ? styles.sheetMenu : styles.menu, xstyle),
+        className,
+        style,
+      )}>
+      <DropdownMenuContext value={contextValue}>
+        {resolvedMenuContent}
+      </DropdownMenuContext>
+    </div>
+  );
+
   return (
     <>
       <div
@@ -494,29 +564,19 @@ export function ContextMenu({
         />
       </div>
 
-      {layer.render(
-        <div
-          ref={listRef}
-          id={menuId}
-          role="menu"
-          aria-label={label}
-          onKeyDown={listKeyDown}
-          onContextMenu={e => e.preventDefault()}
-          {...mergeProps(
-            themeProps('context-menu'),
-            stylex.props(styles.menu, xstyle),
-            className,
-            style,
-          )}>
-          <DropdownMenuContext value={contextValue}>
-            {resolvedMenuContent}
-          </DropdownMenuContext>
-        </div>,
-        {
+      {usesBottomSheet ? (
+        <MenuBottomSheet
+          isOpen={isOpen}
+          onOpenChange={updateOpenState}
+          label={label}>
+          {renderedMenu}
+        </MenuBottomSheet>
+      ) : (
+        layer.render(renderedMenu, {
           placement: 'below',
           alignment: 'start',
           xstyle: [popoverXstyle, layerAnimations.below],
-        },
+        })
       )}
     </>
   );

@@ -22,7 +22,7 @@ import type {ReactNode} from 'react';
 import {useIcon} from '../Icon';
 import {DropdownMenu} from '../DropdownMenu/DropdownMenu';
 import {useSize} from '../SizeContext/SizeContext';
-import type {DropdownMenuOption} from '../DropdownMenu';
+import type {DropdownMenuOption, MenuPresentation} from '../DropdownMenu';
 import type {LayerAlignment, LayerPlacement} from '../Layer';
 import type {ButtonVariant, ButtonSize} from '../Button';
 import type {BaseProps} from '../BaseProps';
@@ -88,6 +88,13 @@ export interface MoreMenuProps extends Pick<
   alignment?: LayerAlignment;
 
   /**
+   * Menu presentation policy. `adaptive` uses a BottomSheet on compact
+   * coarse-pointer viewports and an anchored popover elsewhere.
+   * @default 'popover'
+   */
+  presentation?: MenuPresentation;
+
+  /**
    * Controlled open state for the menu.
    */
   isMenuOpen?: boolean;
@@ -125,6 +132,7 @@ export function MoreMenu({
   isDisabled = false,
   placement,
   alignment,
+  presentation,
   isMenuOpen,
   onOpenChange,
   xstyle,
@@ -151,6 +159,7 @@ export function MoreMenu({
       onOpenChange={onOpenChange}
       placement={placement}
       alignment={alignment}
+      presentation={presentation}
       button={{
         label,
         icon: icon ?? moreIcon,

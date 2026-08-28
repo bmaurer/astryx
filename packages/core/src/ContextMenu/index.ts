@@ -15,6 +15,7 @@ export {
   type ContextMenuSection,
   type ContextMenuOption,
 } from './ContextMenu';
+export type {MenuPresentation} from '../DropdownMenu/menuPresentation';
 
 export {
   DropdownMenuItem as ContextMenuItem,
