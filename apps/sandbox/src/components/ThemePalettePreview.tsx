@@ -14,6 +14,7 @@ import {CheckboxInput} from '@astryxdesign/core/CheckboxInput';
 import {RadioList, RadioListItem} from '@astryxdesign/core/RadioList';
 import {Switch} from '@astryxdesign/core/Switch';
 import {Card} from '@astryxdesign/core/Card';
+import {SelectableCard} from '@astryxdesign/core/SelectableCard';
 import {TextInput} from '@astryxdesign/core/TextInput';
 import {FieldStatus} from '@astryxdesign/core/FieldStatus';
 import {Badge, type BadgeVariant} from '@astryxdesign/core/Badge';
@@ -3157,6 +3158,19 @@ const CARD_VARIANTS = [
   'yellow',
 ] as const;
 
+const SELECTABLE_CARD_VARIANTS = [
+  'red',
+  'orange',
+  'yellow',
+  'green',
+  'teal',
+  'cyan',
+  'blue',
+  'purple',
+  'pink',
+  'gray',
+] as const;
+
 function CardVariantsSection() {
   return (
     <div>
@@ -3174,6 +3188,28 @@ function CardVariantsSection() {
               {v}
             </Text>
           </Card>
+        ))}
+      </div>
+      <h4 style={{...S.sectionTitle, marginTop: 24}}>
+        SelectableCard — every categorical selection ring
+      </h4>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns:
+            'repeat(auto-fit, minmax(min(100%, 104px), 1fr))',
+          gap: 10,
+        }}>
+        {SELECTABLE_CARD_VARIANTS.map(variant => (
+          <SelectableCard
+            key={variant}
+            variant={variant}
+            label={`${variant} selected`}
+            padding={2}
+            isSelected
+            onChange={() => {}}>
+            <Text type="supporting">{variant}</Text>
+          </SelectableCard>
         ))}
       </div>
     </div>
