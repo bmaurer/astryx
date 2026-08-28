@@ -3145,6 +3145,7 @@ function CheckboxRadioSwitchSection({
 
 const CARD_VARIANTS = [
   'default',
+  'transparent',
   'muted',
   'blue',
   'cyan',
@@ -3158,23 +3159,123 @@ const CARD_VARIANTS = [
   'yellow',
 ] as const;
 
-const SELECTABLE_CARD_VARIANTS = [
-  'red',
-  'orange',
-  'yellow',
-  'green',
-  'teal',
-  'cyan',
-  'blue',
-  'purple',
-  'pink',
-  'gray',
-] as const;
+const SELECTABLE_CARD_VARIANTS = CARD_VARIANTS;
 
-function CardVariantsSection() {
+const CARD_BACKGROUND_DEFAULTS = {
+  default: 'var(--color-background-card)',
+  transparent: 'transparent',
+  muted: 'var(--color-background-muted)',
+  blue: 'var(--color-background-blue)',
+  cyan: 'var(--color-background-cyan)',
+  gray: 'var(--color-background-gray)',
+  green: 'var(--color-background-green)',
+  orange: 'var(--color-background-orange)',
+  pink: 'var(--color-background-pink)',
+  purple: 'var(--color-background-purple)',
+  red: 'var(--color-background-red)',
+  teal: 'var(--color-background-teal)',
+  yellow: 'var(--color-background-yellow)',
+} as const;
+
+function getCardContrast(theme: DefinedTheme, mode: Mode) {
+  const body = resolveToken(theme, '--color-background-body', mode);
+  const cardBlock = theme.components?.card ?? {};
+
+  return CARD_VARIANTS.map(variant => {
+    try {
+      const variantBlock = cardBlock[`variant:${variant}`] ?? {};
+      const local = Object.fromEntries(
+        Object.entries({...cardBlock.base, ...variantBlock}).filter(
+          (entry): entry is [string, string] =>
+            entry[0].startsWith('--') && typeof entry[1] === 'string',
+        ),
+      );
+      const background = compositeColor(
+        resolveThemeColor(
+          theme,
+          String(
+            variantBlock.backgroundColor ??
+              cardBlock.backgroundColor ??
+              CARD_BACKGROUND_DEFAULTS[variant],
+          ),
+          mode,
+          local,
+        ),
+        body,
+      );
+      const foreground = compositeColor(
+        resolveThemeColor(
+          theme,
+          String(
+            variantBlock.color ??
+              cardBlock.color ??
+              'var(--color-text-primary)',
+          ),
+          mode,
+          local,
+        ),
+        background,
+      );
+
+      let boundary: number | undefined;
+      if (variant === 'default') {
+        const border = compositeColor(
+          resolveThemeColor(
+            theme,
+            String(
+              variantBlock.borderColor ??
+                cardBlock.borderColor ??
+                'var(--color-border)',
+            ),
+            mode,
+            local,
+          ),
+          background,
+        );
+        boundary = Math.min(
+          contrastRatio(border, background),
+          contrastRatio(border, body),
+        );
+      }
+
+      const ringToken =
+        variant === 'default' ||
+        variant === 'transparent' ||
+        variant === 'muted'
+          ? 'var(--color-accent)'
+          : `var(--color-border-${variant})`;
+      const ring = compositeColor(
+        resolveThemeColor(theme, ringToken, mode, local),
+        background,
+      );
+
+      return {
+        variant,
+        name: variant[0].toUpperCase() + variant.slice(1),
+        text: contrastRatio(foreground, background),
+        surface: contrastRatio(background, body),
+        boundary,
+        selection: contrastRatio(ring, background),
+      };
+    } catch {
+      return {
+        variant,
+        name: variant[0].toUpperCase() + variant.slice(1),
+        text: undefined,
+        surface: undefined,
+        boundary: undefined,
+        selection: undefined,
+      };
+    }
+  });
+}
+
+function CardVariantsSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
+  const audit = getCardContrast(theme, mode);
   return (
-    <div>
-      <h3 style={S.sectionTitle}>Card Variants</h3>
+    <div style={S.section}>
+      <h3 style={S.sectionTitle}>Cards</h3>
+      <div style={buttonRowLabelStyle}>Card variants</div>
       <div
         style={{
           display: 'grid',
@@ -3190,7 +3291,7 @@ function CardVariantsSection() {
           </Card>
         ))}
       </div>
-      <h4 style={{...S.sectionTitle, marginTop: 24}}>
+      <h4 style={{...S.sectionTitle, marginTop: 24, fontSize: 12}}>
         SelectableCard — every categorical selection ring
       </h4>
       <div
@@ -3212,6 +3313,161 @@ function CardVariantsSection() {
           </SelectableCard>
         ))}
       </div>
+      <div style={{...buttonRowLabelStyle, marginTop: 24}}>
+        Static Card surfaces
+      </div>
+      <div style={{overflowX: 'auto'}}>
+        <table
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: 11,
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+          <thead>
+            <tr>
+              {[
+                'Variant',
+                'Text / background',
+                'Background / body',
+                'Border / adjacent',
+                'Required result',
+              ].map(label => (
+                <th
+                  key={label}
+                  style={{
+                    padding: '7px 8px',
+                    borderBottom: '1px solid var(--color-border)',
+                    textAlign: label === 'Variant' ? 'left' : 'right',
+                  }}>
+                  {label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {audit.map(row => {
+              const passes = row.text != null && row.text >= 4.5;
+              return (
+                <tr key={row.variant}>
+                  <td style={{padding: '7px 8px'}}>{row.name}</td>
+                  {[row.text, row.surface, row.boundary].map((ratio, index) => (
+                    <td
+                      key={index}
+                      style={{padding: '7px 8px', textAlign: 'right'}}>
+                      {ratio == null ? '—' : `${ratio.toFixed(2)}:1`}
+                    </td>
+                  ))}
+                  <td
+                    style={{
+                      padding: '7px 8px',
+                      textAlign: 'right',
+                      color:
+                        row.text == null
+                          ? 'var(--color-text-secondary)'
+                          : passes
+                            ? 'var(--color-success)'
+                            : 'var(--color-error)',
+                      fontWeight: 700,
+                    }}>
+                    {row.text == null
+                      ? 'Not measured'
+                      : passes
+                        ? 'Text passes'
+                        : 'Text fails'}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p
+        style={{
+          margin: '8px 0 0',
+          color: 'var(--color-text-secondary)',
+          fontSize: 10,
+          lineHeight: 1.5,
+        }}>
+        Card text requires 4.5:1. Background/body and border/adjacent ratios are
+        shown for inspection, but a static Card surface is decorative when
+        spacing, headings, and content already communicate the grouping; those
+        surfaces do not inherently need 3:1. If color communicates a category or
+        status, provide a visible text or non-color cue.
+      </p>
+      <div style={{...buttonRowLabelStyle, marginTop: 18}}>
+        SelectableCard state boundary
+      </div>
+      <div style={{overflowX: 'auto'}}>
+        <table
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: 11,
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+          <thead>
+            <tr>
+              {['Variant', 'Ring / background', 'WCAG 1.4.11'].map(label => (
+                <th
+                  key={label}
+                  style={{
+                    padding: '7px 8px',
+                    borderBottom: '1px solid var(--color-border)',
+                    textAlign: label === 'Variant' ? 'left' : 'right',
+                  }}>
+                  {label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {audit.map(row => {
+              const passes = row.selection != null && row.selection >= 3;
+              return (
+                <tr key={row.variant}>
+                  <td style={{padding: '7px 8px'}}>{row.name}</td>
+                  <td style={{padding: '7px 8px', textAlign: 'right'}}>
+                    {row.selection == null
+                      ? '—'
+                      : `${row.selection.toFixed(2)}:1`}
+                  </td>
+                  <td
+                    style={{
+                      padding: '7px 8px',
+                      textAlign: 'right',
+                      color:
+                        row.selection == null
+                          ? 'var(--color-text-secondary)'
+                          : passes
+                            ? 'var(--color-success)'
+                            : 'var(--color-error)',
+                      fontWeight: 700,
+                    }}>
+                    {row.selection == null
+                      ? 'Not measured'
+                      : passes
+                        ? 'Pass'
+                        : 'Fail'}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p
+        style={{
+          margin: '8px 0 0',
+          color: 'var(--color-text-secondary)',
+          fontSize: 10,
+          lineHeight: 1.5,
+        }}>
+        The SelectableCard ring communicates selected state, so it requires 3:1
+        against its Card background. ClickableCard reuses the same Card surface;
+        its boundary needs 3:1 only when required to identify the target, while
+        its focus indicator is always evaluated separately.
+      </p>
     </div>
   );
 }
@@ -4092,7 +4348,7 @@ function ModeColumn({
           <SpinnerSection theme={theme} mode={mode} />
           <ProgressBarSection theme={theme} mode={mode} />
           <CheckboxRadioSwitchSection theme={theme} mode={mode} />
-          <CardVariantsSection />
+          <CardVariantsSection theme={theme} mode={mode} />
           <SurfacesSection mode={mode} />
           <ElevationsSection mode={mode} description={shadowDescription} />
           {typeof extraSections === 'function'
