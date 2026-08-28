@@ -36,6 +36,32 @@ function App() {
 
 If you're using `@astryxdesign/build` for StyleX source compilation, import from the bare path. Otherwise, use `/built`.
 
+## Approved palette
+
+The source package exports `neutralPalettes`, and every built `neutralTheme`
+includes the same data at `neutralTheme.palettes`. Each family contains exact
+light- and dark-mode stops from T0 through T100 in increments of five.
+
+Use semantic theme tokens for components. When a new semantic token or audit
+tool needs a raw color, select an exact named family and tone from this palette
+rather than inventing or approximating a hex value. Alpha overlays should be
+derived from a named stop and documented at the token that uses them.
+
+```tsx
+import {neutralPalettes} from '@astryxdesign/theme-neutral';
+
+const auditedInfo = neutralPalettes.blue.light[45];
+```
+
+The pre-built theme exposes the same palette without requiring source
+compilation:
+
+```tsx
+import {neutralTheme} from '@astryxdesign/theme-neutral/built';
+
+const auditedInfo = neutralTheme.palettes?.blue.light[45];
+```
+
 ### CSS import
 
 Add the theme CSS to your stylesheet:
