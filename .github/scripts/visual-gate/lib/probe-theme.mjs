@@ -71,6 +71,15 @@ export function unionValues(type, aliases = {}) {
 }
 
 /**
+ * Non-colour properties whose ownership must be visible in the probe capture.
+ * The colours prove that a target is reachable; these values prove that the
+ * target sits on the element that paints the documented property.
+ */
+const PROPERTY_PROBES = {
+  popover: {borderRadius: '32px'},
+};
+
+/**
  * Build the probe theme's `components` map.
  *
  * @param {Array<{key: string, component: string, props: string[], states: string[]}>} targets
@@ -89,12 +98,17 @@ export function buildProbeComponents(targets, propsByComponent, aliases = {}) {
     const styles = (components[target.key] ??= {});
 
     if (!styles.base) {
-      styles.base = paint(`${target.key}`);
+      styles.base = {
+        ...paint(`${target.key}`),
+        ...(PROPERTY_PROBES[target.key] ?? {}),
+      };
       selectors += 1;
     }
 
     for (const prop of target.props) {
-      const declared = propsByComponent[target.component]?.find(entry => entry.name === prop);
+      const declared = propsByComponent[target.component]?.find(
+        entry => entry.name === prop,
+      );
       const values = unionValues(declared?.type, aliases);
       if (values.length === 0) {
         skipped.push({
@@ -121,7 +135,10 @@ export function buildProbeComponents(targets, propsByComponent, aliases = {}) {
     }
   }
 
-  return {components, coverage: {targets: Object.keys(components).length, selectors, skipped}};
+  return {
+    components,
+    coverage: {targets: Object.keys(components).length, selectors, skipped},
+  };
 }
 
 /**
@@ -165,13 +182,15 @@ export function renderProbeTheme({components, coverage}) {
 // can prove each one still reaches the pixels. Not shipped; not published; a
 // test fixture. Regenerate with: pnpm visual:probe-theme
 //
-// defineTheme takes six things and this covers all six:
+// defineTheme has six visual inputs and this covers all six:
 //   components  ${coverage.targets} targets, ${coverage.selectors} selectors (generated from the docs)
 //   tokens      custom properties, read back off the themed element
 //   icons       every registry entry swapped for a marked glyph
 //   indicators  check / radio / checkbox swapped — the swap that reaches furthest
 //   fonts       a family name nothing else could produce
 //   syntax      one unmistakable colour per code token
+// Palette metadata emits no CSS; its contract is covered by theme unit and
+// production-build tests rather than this visual fixture.
 //
 // Only \`components\` is generated; the rest are fixed values that live in
 // probeConfig.ts, because they are a contract to assert against rather than a
