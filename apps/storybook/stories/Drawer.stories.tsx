@@ -30,9 +30,9 @@ const meta: Meta<typeof Drawer> = {
           '  budget, and below 640px the panel preserves a 56px reveal',
           '  without exceeding that budget (`isFullWidthOnMobile` makes it',
           '  edge to edge).',
-          '- **Scrim optional**: modal with a scrim by default, or',
-          '  `isModal={false}` for a non-modal overlay that leaves the page',
-          '  behind interactive.',
+          '- **Three independent axes**: `containerRef` chooses scope,',
+          '  `modality` chooses whether that scope is blocked, and `hasScrim`',
+          '  chooses whether it is dimmed. Defaults remain modal + scrim.',
           '- **Square corners** (0px radius) — the panel is flush with three',
           '  viewport edges.',
         ].join('\n'),
@@ -117,7 +117,7 @@ export const RowInspector: Story = {
           isOpen={selected != null}
           onOpenChange={isOpen => !isOpen && setSelectedId(null)}
           label={selected ? `Host details: ${selected.id}` : 'Host details'}
-          isModal={false}
+          modality="nonModal"
           width={360}>
           {selected != null && (
             <Section padding={4}>
@@ -152,9 +152,9 @@ export const RowInspector: Story = {
 /**
  * `containerRef` binds the drawer to an element instead of the viewport: the
  * panel slides against the pane's edge, at the pane's height, and its scrim
- * dims only that pane. `isModal` then applies to the pane rather than the
- * page — the pane is dimmed and `inert` while the drawer is open, and the
- * rest of the page stays live. The mechanism differs because the browser top layer is
+ * dims only that pane. `modality` then applies to the pane rather than the
+ * page — the pane is `inert` while the drawer is open, and the rest of the
+ * page stays live. The mechanism differs because the browser top layer is
  * always viewport-sized, so a bounded modal is not `aria-modal` and does not
  * lock body scroll. Give the container `position: relative`.
  */
@@ -470,7 +470,7 @@ export const FloatsOverContent: Story = {
           isOpen={isOpen}
           onOpenChange={setIsOpen}
           label="Deployment details"
-          isModal={false}>
+          modality="nonModal">
           <Section padding={4}>
             <VStack gap={4}>
               <Heading level={3}>web-prod-04</Heading>
@@ -486,56 +486,63 @@ export const FloatsOverContent: Story = {
 };
 
 /**
- * With a scrim (default) the drawer is modal: the page behind dims, focus is
- * trapped, and clicking the scrim closes it. Without one it is a plain
- * overlay — no dimming, no focus trap, and the page behind stays clickable,
- * which is what master-detail flows want.
+ * `modality` controls interaction; `hasScrim` controls paint. Their defaults
+ * match, while all four combinations remain available for future products.
+ * A non-modal scrim is visual only and does not intercept the page behind it.
  */
 export const Scrim: Story = {
   render: () => {
-    const [openWith, setOpenWith] = useState(false);
-    const [openWithout, setOpenWithout] = useState(false);
+    type Combination =
+      'modal-scrim' | 'modal-clear' | 'nonmodal-scrim' | 'nonmodal-clear';
+    const [combination, setCombination] = useState<Combination | null>(null);
+    const blocksBehind = combination?.startsWith('modal-') ?? true;
+    const hasScrim = combination?.endsWith('-scrim') ?? true;
+
     return (
       <>
         <VStack gap={3}>
-          <HStack gap={2}>
-            <Button label="With scrim" onClick={() => setOpenWith(true)} />
+          <HStack gap={2} wrap="wrap">
             <Button
-              label="Without scrim"
+              label="Modal + scrim"
+              onClick={() => setCombination('modal-scrim')}
+            />
+            <Button
+              label="Modal + clear"
               variant="secondary"
-              onClick={() => setOpenWithout(true)}
+              onClick={() => setCombination('modal-clear')}
+            />
+            <Button
+              label="Non-modal + scrim"
+              variant="secondary"
+              onClick={() => setCombination('nonmodal-scrim')}
+            />
+            <Button
+              label="Non-modal + clear"
+              variant="secondary"
+              onClick={() => setCombination('nonmodal-clear')}
             />
           </HStack>
           <Text type="supporting" color="secondary">
-            These buttons stay clickable while the scrim-less drawer is open.
+            Scope, enforcement and paint are independent: containerRef chooses
+            where, modality chooses blocking, and hasScrim chooses dimming.
           </Text>
         </VStack>
         <Drawer
-          isOpen={openWith}
-          onOpenChange={setOpenWith}
-          label="Modal details">
+          isOpen={combination != null}
+          onOpenChange={isOpen => !isOpen && setCombination(null)}
+          label="Drawer axis combination"
+          modality={blocksBehind ? 'modal' : 'nonModal'}
+          hasScrim={hasScrim}>
           <Section padding={4}>
             <VStack gap={4}>
-              <Heading level={3}>Modal</Heading>
+              <Heading level={3}>
+                {blocksBehind ? 'Modal' : 'Non-modal'}
+              </Heading>
               <Text type="body">
-                Scrim dims the page, focus is trapped, Escape or a scrim click
-                closes.
-              </Text>
-            </VStack>
-          </Section>
-        </Drawer>
-        <Drawer
-          isOpen={openWithout}
-          onOpenChange={setOpenWithout}
-          label="Non-modal details"
-          isModal={false}
-          hasCloseButton>
-          <Section padding={4}>
-            <VStack gap={4}>
-              <Heading level={3}>Non-modal</Heading>
-              <Text type="body">
-                No scrim, no focus trap. The page behind keeps working while
-                this stays open.
+                {hasScrim ? 'Scrim painted.' : 'No scrim painted.'}{' '}
+                {blocksBehind
+                  ? 'The area behind is blocked.'
+                  : 'The area behind remains interactive.'}
               </Text>
             </VStack>
           </Section>

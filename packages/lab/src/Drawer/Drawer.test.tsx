@@ -78,30 +78,6 @@ describe('Drawer', () => {
     expect(screen.getByRole('dialog')).toHaveAccessibleName('Host details');
   });
 
-  describe('modal vs non-modal', () => {
-    it('opens with showModal() and aria-modal by default', () => {
-      render(
-        <Drawer isOpen onOpenChange={() => {}} label="Details">
-          Content
-        </Drawer>,
-      );
-      expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled();
-      expect(HTMLDialogElement.prototype.show).not.toHaveBeenCalled();
-      expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true');
-    });
-
-    it('opens with show() and no aria-modal when isModal is false', () => {
-      render(
-        <Drawer isOpen onOpenChange={() => {}} label="Details" isModal={false}>
-          Content
-        </Drawer>,
-      );
-      expect(HTMLDialogElement.prototype.show).toHaveBeenCalled();
-      expect(HTMLDialogElement.prototype.showModal).not.toHaveBeenCalled();
-      expect(screen.getByRole('dialog')).not.toHaveAttribute('aria-modal');
-    });
-  });
-
   describe('Escape key', () => {
     it('calls onOpenChange(false) on Escape keydown', () => {
       const handleOpenChange = vi.fn();
@@ -121,7 +97,7 @@ describe('Drawer', () => {
           isOpen
           onOpenChange={handleOpenChange}
           label="Details"
-          isModal={false}>
+          modality="nonModal">
           Content
         </Drawer>,
       );
@@ -218,7 +194,7 @@ describe('Drawer', () => {
           isOpen
           onOpenChange={handleOpenChange}
           label="Details"
-          isModal={false}>
+          modality="nonModal">
           Content
         </Drawer>,
       );
@@ -466,7 +442,7 @@ describe('Drawer', () => {
           isOpen
           onOpenChange={handleOpenChange}
           label="Details"
-          isModal={false}>
+          modality="nonModal">
           Content
         </Drawer>,
       );
@@ -495,7 +471,7 @@ describe('Drawer', () => {
           isOpen
           onOpenChange={() => {}}
           label="Details"
-          isModal={false}
+          modality="nonModal"
           hasCloseButton>
           Content
         </Drawer>,
@@ -514,14 +490,14 @@ describe('Drawer', () => {
             isOpen
             onOpenChange={closeFirst}
             label="First"
-            isModal={false}>
+            modality="nonModal">
             First content
           </Drawer>
           <Drawer
             isOpen
             onOpenChange={closeSecond}
             label="Second"
-            isModal={false}>
+            modality="nonModal">
             Second content
           </Drawer>
         </>,
@@ -551,14 +527,14 @@ describe('Drawer', () => {
             isOpen={outerOpen}
             onOpenChange={setOuterOpen}
             label="Outer"
-            isModal={false}>
+            modality="nonModal">
             Outer content
           </Drawer>
           <Drawer
             isOpen={innerOpen}
             onOpenChange={setInnerOpen}
             label="Inner"
-            isModal={false}>
+            modality="nonModal">
             Inner content
           </Drawer>
         </>
@@ -593,16 +569,24 @@ describe('Drawer', () => {
             isOpen
             onOpenChange={closeFirst}
             label="First"
-            isModal={false}>
+            modality="nonModal">
             First content
           </Drawer>
-          <Drawer isOpen onOpenChange={() => {}} label="Second" isModal={false}>
+          <Drawer
+            isOpen
+            onOpenChange={() => {}}
+            label="Second"
+            modality="nonModal">
             Second content
           </Drawer>
         </>,
       );
       rerender(
-        <Drawer isOpen onOpenChange={closeFirst} label="First" isModal={false}>
+        <Drawer
+          isOpen
+          onOpenChange={closeFirst}
+          label="First"
+          modality="nonModal">
           First content
         </Drawer>,
       );
@@ -648,10 +632,12 @@ describe('Drawer', () => {
 
   describe('bounded to a container', () => {
     function BoundedHarness({
-      isModal,
+      modality,
+      hasScrim,
       isOpen = true,
     }: {
-      isModal?: boolean;
+      modality?: 'modal' | 'nonModal';
+      hasScrim?: boolean;
       isOpen?: boolean;
     }) {
       const containerRef = useRef<HTMLDivElement>(null);
@@ -675,7 +661,8 @@ describe('Drawer', () => {
             isOpen={isOpen}
             onOpenChange={onOpenChange}
             label="Row details"
-            isModal={isModal}
+            modality={modality}
+            hasScrim={hasScrim}
             containerRef={containerRef}>
             Bounded content
           </Drawer>
@@ -709,15 +696,15 @@ describe('Drawer', () => {
     it('renders its own scrim, because ::backdrop needs the top layer', () => {
       const {rerender} = render(<BoundedHarness />);
       const pane = screen.getByTestId('pane');
-      const scrim = pane.querySelector('button[aria-hidden="true"]');
+      const scrim = pane.querySelector('[data-drawer-scrim]');
       expect(scrim).not.toBeNull();
 
       fireEvent.click(scrim as Element);
       expect(onOpenChange).toHaveBeenCalledWith(false);
 
-      rerender(<BoundedHarness isModal={false} />);
+      rerender(<BoundedHarness modality="nonModal" />);
       expect(
-        screen.getByTestId('pane').querySelector('button[aria-hidden="true"]'),
+        screen.getByTestId('pane').querySelector('[data-drawer-scrim]'),
       ).toBeNull();
     });
 
@@ -787,7 +774,7 @@ describe('Drawer', () => {
     });
 
     it('makes the container inert when modal, so keyboard matches pointer', () => {
-      // Bounded mode's half of isModal: the container is the area taken out
+      // Bounded mode's modal enforcement: the container is the area taken out
       // of play. Dimming alone blocked only the pointer, so two reverse Tabs
       // out of the panel landed on the dimmed opener and Enter fired a
       // control no click could reach.
@@ -804,7 +791,7 @@ describe('Drawer', () => {
     it('leaves the container live when non-modal', () => {
       // The negative control: a non-modal bounded drawer leaves its
       // container alone.
-      render(<BoundedHarness isModal={false} />);
+      render(<BoundedHarness modality="nonModal" />);
       const content = screen
         .getByTestId('pane')
         .querySelector('span') as HTMLElement;
@@ -854,7 +841,7 @@ describe('Drawer', () => {
       expect(preInert).toHaveAttribute('inert');
     });
 
-    it('restores the container when the drawer closes', () => {
+    it('keeps the container inert through the exit transition', () => {
       const {rerender} = render(<BoundedHarness isOpen />);
       const content = screen
         .getByTestId('pane')
@@ -862,6 +849,11 @@ describe('Drawer', () => {
       expect(content).toHaveAttribute('inert');
 
       rerender(<BoundedHarness isOpen={false} />);
+      expect(content).toHaveAttribute('inert');
+
+      fireEvent.transitionEnd(screen.getByRole('dialog', {hidden: true}), {
+        propertyName: 'transform',
+      });
       expect(content).not.toHaveAttribute('inert');
     });
 
@@ -946,18 +938,36 @@ describe('Drawer', () => {
       expect(commits).toEqual(['mount']);
     });
 
-    it('dims and blocks the container together, or neither', () => {
-      // One prop, deliberately. A dimmed area that still takes clicks looks
-      // broken; a blocked area with no dimming gives no clue why clicks do
-      // nothing. Neither half is worth offering on its own.
+    it('defaults scrim paint to match modality', () => {
       const {rerender} = render(<BoundedHarness />);
       const pane = screen.getByTestId('pane');
-      expect(pane.querySelector('button[aria-hidden="true"]')).not.toBeNull();
+      expect(pane.querySelector('[data-drawer-scrim]')).not.toBeNull();
       expect(pane.querySelector('span')).toHaveAttribute('inert');
 
-      rerender(<BoundedHarness isModal={false} />);
-      expect(pane.querySelector('button[aria-hidden="true"]')).toBeNull();
+      rerender(<BoundedHarness modality="nonModal" />);
+      expect(pane.querySelector('[data-drawer-scrim]')).toBeNull();
       expect(pane.querySelector('span')).not.toHaveAttribute('inert');
+    });
+
+    it('can paint a scrim without enforcing modality', () => {
+      render(<BoundedHarness modality="nonModal" hasScrim />);
+      const pane = screen.getByTestId('pane');
+      const scrim = pane.querySelector('[data-drawer-scrim]') as HTMLElement;
+
+      expect(scrim).not.toBeNull();
+      expect(window.getComputedStyle(scrim).pointerEvents).toBe('none');
+      expect(pane.querySelector('span')).not.toHaveAttribute('inert');
+
+      fireEvent.click(scrim);
+      expect(onOpenChange).not.toHaveBeenCalled();
+    });
+
+    it('can enforce modality without painting a scrim', () => {
+      render(<BoundedHarness hasScrim={false} />);
+      const pane = screen.getByTestId('pane');
+
+      expect(pane.querySelector('[data-drawer-scrim]')).toBeNull();
+      expect(pane.querySelector('span')).toHaveAttribute('inert');
     });
 
     it('means the same thing bounded, by a different mechanism', () => {
@@ -973,8 +983,8 @@ describe('Drawer', () => {
     });
   });
 
-  describe('isModal', () => {
-    it('is modal by default', () => {
+  describe('modality and scrim paint', () => {
+    it('is modal with a scrim by default', () => {
       render(
         <Drawer isOpen onOpenChange={() => {}} label="Details">
           Content
@@ -984,15 +994,75 @@ describe('Drawer', () => {
       expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true');
     });
 
-    it('leaves the page interactive when isModal is false', () => {
+    it('can enforce viewport modality without painting a scrim', () => {
+      const {container} = render(
+        <Drawer isOpen onOpenChange={() => {}} label="Details" hasScrim={false}>
+          Content
+        </Drawer>,
+      );
+      expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled();
+      expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true');
+      expect(container.querySelector('[data-drawer-scrim]')).toBeNull();
+    });
+
+    it('leaves the page interactive when modality is nonModal', () => {
       render(
-        <Drawer isOpen onOpenChange={() => {}} label="Details" isModal={false}>
+        <Drawer
+          isOpen
+          onOpenChange={() => {}}
+          label="Details"
+          modality="nonModal">
           Content
         </Drawer>,
       );
       expect(HTMLDialogElement.prototype.show).toHaveBeenCalled();
       expect(HTMLDialogElement.prototype.showModal).not.toHaveBeenCalled();
       expect(screen.getByRole('dialog')).not.toHaveAttribute('aria-modal');
+    });
+
+    it('can paint a viewport scrim without enforcing modality', () => {
+      const {container} = render(
+        <Drawer
+          isOpen
+          onOpenChange={() => {}}
+          label="Details"
+          modality="nonModal"
+          hasScrim>
+          Content
+        </Drawer>,
+      );
+      const scrim = container.querySelector(
+        '[data-drawer-scrim]',
+      ) as HTMLElement;
+      expect(HTMLDialogElement.prototype.show).toHaveBeenCalled();
+      expect(HTMLDialogElement.prototype.showModal).not.toHaveBeenCalled();
+      expect(scrim).not.toBeNull();
+      expect(window.getComputedStyle(scrim).position).toBe('fixed');
+      expect(window.getComputedStyle(scrim).pointerEvents).toBe('none');
+    });
+
+    it('reopens the native dialog when modality changes while open', () => {
+      const {rerender} = render(
+        <Drawer
+          isOpen
+          onOpenChange={() => {}}
+          label="Details"
+          modality="nonModal">
+          Content
+        </Drawer>,
+      );
+      vi.mocked(HTMLDialogElement.prototype.close).mockClear();
+      vi.mocked(HTMLDialogElement.prototype.showModal).mockClear();
+
+      rerender(
+        <Drawer isOpen onOpenChange={() => {}} label="Details" modality="modal">
+          Content
+        </Drawer>,
+      );
+
+      expect(HTMLDialogElement.prototype.close).toHaveBeenCalledTimes(1);
+      expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true');
     });
   });
 

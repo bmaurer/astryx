@@ -17,19 +17,21 @@
  * a drawer is always a full-height side panel.
  *
  * Bounded to the viewport by default; `containerRef` binds it to an element
- * instead, so the panel slides against that element's edge at its height. A
- * bounded drawer cannot be modal — the top layer is always viewport-sized —
- * so it is `show()`n and carries its own scrim in place of `::backdrop`.
+ * instead, so the panel slides against that element's edge at its height.
+ * Bounded drawers use `show()` because the browser top layer is always
+ * viewport-sized; modal enforcement is scoped to the container with `inert`,
+ * and a requested scrim is rendered inside that same container.
  *
  * Sizing is viewport-aware: `width` is the desktop budget, and below
  * the mobile breakpoint it preserves a 56px reveal of the page behind, capped
  * by the requested width (or fills the viewport with `isFullWidthOnMobile`).
  *
  * Uses the native `<dialog>` element (same precedent as Dialog/MobileNav):
- * - `showModal()` when `isModal` (default) — top-layer rendering, focus
+ * - `showModal()` when `modality="modal"` (default) — top-layer rendering, focus
  *   trapping, `::backdrop`, no z-index management.
- * - `show()` when `isModal={false}` — the area behind stays interactive
+ * - `show()` when `modality="nonModal"` — the area behind stays interactive
  *   (e.g. master-detail inspectors).
+ * `hasScrim` is the separate visual axis and follows `modality` by default.
  *
  * Entry animation uses `@starting-style`; exit slides out before
  * `dialog.close()` releases the top layer and restores focus to the element
@@ -92,7 +94,7 @@ import {useDrawerDialogPresence} from './useDrawerDialogPresence';
 // layer's chronological stacking instead.
 type DrawerRegistryEntry = {id: string; close: () => void};
 
-// Without the top layer (isModal={false} uses show(), not showModal())
+// Without the top layer (`modality="nonModal"` uses show(), not showModal())
 // the panel needs explicit stacking. No z-index token exists in the theme;
 // 1000 matches the app-level drawer convention.
 const NON_MODAL_BASE_Z = 1000;
@@ -227,6 +229,13 @@ const styles = stylex.create({
     '@media (prefers-reduced-motion: reduce)': {
       transitionDuration: '0.01s',
     },
+  },
+  // A non-modal viewport drawer cannot use ::backdrop because it is opened
+  // with show(). This sibling paints the requested scrim but deliberately
+  // stays out of hit testing — modality, not paint, owns interaction.
+  viewportScrim: {
+    position: 'fixed',
+    pointerEvents: 'none',
   },
   boundedScrimClosed: {
     opacity: 0,
@@ -436,26 +445,35 @@ export interface DrawerProps extends BaseProps<HTMLDialogElement> {
 
   /**
    * Whether the drawer takes the area behind it out of play.
-   * - `true` (default) — the area behind is dimmed and blocked: not
-   *   clickable, not tabbable, not reachable by a screen reader. Clicking
-   *   the dimmed area closes the drawer.
-   * - `false` — a bare overlay; the area behind stays interactive. Escape
-   *   still closes while focus is inside the drawer.
+   * - `'modal'` (default) — the area behind is blocked: not clickable, not
+   *   tabbable, not in the accessibility tree.
+   * - `'nonModal'` — the area behind stays interactive. Escape still closes
+   *   while focus is inside the drawer.
    *
-   * Dimming and blocking are one prop on purpose. A dimmed area that still
-   * takes clicks looks broken, and a blocked area with no dimming gives no
-   * clue why clicks do nothing — so neither half is worth offering alone.
-   *
-   * `containerRef` changes WHICH area this applies to (the container, not
-   * the page), not what it means. The mechanism differs because the browser
-   * top layer is always viewport-sized: a viewport drawer uses
+   * `containerRef` changes which area that is — the container rather than
+   * the page — not what the word means. The mechanism differs because the
+   * browser top layer is always viewport-sized: a viewport drawer uses
    * `showModal()` (top layer, focus trap, body scroll lock), a bounded one
-   * makes its container `inert`. Same guarantee, smaller scope — so a
-   * bounded modal is not `aria-modal` and does not lock body scroll,
-   * because neither is true of it.
-   * @default true
+   * makes its container `inert`. Same guarantee, smaller scope; a bounded
+   * modal is not `aria-modal` and does not lock body scroll, because
+   * neither is true of it.
+   * @default 'modal'
    */
-  isModal?: boolean;
+  modality?: 'modal' | 'nonModal';
+
+  /**
+   * Whether to paint a scrim over the area behind the drawer.
+   *
+   * Independent of `modality`: this is what the user SEES, `modality` is
+   * what is enforced. It defaults to match — a modal drawer scrims, a
+   * non-modal one does not — so it only needs setting when you want them
+   * apart, e.g. a non-modal inspector that still dims its context, or a
+   * modal one over content that should stay legible. For modal drawers, the
+   * scrim is also the pointer dismissal surface; a non-modal scrim is paint
+   * only and does not intercept the interactive area behind it.
+   * @default modality === 'modal'
+   */
+  hasScrim?: boolean;
 
   /**
    * Bound the drawer to an element instead of the viewport. The panel is
@@ -466,11 +484,12 @@ export interface DrawerProps extends BaseProps<HTMLDialogElement> {
    * The container must establish a containing block for absolute positioning:
    * give it `position: relative` (a dev warning fires if it is `static`).
    *
-   * Scope only — it chooses the host, narrowing what `isModal` applies TO
-   * (the container, not the page) without changing what it means. A bounded
-   * modal dims its container and makes it `inert` rather than using the top
-   * layer, so the rest of the page stays live; it is not `aria-modal` and
-   * does not lock body scroll, because neither is true of it.
+   * Scope only — it chooses the host, narrowing what `modality` and
+   * `hasScrim` apply TO (the container, not the page) without changing what
+   * either means. A bounded `modality="modal"` blocks its container with
+   * `inert` rather than the top layer, so the rest of the page stays live;
+   * it is not `aria-modal` and does not lock body scroll, because neither
+   * is true of it.
    */
   containerRef?: React.RefObject<HTMLElement | null>;
 
@@ -503,7 +522,7 @@ export interface DrawerProps extends BaseProps<HTMLDialogElement> {
  *
  * Slides in from the logical start or end edge and floats above the page
  * using the native `<dialog>` element: modal with a scrim by default, or a
- * non-modal overlay with `isModal={false}` that leaves the area behind
+ * non-modal overlay with `modality="nonModal"` that leaves the area behind
  * interactive. `width` is the desktop budget; below 640px the panel preserves
  * a 56px page reveal without exceeding that budget (or fills the viewport
  * with `isFullWidthOnMobile`). Escape
@@ -528,7 +547,8 @@ export function Drawer({
   width = 400,
   isFullWidthOnMobile = false,
   label,
-  isModal: isModalProp = true,
+  modality = 'modal',
+  hasScrim,
   hasCloseButton = true,
   containerRef,
   children,
@@ -599,13 +619,14 @@ export function Drawer({
     return () => observer.disconnect();
   }, [needsPortalTarget, portalTarget, containerRef]);
 
-  // `isModal` means the same thing at both scopes — the area behind is out
-  // of play — and only the mechanism differs, because the browser top layer
-  // is always viewport-sized. A viewport drawer gets it from `showModal()`;
-  // a bounded one gets it from dimming its container and making it `inert`,
-  // which is the same guarantee over a smaller area. `isTopLayerModal` is
-  // just "can we use the browser's own machinery for it".
-  const isTopLayerModal = isModalProp && !isBounded;
+  // Three independent axes: `containerRef` is WHERE, `modality` is what
+  // interaction is ENFORCED, and `hasScrim` is what is PAINTED. The visual
+  // default follows modality, but callers can deliberately separate them.
+  const blocksBehind = modality === 'modal';
+  const showsScrim = hasScrim ?? blocksBehind;
+  // The browser top layer is viewport-sized. A bounded modal enforces the
+  // same promise over its container with `inert` instead.
+  const isTopLayerModal = blocksBehind && !isBounded;
   // Dev-only, and in an effect rather than in render: getComputedStyle is a
   // style read, and one per render per Drawer is a cost the shipped build
   // should never pay to produce a warning it will never print.
@@ -662,7 +683,7 @@ export function Drawer({
     };
   }, [portalTarget, isRendered]);
 
-  // Bounded mode's half of `isModal`. A bounded panel cannot use the top
+  // Bounded mode's half of `modality="modal"`. A bounded panel cannot use the top
   // layer, so this is what "the area behind is out of play" means for a
   // container: `inert` covers pointer, tab order and the accessibility tree
   // at once. Before it, the scrim blocked the pointer only — two reverse Tabs
@@ -677,7 +698,7 @@ export function Drawer({
   // which is the only thing that can add one.
   useLayoutEffect(() => {
     const host = portalTarget;
-    if (host == null || !isModalProp || !isOpen) {
+    if (host == null || !blocksBehind || !isRendered) {
       return;
     }
     // Only what this drawer inerted, so a container that was already inert
@@ -716,7 +737,7 @@ export function Drawer({
         child.removeAttribute('inert');
       }
     };
-  }, [portalTarget, isModalProp, isOpen, isRendered]);
+  }, [portalTarget, blocksBehind, isRendered]);
 
   // Opening, closing, the exit transition and the unmount cleanup all live in
   // the presence hook (#5549). Bounded mode hands it `isTopLayerModal`, not
@@ -831,7 +852,7 @@ export function Drawer({
           isRendered && styles.rendered,
           isOpen && sideOpenStyle,
           isTopLayerModal ? styles.scrim : dynamicStyles.stackZ(stackZ),
-          isTopLayerModal && isOpen && styles.scrimOpen,
+          isTopLayerModal && showsScrim && isOpen && styles.scrimOpen,
           xstyle,
         ),
         className,
@@ -861,8 +882,33 @@ export function Drawer({
     </dialog>
   );
 
+  const customScrim = !isTopLayerModal && showsScrim && isRendered && (
+    <button
+      type="button"
+      data-drawer-scrim=""
+      // This is never a keyboard destination. In modal bounded mode it is the
+      // pointer dismissal plane; in non-modal mode it is paint only and stays
+      // out of hit testing so the underlying scope remains interactive.
+      tabIndex={-1}
+      aria-hidden="true"
+      {...stylex.props(
+        styles.boundedScrim,
+        !isBounded && styles.viewportScrim,
+        blocksBehind && styles.boundedInteractive,
+        !isOpen && styles.boundedScrimClosed,
+        dynamicStyles.stackZ(stackZ),
+      )}
+      onClick={blocksBehind ? () => onOpenChange(false) : undefined}
+    />
+  );
+
   if (!isBounded) {
-    return panel;
+    return (
+      <>
+        {customScrim}
+        {panel}
+      </>
+    );
   }
 
   // Bounded: portal the panel into the container so it positions against it,
@@ -874,24 +920,7 @@ export function Drawer({
 
   return createPortal(
     <div ref={clipRef} {...stylex.props(styles.boundedClip)}>
-      {isModalProp && isRendered && (
-        <button
-          type="button"
-          // Not an interactive control a keyboard user should land on: the
-          // close button and Escape are the keyboard paths, and this only
-          // exists so a pointer dismiss outside the panel works. Same shape
-          // Dialog's scrim click takes, which is also pointer-only.
-          tabIndex={-1}
-          aria-hidden="true"
-          {...stylex.props(
-            styles.boundedScrim,
-            styles.boundedInteractive,
-            !isOpen && styles.boundedScrimClosed,
-            dynamicStyles.stackZ(stackZ),
-          )}
-          onClick={() => onOpenChange(false)}
-        />
-      )}
+      {customScrim}
       {panel}
     </div>,
     portalTarget,

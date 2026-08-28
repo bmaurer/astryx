@@ -77,6 +77,10 @@ export function useDrawerDialogPresence({
 }: UseDrawerDialogPresenceOptions): void {
   // Element focused when the drawer opened — restored on close.
   const triggerElementRef = useRef<HTMLElement | null>(null);
+  // Native <dialog> cannot change between show() and showModal() while open.
+  // Track how it was opened so a live modality prop change can close/reopen it
+  // with the new enforcement instead of updating only ARIA and styles.
+  const openedAsModalRef = useRef<boolean | null>(null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -93,20 +97,34 @@ export function useDrawerDialogPresence({
         } else {
           dialog.show();
         }
+        openedAsModalRef.current = isModal;
         // React's autoFocus calls .focus() during commit, before the dialog is
         // shown, so it silently fails — honour data-autofocus instead (same
         // contract as Dialog).
         dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus();
+      } else if (openedAsModalRef.current !== isModal) {
+        // An open native dialog cannot be promoted/demoted in place. Reopen it
+        // synchronously with the requested mode; keep the original trigger so
+        // close still restores focus to the element that opened the Drawer.
+        dialog.close();
+        if (isModal) {
+          dialog.showModal();
+        } else {
+          dialog.show();
+        }
+        openedAsModalRef.current = isModal;
       }
       return;
     }
 
     if (!dialog.open) {
+      openedAsModalRef.current = null;
       return;
     }
 
     return waitForDrawerExit(dialog, () => {
       dialog.close();
+      openedAsModalRef.current = null;
       // flushSync, not a plain setState: React's default scheduling can land
       // the commit after the next paint, and that one frame is exactly the
       // bug — the panel paints outside the top layer. Both happen in this
@@ -133,6 +151,7 @@ export function useDrawerDialogPresence({
       if (dialog?.open) {
         dialog.close();
       }
+      openedAsModalRef.current = null;
     };
   }, [dialogRef]);
 }
