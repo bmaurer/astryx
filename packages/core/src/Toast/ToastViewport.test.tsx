@@ -30,7 +30,9 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import React from 'react';
+import React, {useState} from 'react';
+import {hydrateRoot} from 'react-dom/client';
+import {renderToString} from 'react-dom/server';
 import {readFileSync} from 'node:fs';
 import {type AnnounceFn, __resetLiveRegionsForTest} from '../hooks/useAnnounce';
 import {Button} from '../Button';
@@ -720,6 +722,43 @@ describe('Toast native motion contract', () => {
 });
 
 describe('Toast live-region fallback semantics', () => {
+  it('server-renders and hydrates one dismiss control for custom content', async () => {
+    const tree = (
+      <Toast
+        type="error"
+        body="Upload failed"
+        isAutoHide={false}
+        autoHideDuration={5000}
+        onDismiss={() => {}}
+        renderContent={({body, DismissButton}) => (
+          <div>
+            {body}
+            <DismissButton />
+          </div>
+        )}
+      />
+    );
+    const serverHTML = renderToString(tree);
+    expect(serverHTML.match(/Dismiss notification/g)).toHaveLength(1);
+
+    const container = document.createElement('div');
+    container.innerHTML = serverHTML;
+    document.body.appendChild(container);
+    let root: ReturnType<typeof hydrateRoot> | undefined;
+    await act(async () => {
+      root = hydrateRoot(container, tree);
+    });
+    expect(
+      within(container).getAllByRole('button', {
+        name: 'Dismiss notification',
+      }),
+    ).toHaveLength(1);
+    await act(async () => {
+      root?.unmount();
+    });
+    container.remove();
+  });
+
   it('keeps standalone info Toast content in a polite status region', () => {
     render(
       <Toast
@@ -1012,5 +1051,328 @@ describe('toast timer lifecycle (#3589)', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  // `renderContent` rides the `showToast` options and replaces the content of
+  // that toast's card. What matters to a consumer is the handover: the pieces
+  // the layout needs must arrive rather than being dropped; the dismiss must
+  // stay Astryx's own control so a layout cannot mislabel it or lose it; and
+  // a toast that does NOT pass one must be untouched, because that is the
+  // library-raised case the app cannot reach.
+  describe('renderContent', () => {
+    const STRIPED: ToastOptions = {
+      body: 'Toast A',
+      renderContent: toast => (
+        <div data-testid="custom-content">
+          {toast.body}
+          {toast.endContent}
+          <toast.DismissButton />
+        </div>
+      ),
+    };
+
+    it('keeps slot registration inactive for the default layout', () => {
+      let commits = 0;
+      render(
+        <React.Profiler
+          id="default-toast"
+          onRender={() => {
+            commits += 1;
+          }}>
+          <Toast
+            type="info"
+            body="Plain"
+            isAutoHide={false}
+            autoHideDuration={5000}
+            onDismiss={() => {}}
+          />
+        </React.Profiler>,
+      );
+      expect(commits).toBe(1);
+    });
+
+    it('replaces the default layout for that toast', () => {
+      renderViewport(<ShowToastButton options={STRIPED} triggerLabel="Show" />);
+      act(() => {
+        fireEvent.click(screen.getByText('Show'));
+      });
+      expect(screen.getByTestId('custom-content')).toHaveTextContent('Toast A');
+    });
+
+    it('leaves a toast that did not ask for one alone', () => {
+      // The library-raised case: code that never passes `renderContent` keeps
+      // Astryx's own layout, intact and dismissible, rather than inheriting a
+      // layout written for someone else's payload.
+      renderViewport(
+        <>
+          <ShowToastButton options={STRIPED} triggerLabel="Custom" />
+          <ShowToastButton options={INFO_B} triggerLabel="Plain" />
+        </>,
+      );
+      act(() => {
+        fireEvent.click(screen.getByText('Custom'));
+      });
+      act(() => {
+        fireEvent.click(screen.getByText('Plain'));
+      });
+      const plain = screen.getByText('Toast B').closest('.astryx-toast');
+      expect(plain).not.toBeNull();
+      expect(
+        within(plain as HTMLElement).getByRole('button', {
+          name: 'Dismiss notification',
+        }),
+      ).toBeInTheDocument();
+      expect(
+        within(plain as HTMLElement).queryByTestId('custom-content'),
+      ).not.toBeInTheDocument();
+    });
+
+    it("hands over Astryx's own dismiss button, correctly named", () => {
+      // Why the control is passed rather than left to the layout: it keeps the
+      // translated label and the accessible name, so a custom layout cannot
+      // ship an unnamed or unlabelled close.
+      renderViewport(<ShowToastButton options={STRIPED} triggerLabel="Show" />);
+      act(() => {
+        fireEvent.click(screen.getByText('Show'));
+      });
+      expect(
+        within(screen.getByTestId('custom-content')).getByRole('button', {
+          name: 'Dismiss notification',
+        }),
+      ).toBeInTheDocument();
+    });
+
+    it('dismisses the toast from the handed-over button', () => {
+      const onHide = vi.fn();
+      renderViewport(
+        <ShowToastButton options={{...STRIPED, onHide}} triggerLabel="Show" />,
+      );
+      act(() => {
+        fireEvent.click(screen.getByText('Show'));
+      });
+      act(() => {
+        fireEvent.click(
+          screen.getByRole('button', {name: 'Dismiss notification'}),
+        );
+      });
+      expect(onHide).toHaveBeenCalledWith('manual');
+    });
+
+    it('renders no dismiss button of its own beside the layout', () => {
+      // Astryx must not draw a second close next to the one the layout placed.
+      renderViewport(<ShowToastButton options={STRIPED} triggerLabel="Show" />);
+      act(() => {
+        fireEvent.click(screen.getByText('Show'));
+      });
+      expect(
+        screen.getAllByRole('button', {name: 'Dismiss notification'}),
+      ).toHaveLength(1);
+    });
+
+    it('hands endContent to the layout rather than dropping it', () => {
+      renderViewport(
+        <ShowToastButton
+          options={{
+            ...STRIPED,
+            endContent: <button type="button">Undo</button>,
+          }}
+          triggerLabel="Show"
+        />,
+      );
+      act(() => {
+        fireEvent.click(screen.getByText('Show'));
+      });
+      expect(
+        within(screen.getByTestId('custom-content')).getByRole('button', {
+          name: 'Undo',
+        }),
+      ).toBeInTheDocument();
+    });
+
+    it('still auto-dismisses, and says so before it happens', () => {
+      vi.useFakeTimers();
+      try {
+        const seen: {isAutoHide: boolean; autoHideDuration: number}[] = [];
+        const onHide = vi.fn();
+        renderViewport(
+          <ShowToastButton
+            options={{
+              body: 'Fleeting',
+              autoHideDuration: 3000,
+              onHide,
+              renderContent: toast => {
+                seen.push({
+                  isAutoHide: toast.isAutoHide,
+                  autoHideDuration: toast.autoHideDuration,
+                });
+                return <div>{toast.body}</div>;
+              },
+            }}
+            triggerLabel="Show"
+          />,
+        );
+        act(() => {
+          fireEvent.click(screen.getByText('Show'));
+        });
+        expect(seen[0]).toEqual({isAutoHide: true, autoHideDuration: 3000});
+        act(() => {
+          vi.advanceTimersByTime(3000);
+        });
+        expect(onHide).toHaveBeenCalledWith('auto');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('keeps announcing through the live region', () => {
+      // The announcement is the viewport's job, not the layout's — a custom
+      // body must not cost a screen-reader user the notification.
+      renderViewport(<ShowToastButton options={STRIPED} triggerLabel="Show" />);
+      act(() => {
+        fireEvent.click(screen.getByText('Show'));
+      });
+      expect(announceSpy).toHaveBeenCalledWith('Toast A', 'polite');
+    });
+  });
+
+  // A layout is free to leave `DismissButton` out — the component renders
+  // what it is given. What it must not produce is a toast with no way out, so
+  // an unplaced close falls back to the card's own corner.
+  describe('a layout that drops the dismiss', () => {
+    const NO_CLOSE: ToastOptions = {
+      body: 'Stuck',
+      type: 'error', // errors do not auto-hide
+      renderContent: toast => <div>{toast.body}</div>,
+    };
+
+    function closeButtons(): HTMLElement[] {
+      return screen.queryAllByRole('button', {name: 'Dismiss notification'});
+    }
+
+    it('still renders a close, and it dismisses the toast', () => {
+      const onHide = vi.fn();
+      renderViewport(
+        <ShowToastButton options={{...NO_CLOSE, onHide}} triggerLabel="Show" />,
+      );
+      act(() => {
+        fireEvent.click(screen.getByText('Show'));
+      });
+      expect(closeButtons()).toHaveLength(1);
+      act(() => {
+        fireEvent.click(closeButtons()[0]);
+      });
+      expect(onHide).toHaveBeenCalledWith('manual');
+    });
+
+    it('does not add a second one when the layout places it', () => {
+      renderViewport(
+        <ShowToastButton
+          options={{
+            ...NO_CLOSE,
+            renderContent: toast => (
+              <div>
+                {toast.body}
+                <toast.DismissButton />
+              </div>
+            ),
+          }}
+          triggerLabel="Show"
+        />,
+      );
+      act(() => {
+        fireEvent.click(screen.getByText('Show'));
+      });
+      expect(closeButtons()).toHaveLength(1);
+    });
+
+    it('restores the fallback when a nested layout removes its close', () => {
+      function NestedLayout({
+        DismissButton,
+      }: {
+        DismissButton: React.ComponentType;
+      }) {
+        const [showsClose, setShowsClose] = useState(true);
+        return (
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowsClose(value => !value)}>
+              Toggle nested close
+            </button>
+            {showsClose && (
+              <div data-testid="nested-dismiss">
+                <DismissButton />
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      const onHide = vi.fn();
+      renderViewport(
+        <ShowToastButton
+          options={{
+            ...NO_CLOSE,
+            onHide,
+            renderContent: toast => (
+              <NestedLayout DismissButton={toast.DismissButton} />
+            ),
+          }}
+          triggerLabel="Show"
+        />,
+      );
+      act(() => {
+        fireEvent.click(screen.getByText('Show'));
+      });
+      expect(
+        within(screen.getByTestId('nested-dismiss')).getByRole('button', {
+          name: 'Dismiss notification',
+        }),
+      ).toBeInTheDocument();
+      expect(closeButtons()).toHaveLength(1);
+
+      // Only NestedLayout rerenders. Toast does not, so this specifically
+      // proves registration cleanup — not a parent render recount — restores
+      // the safe default.
+      act(() => {
+        fireEvent.click(screen.getByText('Toggle nested close'));
+      });
+      expect(screen.queryByTestId('nested-dismiss')).not.toBeInTheDocument();
+      expect(closeButtons()).toHaveLength(1);
+
+      act(() => {
+        fireEvent.click(closeButtons()[0]);
+      });
+      expect(onHide).toHaveBeenCalledWith('manual');
+    });
+
+    it('warns when a layout renders the close more than once', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        renderViewport(
+          <ShowToastButton
+            options={{
+              ...NO_CLOSE,
+              renderContent: toast => (
+                <div>
+                  <toast.DismissButton />
+                  {toast.body}
+                  <toast.DismissButton />
+                </div>
+              ),
+            }}
+            triggerLabel="Show"
+          />,
+        );
+        act(() => {
+          fireEvent.click(screen.getByText('Show'));
+        });
+        expect(warn).toHaveBeenCalledWith(
+          expect.stringContaining('Render it once'),
+        );
+      } finally {
+        warn.mockRestore();
+      }
+    });
   });
 });
