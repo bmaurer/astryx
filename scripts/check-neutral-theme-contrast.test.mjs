@@ -160,6 +160,7 @@ describe('neutral theme component-pair contrast', () => {
         const local = {
           ...progress.base,
           ...progress[`variant:${variant}`],
+          ...progressFill?.[`variant:${variant}`],
         };
         expectPairToPass(
           progressFill?.[`variant:${variant}`]?.backgroundColor ??
@@ -174,23 +175,27 @@ describe('neutral theme component-pair contrast', () => {
 
   it('maps live neutral ProgressBar fill and marks to the primary Button pair', () => {
     expect(
-      neutralTheme.components['progress-bar-fill']['variant:neutral']
-        .backgroundColor,
+      neutralTheme.components['progress-bar-fill']['variant:neutral'][
+        '--color-text-disabled'
+      ],
     ).toBe('var(--color-accent)');
     expect(
       neutralTheme.components['progress-bar-mark'][
         'variant:neutral+placement:fill'
-      ].backgroundColor,
+      ]['--color-text-primary'],
     ).toBe('var(--color-on-accent)');
   });
 
-  it('keeps warning ProgressBar aligned with Badge on a yellow-family track', () => {
+  it('uses one ProgressBar track and a contrast-specific warning fill', () => {
     const progress = neutralTheme.components['progress-bar'];
-    expect(progress['variant:warning']['--color-background-muted']).toBe(
-      '#927300',
+    expect(progress.base['--color-background-muted']).toBe(
+      'light-dark(#d4d4d4, #404040)',
     );
+    expect(
+      progress['variant:warning']['--color-background-muted'],
+    ).toBeUndefined();
     expect(progress['variant:warning']['--color-warning']).toBe(
-      neutralTheme.components.badge['variant:warning'].backgroundColor,
+      'light-dark(#927300, #f1d27c)',
     );
   });
 
@@ -664,10 +669,19 @@ describe('neutral theme component-pair contrast', () => {
           ...progress.base,
           ...progress[`variant:${variant}`],
         };
+        const fillLocal = {
+          ...local,
+          ...progressFill?.[`variant:${variant}`],
+        };
+        const markLocal = {
+          ...fillLocal,
+          ...progressMark?.[`variant:${variant}`],
+          ...progressMark?.[`variant:${variant}+placement:fill`],
+        };
         const fill = resolve(
           progressFill?.[`variant:${variant}`]?.backgroundColor ?? fillToken,
           index,
-          local,
+          fillLocal,
         );
         const track = resolve('var(--color-background-muted)', index, local);
         const markOnFill = resolve(
@@ -676,7 +690,7 @@ describe('neutral theme component-pair contrast', () => {
             progressMark?.[`variant:${variant}`]?.backgroundColor ??
             markToken,
           index,
-          local,
+          markLocal,
         );
         const markOnTrack = resolve('var(--color-text-primary)', index, local);
         expect(

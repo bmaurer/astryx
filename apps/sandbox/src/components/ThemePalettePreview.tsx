@@ -2,7 +2,7 @@
 
 'use client';
 
-import {useMemo, useReducer} from 'react';
+import {useMemo, useReducer, type CSSProperties} from 'react';
 
 import {Banner, type BannerStatus} from '@astryxdesign/core/Banner';
 import {Spinner} from '@astryxdesign/core/Spinner';
@@ -366,14 +366,16 @@ const S = {
     background: 'var(--color-background-body)',
     color: 'var(--color-text-primary)',
     fontFamily: 'var(--font-family-body)',
-    padding: '40px 32px',
+    padding: 'clamp(16px, 4vw, 40px) clamp(12px, 3vw, 32px)',
   } satisfies React.CSSProperties,
   inner: {
+    width: '100%',
+    minWidth: 0,
     maxWidth: 1280,
     margin: '0 auto',
   } satisfies React.CSSProperties,
   title: {
-    fontSize: 32,
+    fontSize: 'clamp(24px, 5vw, 32px)',
     fontWeight: 700,
     letterSpacing: '-0.02em',
     margin: 0,
@@ -388,15 +390,16 @@ const S = {
   } satisfies React.CSSProperties,
   twoCol: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 24,
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 520px), 1fr))',
+    gap: 'clamp(16px, 2vw, 24px)',
   } satisfies React.CSSProperties,
   modeCol: (bg: string, fg: string): React.CSSProperties => ({
     background: bg,
     color: fg,
     border: '1px solid var(--color-border)',
     borderRadius: 16,
-    padding: 24,
+    padding: 'clamp(16px, 2vw, 24px)',
+    minWidth: 0,
     display: 'flex',
     flexDirection: 'column' as const,
     gap: 28,
@@ -419,7 +422,7 @@ const S = {
   } satisfies React.CSSProperties,
   coreRow: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(5, 1fr)',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 112px), 1fr))',
     gap: 10,
   } satisfies React.CSSProperties,
   coreSwatch: (bg: string): React.CSSProperties => ({
@@ -437,7 +440,7 @@ const S = {
   } satisfies React.CSSProperties,
   surfacesGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(5, 1fr)',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 104px), 1fr))',
     gap: 8,
   } satisfies React.CSSProperties,
   surfaceCell: {
@@ -473,12 +476,15 @@ const S = {
   tonalStrip: {
     display: 'flex',
     flex: 1,
+    minWidth: 0,
     borderRadius: 6,
-    overflow: 'hidden',
+    overflowX: 'auto',
+    overflowY: 'hidden',
     border: '1px solid rgba(0,0,0,0.06)',
   } satisfies React.CSSProperties,
   tonalCell: (bg: string): React.CSSProperties => ({
     flex: 1,
+    minWidth: 24,
     height: 36,
     background: bg,
     display: 'flex',
@@ -1792,7 +1798,14 @@ function getSpinnerContrast(theme: DefinedTheme, mode: Mode) {
   }
 }
 
-function getProgressContrast(theme: DefinedTheme, mode: Mode) {
+function getProgressContrast(
+  theme: DefinedTheme,
+  mode: Mode,
+  overrides?: {
+    track?: string;
+    fills?: Partial<Record<(typeof PROGRESS_VARIANTS)[number], string>>;
+  },
+) {
   const fallbackRows = PROGRESS_VARIANTS.map(variant => ({
     variant,
     name: variant[0].toUpperCase() + variant.slice(1),
@@ -1850,23 +1863,39 @@ function getProgressContrast(theme: DefinedTheme, mode: Mode) {
               entry[0].startsWith('--') && typeof entry[1] === 'string',
           ),
         );
-        const track = resolveThemeColor(
-          theme,
-          'var(--color-background-muted)',
-          mode,
-          local,
+        const fillLocal = Object.fromEntries(
+          Object.entries({...local, ...fillVariantBlock}).filter(
+            (entry): entry is [string, string] =>
+              entry[0].startsWith('--') && typeof entry[1] === 'string',
+          ),
         );
-        const fill = resolveThemeColor(
-          theme,
-          String(fillVariantBlock.backgroundColor ?? fillDefaults[variant]),
-          mode,
-          local,
+        const markFillLocal = Object.fromEntries(
+          Object.entries({...fillLocal, ...markFillVariantBlock}).filter(
+            (entry): entry is [string, string] =>
+              entry[0].startsWith('--') && typeof entry[1] === 'string',
+          ),
         );
+        const track =
+          overrides?.track ??
+          resolveThemeColor(
+            theme,
+            'var(--color-background-muted)',
+            mode,
+            local,
+          );
+        const fill =
+          overrides?.fills?.[variant] ??
+          resolveThemeColor(
+            theme,
+            String(fillVariantBlock.backgroundColor ?? fillDefaults[variant]),
+            mode,
+            fillLocal,
+          );
         const markFill = resolveThemeColor(
           theme,
           String(markFillVariantBlock.backgroundColor ?? markDefaults[variant]),
           mode,
-          local,
+          markFillLocal,
         );
         const markTrack = resolveThemeColor(
           theme,
@@ -2540,11 +2569,103 @@ function SpinnerSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
 }
 
 function ProgressBarSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
-  const audit = getProgressContrast(theme, mode);
   const marks = [
     {value: 25, label: 'Quarter'},
     {value: 80, label: 'Goal'},
   ];
+  const progressBlock = theme.components?.['progress-bar'] ?? {};
+  const progressFillBlock = theme.components?.['progress-bar-fill'] ?? {};
+  const subtleTrack = resolveToken(theme, '--color-background-muted', mode);
+  const parentSurface = resolveToken(theme, '--color-background-surface', mode);
+  const progressFillDefaults = {
+    accent: 'var(--color-accent)',
+    success: 'var(--color-success)',
+    warning: 'var(--color-warning)',
+    error: 'var(--color-error)',
+    neutral: 'var(--color-text-disabled)',
+  } as const;
+  const progressOptionRows = PROGRESS_VARIANTS.map((variant, index) => {
+    const local = Object.fromEntries(
+      Object.entries({
+        ...progressBlock.base,
+        ...progressBlock[`variant:${variant}`],
+      }).filter(
+        (entry): entry is [string, string] =>
+          entry[0].startsWith('--') && typeof entry[1] === 'string',
+      ),
+    );
+    const fillOverride = progressFillBlock[`variant:${variant}`] ?? {};
+    const fillLocal = Object.fromEntries(
+      Object.entries({...local, ...fillOverride}).filter(
+        (entry): entry is [string, string] =>
+          entry[0].startsWith('--') && typeof entry[1] === 'string',
+      ),
+    );
+
+    return {
+      variant,
+      name: variant[0].toUpperCase() + variant.slice(1),
+      value: 45 + index * 10,
+      fill: resolveThemeColor(
+        theme,
+        String(fillOverride.backgroundColor ?? progressFillDefaults[variant]),
+        mode,
+        fillLocal,
+      ),
+      currentTrack: resolveThemeColor(
+        theme,
+        'var(--color-background-muted)',
+        mode,
+        local,
+      ),
+    };
+  });
+  const standaloneTrack =
+    progressOptionRows.find(row => row.variant === 'accent')?.currentTrack ??
+    subtleTrack;
+  const supplementalTrack = mode === 'light' ? '#e2e2e2' : standaloneTrack;
+  const supplementalWarningFill = mode === 'light' ? '#f6d168' : '#f1d27c';
+  const audit = getProgressContrast(theme, mode, {
+    track: supplementalTrack,
+    fills: {warning: supplementalWarningFill},
+  });
+  const getSupplementalStyle = (variant: (typeof PROGRESS_VARIANTS)[number]) =>
+    ({
+      '--color-background-muted': supplementalTrack,
+      ...(variant === 'warning'
+        ? {
+            '--color-warning': supplementalWarningFill,
+          }
+        : {}),
+    }) as CSSProperties;
+
+  const trackOptions = [
+    {
+      name: 'Standalone',
+      precedent: 'Default · the graphic carries the progress information',
+      description:
+        'Every variant uses the same neutral track and a 3:1 endpoint marker. Light-mode warning moves to the closest darker yellow palette stop that clears 3:1.',
+      getTrack: (_row: (typeof progressOptionRows)[number]) => standaloneTrack,
+      getFill: (row: (typeof progressOptionRows)[number]) =>
+        row.variant === 'warning' && mode === 'light' ? '#927300' : row.fill,
+      showValue: false,
+      hasEndpointGap: false,
+      hasEndMarker: true,
+    },
+    {
+      name: 'Supplemental',
+      precedent: 'Explicit opt-in · an equivalent visible value is nearby',
+      description:
+        'Every fill retains its semantic Badge color. Light mode uses the quieter muted track; dark mode keeps the original neutral track. The nearby value carries the precise progress information.',
+      getTrack: (_row: (typeof progressOptionRows)[number]) =>
+        supplementalTrack,
+      getFill: (row: (typeof progressOptionRows)[number]) =>
+        row.variant === 'warning' ? supplementalWarningFill : row.fill,
+      showValue: true,
+      hasEndpointGap: false,
+      hasEndMarker: false,
+    },
+  ] as const;
 
   return (
     <div style={S.section}>
@@ -2558,12 +2679,14 @@ function ProgressBarSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
             variant={variant}
             hasValueLabel
             marks={marks}
+            style={getSupplementalStyle(variant)}
           />
         ))}
         <ProgressBar
           isIndeterminate
           label="Indeterminate progress"
           variant="accent"
+          style={getSupplementalStyle('accent')}
         />
         <ProgressBar
           value={60}
@@ -2571,10 +2694,145 @@ function ProgressBarSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
           variant="neutral"
           hasValueLabel
           isDisabled
+          style={getSupplementalStyle('neutral')}
         />
       </VStack>
+      <div style={{...buttonRowLabelStyle, marginTop: 18}}>
+        Proposed contrast presentations across every variant
+      </div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: 10,
+        }}>
+        {trackOptions.map(option => (
+          <div
+            key={option.name}
+            style={{
+              padding: 12,
+              border: '1px solid var(--color-border)',
+              borderRadius: 10,
+              background: 'var(--color-background-surface)',
+            }}>
+            <strong style={{display: 'block', fontSize: 12}}>
+              {option.name}
+            </strong>
+            <div
+              style={{
+                margin: '3px 0 10px',
+                color: 'var(--color-text-secondary)',
+                fontSize: 10,
+              }}>
+              {option.precedent}
+            </div>
+            <div style={{display: 'grid', gap: 9}}>
+              {progressOptionRows.map(row => {
+                const track = option.getTrack(row);
+                const fill = option.getFill(row);
+                return (
+                  <div key={row.variant}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        gap: 8,
+                        marginBottom: 4,
+                        fontSize: 10,
+                      }}>
+                      <span>{row.name}</span>
+                      {option.showValue && <span>{row.value}%</span>}
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: option.hasEndpointGap ? 4 : 0,
+                        height: 10,
+                        overflow: 'hidden',
+                        boxSizing: 'border-box',
+                        borderRadius: 999,
+                        background: option.hasEndpointGap
+                          ? 'transparent'
+                          : track,
+                        position: 'relative',
+                      }}>
+                      <div
+                        style={{
+                          width: `${row.value}%`,
+                          flexShrink: 0,
+                          height: '100%',
+                          borderRadius: 999,
+                          background: fill,
+                          position: 'relative',
+                        }}
+                      />
+                      {(option.hasEndpointGap || option.hasEndMarker) && (
+                        <div
+                          style={{
+                            flex: 1,
+                            minWidth: 0,
+                            height: '100%',
+                            borderRadius: 999,
+                            background: track,
+                            position: 'relative',
+                          }}>
+                          {option.hasEndMarker && (
+                            <span
+                              style={{
+                                position: 'absolute',
+                                insetInlineEnd: 0,
+                                top: '50%',
+                                width: 10,
+                                height: 10,
+                                borderRadius: '50%',
+                                background: fill,
+                                transform: 'translateY(-50%)',
+                              }}
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div
+                      style={{
+                        marginTop: 3,
+                        color: 'var(--color-text-tertiary)',
+                        fontSize: 9,
+                        fontVariantNumeric: 'tabular-nums',
+                      }}>
+                      Fill/track {contrastRatio(fill, track).toFixed(2)}:1 ·
+                      Track/surface{' '}
+                      {contrastRatio(track, parentSurface).toFixed(2)}:1
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div
+              style={{
+                marginTop: 10,
+                color: 'var(--color-text-secondary)',
+                fontSize: 10,
+                lineHeight: 1.45,
+              }}>
+              <div>{option.description}</div>
+              {option.hasEndMarker && (
+                <div style={{marginTop: 4}}>
+                  Total marker/surface{' '}
+                  {Math.min(
+                    ...progressOptionRows.map(row =>
+                      contrastRatio(option.getFill(row), parentSurface),
+                    ),
+                  ).toFixed(2)}
+                  :1
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
       <div style={{...buttonRowLabelStyle, marginTop: 14}}>
-        Label and value text:{' '}
+        Supplemental audit · visible label and value:{' '}
         {audit.labels == null ? 'not measured' : `${audit.labels.toFixed(2)}:1`}
         {audit.labels != null && (audit.labels >= 4.5 ? ' · Pass' : ' · Fail')}
       </div>
@@ -2591,7 +2849,7 @@ function ProgressBarSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
               {[
                 'Variant',
                 'Fill / track',
-                'Track / parent',
+                'Track / parent*',
                 'Mark / fill',
                 'Mark / track',
                 'Mark focus',
@@ -2611,25 +2869,36 @@ function ProgressBarSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
           </thead>
           <tbody>
             {audit.rows.map(row => {
-              const ratios = [
+              const requiredRatios = [
+                row.markOnFill,
+                row.markOnTrack,
+                row.markFocus,
+              ];
+              const displayedRatios = [
                 row.fillTrack,
                 row.trackParent,
                 row.markOnFill,
                 row.markOnTrack,
                 row.markFocus,
               ];
-              const measured = ratios.every(
+              const measured = requiredRatios.every(
                 (ratio): ratio is number => ratio != null,
               );
-              const passes = measured && Math.min(...ratios) >= 3;
+              const passes =
+                measured &&
+                audit.labels != null &&
+                audit.labels >= 4.5 &&
+                Math.min(...requiredRatios) >= 3;
               return (
                 <tr key={row.variant}>
                   <td style={{padding: '8px'}}>{row.name}</td>
-                  {ratios.map((ratio, index) => (
+                  {displayedRatios.map((ratio, index) => (
                     <td
                       key={index}
                       style={{padding: '8px', textAlign: 'right'}}>
-                      {ratio == null ? '—' : `${ratio.toFixed(2)}:1`}
+                      {ratio == null
+                        ? '—'
+                        : `${ratio.toFixed(2)}:1${index === 1 ? '†' : ''}`}
                     </td>
                   ))}
                   <td
@@ -2658,11 +2927,15 @@ function ProgressBarSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
           fontSize: 10,
           lineHeight: 1.5,
         }}>
-        Fill must contrast with the track, and the track must remain visible
-        against its parent because it defines the total range. Target marks are
-        meaningful and require 3:1 on either fill or track; their keyboard focus
-        indicator is measured separately. Determinate and indeterminate fills
-        use the same pair. Disabled progress is an inactive-control exception.
+        Fill/track and †track/parent are reported for visibility but are not
+        included in this supplemental result because the visible value provides
+        the equivalent progress information. The proposed standalone treatment
+        instead requires its fill boundary and endpoint marker to reach 3:1.
+        Without a visible value or endpoint marker, the track must itself reach
+        3:1 against its parent. Target marks and their focus indicators are
+        measured separately. An indeterminate track may be decorative when its
+        moving segment independently communicates loading. Disabled progress is
+        an inactive-control exception.
       </p>
     </div>
   );
@@ -2891,7 +3164,8 @@ function CardVariantsSection() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateColumns:
+            'repeat(auto-fit, minmax(min(100%, 104px), 1fr))',
           gap: 10,
         }}>
         {CARD_VARIANTS.map(v => (
@@ -3938,7 +4212,7 @@ export function ThemePalettePreview({
                         background: 'var(--color-background-body)',
                         color: 'var(--color-text-primary)',
                         borderRadius: 16,
-                        padding: 24,
+                        padding: 'clamp(16px, 2vw, 24px)',
                         marginBottom: 16,
                         border: '1px solid var(--color-border)',
                       }}>

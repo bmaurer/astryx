@@ -54,9 +54,9 @@ const neutralSyntax = defineSyntaxTheme({
 });
 
 /**
- * Filled semantic colors are shared by Badge, StatusDot, and ProgressBar so
- * the same state cannot drift between components. Each pair is resolved for
- * both color schemes and tested at its actual point of use.
+ * Filled semantic colors are shared by Badge and StatusDot. ProgressBar uses
+ * the same colors except where its fill-on-track relationship needs a
+ * contrast-specific stop (light-mode warning).
  */
 const FILLED_STATE_COLORS = {
   info: 'light-dark(#0068cc, #529fff)',
@@ -71,15 +71,15 @@ const FILLED_STATE_TEXT = {
 } as const;
 
 /**
- * Progress is a fill-on-track relationship, not a control boundary. Its track
- * therefore stays separate from --color-border-emphasized: dark fills need a
- * light neutral track, while the bright warning fill needs a darker one.
+ * Progress is a fill-on-track relationship, not a control boundary. Every
+ * variant uses the same neutral track so the remaining range has one stable
+ * visual treatment.
  */
-const PROGRESS_TRACK = 'light-dark(#d4d4d4, #3b3b3b)';
-// Warning keeps the exact filled Badge yellow. Its track uses the yellow
-// palette's #927300 stop (light T50 / dark T45 after the dark-ramp transform),
-// which clears 3:1 against both the bright fill and every parent surface.
-const PROGRESS_WARNING_TRACK = '#927300';
+const PROGRESS_TRACK = 'light-dark(#d4d4d4, #404040)';
+// The bright Badge yellow is only 1.01:1 against the light neutral track.
+// Progress therefore uses the palette's T50 yellow in light mode, the closest
+// darker stop that clears 3:1. Dark mode keeps the brighter semantic yellow.
+const PROGRESS_WARNING_FILL = 'light-dark(#927300, #f1d27c)';
 
 export const neutralTheme = defineTheme({
   name: 'neutral',
@@ -618,9 +618,8 @@ export const neutralTheme = defineTheme({
       base: {
         '--color-background-muted': PROGRESS_TRACK,
       },
-      // Vivid stops exactly match the filled semantic badge colors. Warning
-      // needs a yellow-family track because its bright fill cannot reach 3:1
-      // against the shared light neutral track.
+      // Vivid stops match the filled semantic badge colors except light-mode
+      // warning, which moves darker so every variant can share one gray track.
       'variant:accent': {
         '--color-accent': FILLED_STATE_COLORS.info,
       },
@@ -628,8 +627,7 @@ export const neutralTheme = defineTheme({
         '--color-success': FILLED_STATE_COLORS.success,
       },
       'variant:warning': {
-        '--color-background-muted': PROGRESS_WARNING_TRACK,
-        '--color-warning': FILLED_STATE_COLORS.warning,
+        '--color-warning': PROGRESS_WARNING_FILL,
       },
       'variant:error': {
         '--color-error': FILLED_STATE_COLORS.error,
@@ -641,12 +639,12 @@ export const neutralTheme = defineTheme({
     // ProgressBar root, so genuinely disabled progress remains muted.
     'progress-bar-fill': {
       'variant:neutral': {
-        backgroundColor: 'var(--color-accent)',
+        '--color-text-disabled': 'var(--color-accent)',
       },
     },
     'progress-bar-mark': {
       'variant:neutral+placement:fill': {
-        backgroundColor: 'var(--color-on-accent)',
+        '--color-text-primary': 'var(--color-on-accent)',
       },
     },
 

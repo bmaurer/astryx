@@ -95,7 +95,7 @@ const SECTION_STYLE: CSSProperties = {
 
 const GRID_STYLE: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
   gap: 12,
 };
 
@@ -194,7 +194,8 @@ export function NeutralContrastComponents() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+            gridTemplateColumns:
+              'repeat(auto-fit, minmax(min(100%, 104px), 1fr))',
             gap: 8,
           }}>
           {CATEGORICAL.map(variant => (
