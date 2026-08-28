@@ -55,8 +55,9 @@ const neutralSyntax = defineSyntaxTheme({
 
 /**
  * Status color roles keep one semantic hue family without forcing a single
- * hex value into incompatible jobs. Filled controls use `fill`, text and
- * glyphs use `foreground`, and large tinted regions use `surface`.
+ * hex value into incompatible jobs. Filled controls use `fill`, text uses
+ * `foreground`, backgroundless icons use `graphic`, and large tinted regions
+ * use `surface`.
  */
 const STATUS_COLOR_ROLES = {
   fill: {
@@ -136,6 +137,13 @@ export const neutralTheme = defineTheme({
 
   syntax: neutralSyntax,
 
+  // Palette strategy: this maintained reference intentionally locks the exact
+  // reviewed neutral, semantic, and categorical stops below instead of using
+  // `color`. The color scale generator is the right starting point for most
+  // themes, but it derives an accent and neutral family; it does not generate
+  // the categorical/status palette or preserve these approved exact values.
+  // Prefer `color` for a new theme, then use explicit tokens only for deliberate
+  // exceptions whose rendered light- and dark-mode relationships are audited.
   tokens: {
     // =========================================================================
     // Core — pure grayscale spine (Tailwind neutral)
@@ -571,11 +579,11 @@ export const neutralTheme = defineTheme({
     //          to a deep tinted bg + light text rather than locking the
     //          light-mode pastel.
     //
-    // The inner-header *-muted token carries the tinted background for every
-    // status, info included. A theme override that sets a plain CSS property
-    // instead lands in @layer astryx-theme, which StyleX's @layer priority4
-    // outranks, so `backgroundColor` here would silently do nothing and the
-    // info banner would paint no background at all.
+    // The inner header and its nested text, icon, and action consumers resolve
+    // their colors through semantic tokens. Rebind those public tokens here so
+    // the whole Banner subtree stays synchronized. A direct `backgroundColor`
+    // component override would win through @layer astryx-theme, but it would
+    // update only the targeted element rather than the related consumers.
     //
     // Status overrides reference --color-text-{hue} so text/icon colors
     // stay in sync with the palette anchors automatically.
@@ -590,25 +598,23 @@ export const neutralTheme = defineTheme({
         '--color-overlay-pressed': 'light-dark(#FFFFFF33, #00000033)',
       },
       'status:info': {
-        '--color-accent-muted': STATUS_COLOR_ROLES.surface.info,
-        '--color-text-primary': STATUS_COLOR_ROLES.foreground.info,
-        '--color-text-secondary': STATUS_COLOR_ROLES.foreground.info,
-        '--color-accent': STATUS_COLOR_ROLES.foreground.info,
+        '--color-accent-muted': 'var(--color-background-blue)',
+        '--color-text-primary': 'var(--color-text-blue)',
+        '--color-text-secondary': 'var(--color-text-blue)',
+        '--color-accent': 'var(--color-text-blue)',
       },
       // success/warning/error banner bgs come from --color-{X}-muted, which
       // already carries the correct light/dark tinted values. We only need
       // to redirect the text/icon to the palette colored stop.
       'status:success': {
-        '--color-success-muted': STATUS_COLOR_ROLES.surface.success,
-        '--color-text-primary': STATUS_COLOR_ROLES.foreground.success,
-        '--color-text-secondary': STATUS_COLOR_ROLES.foreground.success,
-        '--color-success': STATUS_COLOR_ROLES.foreground.success,
+        '--color-text-primary': 'var(--color-text-green)',
+        '--color-text-secondary': 'var(--color-text-green)',
+        '--color-success': 'var(--color-text-green)',
       },
       'status:warning': {
-        '--color-warning-muted': STATUS_COLOR_ROLES.surface.warning,
-        '--color-text-primary': STATUS_COLOR_ROLES.foreground.warning,
-        '--color-text-secondary': STATUS_COLOR_ROLES.foreground.warning,
-        '--color-warning': STATUS_COLOR_ROLES.foreground.warning,
+        '--color-text-primary': 'var(--color-text-yellow)',
+        '--color-text-secondary': 'var(--color-text-yellow)',
+        '--color-warning': 'var(--color-text-yellow)',
       },
       'status:error': {
         '--color-error-muted': STATUS_COLOR_ROLES.surface.error,
