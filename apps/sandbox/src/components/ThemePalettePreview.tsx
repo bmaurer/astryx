@@ -691,12 +691,12 @@ interface StatusAuditRow extends Record<string, unknown> {
   id: string;
   label: string;
   color: 'accent' | 'success' | 'warning' | 'error' | 'gray';
-  icon: 'info' | 'check' | 'warning' | 'error' | 'clock';
+  icon: 'info' | 'success' | 'warning' | 'error' | 'clock';
 }
 
 const STATUS_AUDIT_ROWS: StatusAuditRow[] = [
   {id: 'info', label: 'Information', color: 'accent', icon: 'info'},
-  {id: 'success', label: 'Ready', color: 'success', icon: 'check'},
+  {id: 'success', label: 'Ready', color: 'success', icon: 'success'},
   {id: 'warning', label: 'Needs review', color: 'warning', icon: 'warning'},
   {id: 'error', label: 'Blocked', color: 'error', icon: 'error'},
   {id: 'neutral', label: 'Paused', color: 'gray', icon: 'clock'},
