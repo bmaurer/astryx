@@ -55,10 +55,6 @@ import {useMergedRefs} from '../hooks/useMergedRefs';
 
 const styles = stylex.create({
   interactive: {
-    // Declared here, on the element that carries the `astryx-selectable-card`
-    // target, so a theme has something to override — the ring for a variant
-    // only the theme knows about reads it (see selectedUnknown).
-    '--selectable-card-ring-color': colorVars['--color-accent'],
     position: 'relative',
     cursor: {
       default: 'pointer',
@@ -114,56 +110,57 @@ const styles = stylex.create({
   // (rather than box-shadow directly) lets it compose with the card's
   // elevation instead of clobbering it.
   selected: {
-    borderColor: colorVars['--color-accent'],
-    '--_card-ring': `inset 0 0 0 2px ${colorVars['--color-accent']}`,
+    borderColor: `var(--selectable-card-ring-color, ${colorVars['--color-accent']})`,
+    '--_card-ring': `inset 0 0 0 2px var(--selectable-card-ring-color, ${colorVars['--color-accent']})`,
   },
   selectedBlue: {
-    borderColor: colorVars['--color-border-blue'],
-    '--_card-ring': `inset 0 0 0 2px ${colorVars['--color-border-blue']}`,
+    borderColor: `var(--selectable-card-ring-color, ${colorVars['--color-border-blue']})`,
+    '--_card-ring': `inset 0 0 0 2px var(--selectable-card-ring-color, ${colorVars['--color-border-blue']})`,
   },
   selectedCyan: {
-    borderColor: colorVars['--color-border-cyan'],
-    '--_card-ring': `inset 0 0 0 2px ${colorVars['--color-border-cyan']}`,
+    borderColor: `var(--selectable-card-ring-color, ${colorVars['--color-border-cyan']})`,
+    '--_card-ring': `inset 0 0 0 2px var(--selectable-card-ring-color, ${colorVars['--color-border-cyan']})`,
   },
   selectedGray: {
-    borderColor: colorVars['--color-border-gray'],
-    '--_card-ring': `inset 0 0 0 2px ${colorVars['--color-border-gray']}`,
+    borderColor: `var(--selectable-card-ring-color, ${colorVars['--color-border-gray']})`,
+    '--_card-ring': `inset 0 0 0 2px var(--selectable-card-ring-color, ${colorVars['--color-border-gray']})`,
   },
   selectedGreen: {
-    borderColor: colorVars['--color-border-green'],
-    '--_card-ring': `inset 0 0 0 2px ${colorVars['--color-border-green']}`,
+    borderColor: `var(--selectable-card-ring-color, ${colorVars['--color-border-green']})`,
+    '--_card-ring': `inset 0 0 0 2px var(--selectable-card-ring-color, ${colorVars['--color-border-green']})`,
   },
   selectedOrange: {
-    borderColor: colorVars['--color-border-orange'],
-    '--_card-ring': `inset 0 0 0 2px ${colorVars['--color-border-orange']}`,
+    borderColor: `var(--selectable-card-ring-color, ${colorVars['--color-border-orange']})`,
+    '--_card-ring': `inset 0 0 0 2px var(--selectable-card-ring-color, ${colorVars['--color-border-orange']})`,
   },
   selectedPink: {
-    borderColor: colorVars['--color-border-pink'],
-    '--_card-ring': `inset 0 0 0 2px ${colorVars['--color-border-pink']}`,
+    borderColor: `var(--selectable-card-ring-color, ${colorVars['--color-border-pink']})`,
+    '--_card-ring': `inset 0 0 0 2px var(--selectable-card-ring-color, ${colorVars['--color-border-pink']})`,
   },
   selectedPurple: {
-    borderColor: colorVars['--color-border-purple'],
-    '--_card-ring': `inset 0 0 0 2px ${colorVars['--color-border-purple']}`,
+    borderColor: `var(--selectable-card-ring-color, ${colorVars['--color-border-purple']})`,
+    '--_card-ring': `inset 0 0 0 2px var(--selectable-card-ring-color, ${colorVars['--color-border-purple']})`,
   },
   selectedRed: {
-    borderColor: colorVars['--color-border-red'],
-    '--_card-ring': `inset 0 0 0 2px ${colorVars['--color-border-red']}`,
+    borderColor: `var(--selectable-card-ring-color, ${colorVars['--color-border-red']})`,
+    '--_card-ring': `inset 0 0 0 2px var(--selectable-card-ring-color, ${colorVars['--color-border-red']})`,
   },
   selectedTeal: {
-    borderColor: colorVars['--color-border-teal'],
-    '--_card-ring': `inset 0 0 0 2px ${colorVars['--color-border-teal']}`,
+    borderColor: `var(--selectable-card-ring-color, ${colorVars['--color-border-teal']})`,
+    '--_card-ring': `inset 0 0 0 2px var(--selectable-card-ring-color, ${colorVars['--color-border-teal']})`,
   },
   selectedYellow: {
-    borderColor: colorVars['--color-border-yellow'],
-    '--_card-ring': `inset 0 0 0 2px ${colorVars['--color-border-yellow']}`,
+    borderColor: `var(--selectable-card-ring-color, ${colorVars['--color-border-yellow']})`,
+    '--_card-ring': `inset 0 0 0 2px var(--selectable-card-ring-color, ${colorVars['--color-border-yellow']})`,
   },
   // A theme-added variant paints with colours the component cannot know, so no
-  // token is guaranteed to contrast with it — an accent ring disappears against
-  // an accent fill, and an outset one is no better. The theme that supplied the
-  // fill is the only thing that can pick a ring, so it gets a lever beside it;
-  // the var defaults to the accent, keeping every built-in unchanged.
+  // token is guaranteed to contrast with it. The same public variable can also
+  // strengthen a built-in variant whose default border token is too subtle
+  // against that theme's Card surface. Each style keeps its prior token as the
+  // fallback when the theme does not provide an override.
   selectedUnknown: {
-    '--_card-ring': 'inset 0 0 0 2px var(--selectable-card-ring-color)',
+    borderColor: `var(--selectable-card-ring-color, ${colorVars['--color-accent']})`,
+    '--_card-ring': `inset 0 0 0 2px var(--selectable-card-ring-color, ${colorVars['--color-accent']})`,
   },
 });
 

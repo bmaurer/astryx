@@ -23,10 +23,9 @@
  * ```
  *
  * Pair the theme rule's `backgroundColor` with `--selectable-card-ring-color`.
- * SelectableCard rings an added variant in that var, defaulting to the accent —
- * no token the component could pick is guaranteed to contrast with a fill it
- * cannot know, so the theme that supplied the fill picks the ring, in the same
- * rule.
+ * SelectableCard reads that variable for built-in and added variants, retaining
+ * the matching border token (or accent) as its fallback. The theme that supplied
+ * the fill can therefore choose a ring that reaches 3:1 against it.
  */
 export interface CardVariantMap {
   default: true;

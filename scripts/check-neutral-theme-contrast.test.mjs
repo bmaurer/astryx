@@ -113,6 +113,111 @@ describe('neutral theme component-pair contrast', () => {
   });
 
   it.each(MODES)(
+    'keeps Card content readable across every background in $name mode',
+    ({index}) => {
+      const body = resolve('var(--color-background-body)', index);
+      const foreground = resolve('var(--color-text-primary)', index);
+      const backgrounds = {
+        default: 'var(--color-background-card)',
+        transparent: null,
+        muted: 'var(--color-background-muted)',
+        blue: 'var(--color-background-blue)',
+        cyan: 'var(--color-background-cyan)',
+        gray: 'var(--color-background-gray)',
+        green: 'var(--color-background-green)',
+        orange: 'var(--color-background-orange)',
+        pink: 'var(--color-background-pink)',
+        purple: 'var(--color-background-purple)',
+        red: 'var(--color-background-red)',
+        teal: 'var(--color-background-teal)',
+        yellow: 'var(--color-background-yellow)',
+      };
+
+      for (const [variant, token] of Object.entries(backgrounds)) {
+        const background = token ? composite(resolve(token, index), body) : body;
+        expect(
+          contrastRatio(foreground, background),
+          `${variant} Card text should contrast with ${background}`,
+        ).toBeGreaterThanOrEqual(AA_TEXT);
+      }
+    },
+  );
+
+  it.each(MODES)(
+    'keeps every SelectableCard ring distinct from its background in $name mode',
+    ({index}) => {
+      const body = resolve('var(--color-background-body)', index);
+      const selectableCard = neutralTheme.components['selectable-card'];
+      const variants = {
+        default: {
+          background: 'var(--color-background-card)',
+          fallback: 'var(--color-accent)',
+        },
+        transparent: {background: null, fallback: 'var(--color-accent)'},
+        muted: {
+          background: 'var(--color-background-muted)',
+          fallback: 'var(--color-accent)',
+        },
+        blue: {
+          background: 'var(--color-background-blue)',
+          fallback: 'var(--color-border-blue)',
+        },
+        cyan: {
+          background: 'var(--color-background-cyan)',
+          fallback: 'var(--color-border-cyan)',
+        },
+        gray: {
+          background: 'var(--color-background-gray)',
+          fallback: 'var(--color-border-gray)',
+        },
+        green: {
+          background: 'var(--color-background-green)',
+          fallback: 'var(--color-border-green)',
+        },
+        orange: {
+          background: 'var(--color-background-orange)',
+          fallback: 'var(--color-border-orange)',
+        },
+        pink: {
+          background: 'var(--color-background-pink)',
+          fallback: 'var(--color-border-pink)',
+        },
+        purple: {
+          background: 'var(--color-background-purple)',
+          fallback: 'var(--color-border-purple)',
+        },
+        red: {
+          background: 'var(--color-background-red)',
+          fallback: 'var(--color-border-red)',
+        },
+        teal: {
+          background: 'var(--color-background-teal)',
+          fallback: 'var(--color-border-teal)',
+        },
+        yellow: {
+          background: 'var(--color-background-yellow)',
+          fallback: 'var(--color-border-yellow)',
+        },
+      };
+
+      for (const [variant, pair] of Object.entries(variants)) {
+        const background = pair.background
+          ? composite(resolve(pair.background, index), body)
+          : body;
+        const override =
+          selectableCard?.[`variant:${variant}`]?.[
+            '--selectable-card-ring-color'
+          ];
+        const ring = resolve(override ?? pair.fallback, index);
+        expect(
+          contrastRatio(ring, background),
+          `${variant} SelectableCard ring should contrast with ${background}`,
+        ).toBeGreaterThanOrEqual(AA_NON_TEXT);
+      }
+    },
+  );
+
+  it.each(MODES)(
     'keeps emphasized control boundaries perceivable in $name mode',
     ({index}) => {
       for (const background of [

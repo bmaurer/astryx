@@ -3180,6 +3180,7 @@ const CARD_BACKGROUND_DEFAULTS = {
 function getCardContrast(theme: DefinedTheme, mode: Mode) {
   const body = resolveToken(theme, '--color-background-body', mode);
   const cardBlock = theme.components?.card ?? {};
+  const selectableCardBlock = theme.components?.['selectable-card'] ?? {};
 
   return CARD_VARIANTS.map(variant => {
     try {
@@ -3238,14 +3239,34 @@ function getCardContrast(theme: DefinedTheme, mode: Mode) {
         );
       }
 
-      const ringToken =
+      const defaultRingToken =
         variant === 'default' ||
         variant === 'transparent' ||
         variant === 'muted'
           ? 'var(--color-accent)'
           : `var(--color-border-${variant})`;
+      const selectableVariantBlock =
+        selectableCardBlock[`variant:${variant}`] ?? {};
+      const selectableLocal = Object.fromEntries(
+        Object.entries({
+          ...selectableCardBlock.base,
+          ...selectableVariantBlock,
+        }).filter(
+          (entry): entry is [string, string] =>
+            entry[0].startsWith('--') && typeof entry[1] === 'string',
+        ),
+      );
       const ring = compositeColor(
-        resolveThemeColor(theme, ringToken, mode, local),
+        resolveThemeColor(
+          theme,
+          String(
+            selectableVariantBlock['--selectable-card-ring-color'] ??
+              selectableCardBlock.base?.['--selectable-card-ring-color'] ??
+              defaultRingToken,
+          ),
+          mode,
+          {...local, ...selectableLocal},
+        ),
         background,
       );
 

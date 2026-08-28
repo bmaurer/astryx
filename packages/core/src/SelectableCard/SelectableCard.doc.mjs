@@ -38,7 +38,7 @@ export const docs = {
     container: true,
     targets: [{className: 'astryx-selectable-card', visualProps: ['selected', 'variant']}],
     vars: [
-      {name: '--selectable-card-ring-color', description: 'Colour of the selection ring drawn for a variant a theme added. The built-in variants each ring in their own border token and ignore this; a theme that adds a variant sets it in the same rule as that variant\'s `backgroundColor`, because no token the component could pick is guaranteed to contrast with a fill it cannot know.', default: 'var(--color-accent)'},
+      {name: '--selectable-card-ring-color', description: 'Colour of the selected-state ring and matching Card border. A theme can set it for any built-in or added variant when the default ring does not reach 3:1 against the rendered Card background. Built-in variants otherwise fall back to their matching border token; default, transparent, muted, and unknown variants fall back to `--color-accent`.', default: 'Variant border token or var(--color-accent)'},
     ],
   },
   playground: {

@@ -620,6 +620,41 @@ export const neutralTheme = defineTheme({
       },
     },
 
+    // SelectableCard's ring communicates selected state, so use the stronger
+    // same-hue icon stops instead of the intentionally subtle border stops.
+    'selectable-card': {
+      'variant:red': {
+        '--selectable-card-ring-color': 'var(--color-icon-red)',
+      },
+      'variant:orange': {
+        '--selectable-card-ring-color': 'var(--color-icon-orange)',
+      },
+      'variant:yellow': {
+        '--selectable-card-ring-color': 'var(--color-icon-yellow)',
+      },
+      'variant:green': {
+        '--selectable-card-ring-color': 'var(--color-icon-green)',
+      },
+      'variant:teal': {
+        '--selectable-card-ring-color': 'var(--color-icon-teal)',
+      },
+      'variant:cyan': {
+        '--selectable-card-ring-color': 'var(--color-icon-cyan)',
+      },
+      'variant:blue': {
+        '--selectable-card-ring-color': 'var(--color-icon-blue)',
+      },
+      'variant:purple': {
+        '--selectable-card-ring-color': 'var(--color-icon-purple)',
+      },
+      'variant:pink': {
+        '--selectable-card-ring-color': 'var(--color-icon-pink)',
+      },
+      'variant:gray': {
+        '--selectable-card-ring-color': 'var(--color-icon-gray)',
+      },
+    },
+
     // =========================================================================
     // Section — tighter padding via public section padding token
     // =========================================================================

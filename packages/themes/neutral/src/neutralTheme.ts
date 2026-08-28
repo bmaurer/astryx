@@ -657,6 +657,43 @@ export const neutralTheme = defineTheme({
       },
     },
 
+    // SelectableCard's ring is a meaningful selected-state indicator. The
+    // general categorical border tokens are intentionally subtle against
+    // their matching pastel surfaces, so this component uses the stronger
+    // same-hue icon stops to clear WCAG 1.4.11 in both modes.
+    'selectable-card': {
+      'variant:red': {
+        '--selectable-card-ring-color': 'var(--color-icon-red)',
+      },
+      'variant:orange': {
+        '--selectable-card-ring-color': 'var(--color-icon-orange)',
+      },
+      'variant:yellow': {
+        '--selectable-card-ring-color': 'var(--color-icon-yellow)',
+      },
+      'variant:green': {
+        '--selectable-card-ring-color': 'var(--color-icon-green)',
+      },
+      'variant:teal': {
+        '--selectable-card-ring-color': 'var(--color-icon-teal)',
+      },
+      'variant:cyan': {
+        '--selectable-card-ring-color': 'var(--color-icon-cyan)',
+      },
+      'variant:blue': {
+        '--selectable-card-ring-color': 'var(--color-icon-blue)',
+      },
+      'variant:purple': {
+        '--selectable-card-ring-color': 'var(--color-icon-purple)',
+      },
+      'variant:pink': {
+        '--selectable-card-ring-color': 'var(--color-icon-pink)',
+      },
+      'variant:gray': {
+        '--selectable-card-ring-color': 'var(--color-icon-gray)',
+      },
+    },
+
     // =========================================================================
     // Section — tighter padding via public section padding token
     // =========================================================================
