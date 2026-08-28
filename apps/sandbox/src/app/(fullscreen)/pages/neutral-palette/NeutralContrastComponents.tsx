@@ -25,11 +25,9 @@ import {
 } from '@astryxdesign/core/DateTimeInput';
 import {DropdownMenu, DropdownMenuItem} from '@astryxdesign/core/DropdownMenu';
 import {FileInput} from '@astryxdesign/core/FileInput';
-import {Icon} from '@astryxdesign/core/Icon';
 import {MultiSelector} from '@astryxdesign/core/MultiSelector';
 import {NumberInput} from '@astryxdesign/core/NumberInput';
 import {Selector} from '@astryxdesign/core/Selector';
-import {SelectableCard} from '@astryxdesign/core/SelectableCard';
 import {StatusDot} from '@astryxdesign/core/StatusDot';
 import {Step, Stepper} from '@astryxdesign/core/Stepper';
 import {
@@ -43,19 +41,6 @@ import {TimeInput} from '@astryxdesign/core/TimeInput';
 import {Tokenizer} from '@astryxdesign/core/Tokenizer';
 import type {SearchableItem, SearchSource} from '@astryxdesign/core/Typeahead';
 import type {ISOTimeString} from '@astryxdesign/core';
-
-const CATEGORICAL = [
-  'red',
-  'orange',
-  'yellow',
-  'green',
-  'teal',
-  'cyan',
-  'blue',
-  'purple',
-  'pink',
-  'gray',
-] as const;
 
 const PEOPLE: SearchableItem[] = [
   {id: 'ada', label: 'Ada Lovelace'},
@@ -164,53 +149,6 @@ export function NeutralContrastComponents() {
           dedicated audit section above.
         </p>
       </div>
-
-      <CategoryHeading
-        title="Categorical color consumers"
-        description="Components that expose the red, orange, yellow, green, teal, cyan, blue, purple, pink, and gray families directly."
-      />
-      <Section title="Icons — every categorical and semantic color">
-        <div style={{display: 'flex', flexWrap: 'wrap', gap: 12}}>
-          {CATEGORICAL.map(color => (
-            <span
-              key={color}
-              style={{display: 'inline-flex', alignItems: 'center', gap: 4}}>
-              <Icon icon="check" color={color} />
-              <small>{color}</small>
-            </span>
-          ))}
-          {(['success', 'warning', 'error'] as const).map(color => (
-            <span
-              key={color}
-              style={{display: 'inline-flex', alignItems: 'center', gap: 4}}>
-              <Icon icon="check" color={color} />
-              <small>{color}</small>
-            </span>
-          ))}
-        </div>
-      </Section>
-
-      <Section title="SelectableCard — every categorical selection ring">
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns:
-              'repeat(auto-fit, minmax(min(100%, 104px), 1fr))',
-            gap: 8,
-          }}>
-          {CATEGORICAL.map(variant => (
-            <SelectableCard
-              key={variant}
-              variant={variant}
-              label={`${variant} selected`}
-              padding={2}
-              isSelected
-              onChange={() => {}}>
-              <small>{variant}</small>
-            </SelectableCard>
-          ))}
-        </div>
-      </Section>
 
       <CategoryHeading
         title="Semantic status and feedback"
