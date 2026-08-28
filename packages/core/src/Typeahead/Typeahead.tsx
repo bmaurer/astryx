@@ -326,6 +326,9 @@ export function Typeahead<T extends SearchableItem>({
   const [laneRef, laneReserve] = useEndLaneReserve(
     size === 'sm' ? LANE_INSET.sm : LANE_INSET.md,
   );
+  // Whether a lane renders at all — known from props and state, without
+  // measuring anything, which is why the reserve costs no extra commit.
+  const hasEndLane = Boolean(isLoading || (hasClear && value && !isDisabled));
   const [isEditing, setIsEditing] = useState(false);
   const [editingValue, setEditingValue] = useState<T | null>(null);
 
@@ -516,7 +519,13 @@ export function Typeahead<T extends SearchableItem>({
           debounceMs={debounceMs}
           anchorRef={wrapperRef}
           onKeyDown={handleKeyDown}
-          inputXStyle={showToken ? styles.inputHidden : laneReserve}
+          inputXStyle={
+            showToken
+              ? styles.inputHidden
+              : hasEndLane
+                ? laneReserve
+                : undefined
+          }
           // While the token is shown the input is collapsed (width 0 /
           // opacity 0) — take it out of the Tab order so keyboard users
           // don't hit an invisible stop (WCAG 2.4.3 / 2.4.7). It stays
@@ -525,7 +534,7 @@ export function Typeahead<T extends SearchableItem>({
           inputTabIndex={showToken ? -1 : undefined}
           size={size}
         />
-        {(isLoading || (hasClear && value && !isDisabled)) && (
+        {hasEndLane && (
           <div
             ref={laneRef}
             {...stylex.props(

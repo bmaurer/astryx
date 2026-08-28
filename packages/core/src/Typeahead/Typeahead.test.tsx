@@ -17,8 +17,10 @@ import {
   beforeAll,
   afterAll,
   beforeEach,
+  afterEach,
 } from 'vitest';
 import {render, screen, fireEvent, waitFor, act} from '@testing-library/react';
+import {Profiler} from 'react';
 import userEvent from '@testing-library/user-event';
 import {Typeahead} from './Typeahead';
 import {BaseTypeahead} from './BaseTypeahead';
@@ -1579,5 +1581,191 @@ describe('busy indicator ownership', () => {
     });
     expect(onLoadingChange).toHaveBeenCalledTimes(2);
     expect(onLoadingChange).toHaveBeenLastCalledWith(false);
+  });
+});
+
+describe('Typeahead end-lane reserve — render cost', () => {
+  // jsdom has no ResizeObserver and reports every width as 0, so the cost
+  // this guards is invisible without one: a reserve held in React state only
+  // re-renders when the measurement is non-zero. This stub is the smallest
+  // thing that makes the regression reproducible in CI — it reports a width
+  // the moment an element is observed, exactly as a browser would when the
+  // spinner mounts into the lane and again when it leaves.
+  class StubResizeObserver {
+    static instances = 0;
+    private readonly cb: ResizeObserverCallback;
+    constructor(cb: ResizeObserverCallback) {
+      this.cb = cb;
+      StubResizeObserver.instances++;
+    }
+    observe(target: Element) {
+      const entry = {
+        target,
+        borderBoxSize: [{inlineSize: 24, blockSize: 20}],
+        contentRect: {width: 24, height: 20},
+      } as unknown as ResizeObserverEntry;
+      this.cb([entry], this);
+    }
+    unobserve() {}
+    disconnect() {}
+  }
+
+  let originalRO: typeof ResizeObserver | undefined;
+  beforeEach(() => {
+    originalRO = globalThis.ResizeObserver;
+    StubResizeObserver.instances = 0;
+    globalThis.ResizeObserver =
+      StubResizeObserver;
+    // A real width, so a state-held reserve would have something to store.
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 24,
+      height: 20,
+      top: 0,
+      left: 0,
+      right: 24,
+      bottom: 20,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+  });
+  afterEach(() => {
+    globalThis.ResizeObserver = originalRO as typeof ResizeObserver;
+    vi.restoreAllMocks();
+  });
+
+  const pendingSource = () => {
+    let settle: (items: SearchableItem[]) => void = () => {};
+    return {
+      source: {
+        search: async () =>
+          new Promise<SearchableItem[]>(resolve => {
+            settle = resolve;
+          }),
+        bootstrap: () => [],
+      },
+      settle: (items: SearchableItem[] = []) => settle(items),
+    };
+  };
+
+  it('costs no commit of its own across a whole search', async () => {
+    // The lane's width reaches CSS as a custom property written to the DOM,
+    // never as state, so measuring it cannot re-render the field. The two
+    // commits below are the ones the search itself owes: the spinner
+    // arriving, and the spinner leaving. Held in state, the measurement
+    // doubled that — a second commit for each, carrying a number no
+    // JavaScript reads.
+    const {source, settle} = pendingSource();
+    const commits: string[] = [];
+    render(
+      <Profiler id="field" onRender={(_id, phase) => commits.push(phase)}>
+        <Typeahead
+          label="Fruit"
+          searchSource={source}
+          value={null}
+          onChange={() => {}}
+          debounceMs={0}
+        />
+      </Profiler>,
+    );
+
+    const input = screen.getByRole('combobox');
+    commits.length = 0;
+
+    // Drive the whole cycle without waiting on any DOM signal, so the count
+    // is of the field's commits and nothing else — and so this reads the
+    // same against any implementation of the reserve.
+    await act(async () => {
+      fireEvent.change(input, {target: {value: 'App'}});
+    });
+    const afterStart = commits.length;
+
+    await act(async () => {
+      settle([]);
+      await Promise.resolve();
+    });
+
+    // One commit for the spinner arriving, one for it leaving. A reserve
+    // held in state adds a second to each, because the lane changes size
+    // exactly when it appears and disappears.
+    expect(afterStart).toBe(1);
+    expect(commits.length).toBe(2);
+  });
+
+  it('shares one observer across every field on the page', () => {
+    // One observer per lane is the other half of the cost: browsers batch per
+    // observer instance, so N fields meant N callback dispatches a frame.
+    render(
+      <>
+        <Typeahead
+          label="One"
+          searchSource={fruitSource}
+          value={fruits[0]}
+          onChange={() => {}}
+        />
+        <Typeahead
+          label="Two"
+          searchSource={fruitSource}
+          value={fruits[1]}
+          onChange={() => {}}
+        />
+        <Typeahead
+          label="Three"
+          searchSource={fruitSource}
+          value={fruits[2]}
+          onChange={() => {}}
+        />
+      </>,
+    );
+    // Three lanes (each field has a value, so each renders a clear button),
+    // one observer.
+    expect(StubResizeObserver.instances).toBeLessThanOrEqual(1);
+  });
+
+  it('publishes the measured width for CSS, and takes it back with the lane', async () => {
+    // The mechanism the two tests above are protecting: the number reaches
+    // the input as an inherited custom property, so the padding follows the
+    // lane without React seeing the value at all.
+    const {source, settle} = pendingSource();
+    const {container} = render(
+      <Typeahead
+        label="Fruit"
+        searchSource={source}
+        value={null}
+        onChange={() => {}}
+        debounceMs={0}
+      />,
+    );
+    const input = screen.getByRole('combobox');
+
+    await act(async () => {
+      fireEvent.change(input, {target: {value: 'App'}});
+    });
+    await waitFor(() => {
+      expect(
+        container.querySelector('[style*="--_astryx-end-lane-width"]'),
+      ).not.toBeNull();
+    });
+
+    const host = container.querySelector<HTMLElement>(
+      '[style*="--_astryx-end-lane-width"]',
+    );
+    expect(host?.style.getPropertyValue('--_astryx-end-lane-width')).toBe(
+      '24px',
+    );
+
+    await act(async () => {
+      settle([]);
+      await Promise.resolve();
+    });
+    // Lane gone, property gone — the input takes the room back.
+    await waitFor(() => {
+      expect(
+        container.querySelector('[style*="--_astryx-end-lane-width"]'),
+      ).toBeNull();
+    });
+    expect(
+      container.querySelector('[style*="--_astryx-end-lane-width"]'),
+    ).toBeNull();
   });
 });

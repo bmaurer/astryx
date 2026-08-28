@@ -4,9 +4,9 @@
 
 /**
  * @file useEndLaneReserve.ts
- * @input Uses React
- * @output Exports useEndLaneReserve, which measures a field's inline-end
- *   lane and returns the padding the input needs to clear it.
+ * @input Uses React and the shared ResizeObserver
+ * @output Exports useEndLaneReserve, which keeps a field's input clear of the
+ *   absolutely-positioned lane at its inline end
  * @position Shared field internal. Used by Typeahead and Tokenizer, both of
  *   which park their clear button, end content and busy indicator in one
  *   absolutely-positioned lane at the field's inline end.
@@ -16,8 +16,17 @@
  * - /packages/core/src/Tokenizer/Tokenizer.tsx
  */
 
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback} from 'react';
 import * as stylex from '@stylexjs/stylex';
+import {observeResize, unobserveResize} from '../utils/sharedResizeObserver';
+
+/**
+ * The measured lane width, published on the field wrapper and read by the
+ * input through inheritance. A custom property is the point of the design: it
+ * carries a measurement into CSS without carrying it through React, so a lane
+ * that grows or shrinks repaints without re-rendering the field.
+ */
+const LANE_WIDTH_VAR = '--_astryx-end-lane-width';
 
 // Keep the input's text and caret out from under the lane.
 //
@@ -26,86 +35,75 @@ import * as stylex from '@stylexjs/stylex';
 // the input to clear is the lane's inset plus its width, less the padding it
 // already has, plus a padding's worth of gap so the text does not touch the
 // glyph. The two paddings cancel, which is why this reads as inset + width.
+//
+// The width arrives as a variable rather than a number, so this rule is
+// static: one class, generated once, never regenerated as the lane changes.
+// The `0px` fallback covers the frame before the lane is first measured.
 const reserveStyles = stylex.create({
-  reserve: (laneInset: string, laneWidth: number) => ({
-    paddingInlineEnd: `calc(${laneInset} + ${laneWidth}px)`,
+  reserve: (laneInset: string) => ({
+    paddingInlineEnd: `calc(${laneInset} + var(${LANE_WIDTH_VAR}, 0px))`,
   }),
 });
 
 /**
- * Measure a field's inline-end lane, so the input can keep its text out from
- * under it.
+ * Keep a field's input clear of the lane at its inline end.
  *
  * The lane is absolutely positioned — it has to be, because these wrappers
  * wrap, and an in-flow sibling gets pushed onto a second row by a token — and
  * an out-of-flow box reserves no space by definition. There is no CSS that
- * makes one do so: the input cannot see a sibling's width, and a custom
- * property set on the lane cannot travel sideways to it. So the width is
- * measured and handed back, and the caller spends it as padding.
+ * makes one do so: the input cannot see a sibling's width. So the lane is
+ * measured, and the input spends the measurement as padding.
  *
  * What the lane holds is not a fixed set: a clear button that comes and goes
  * with the value, a busy indicator that comes and goes with the search, and,
  * in Tokenizer, arbitrary `endContent`. Measuring covers all of it, including
  * the combinations, and needs no constant kept in step with what renders.
  *
+ * **The measurement never enters React state.** It is written to a custom
+ * property on the field wrapper and inherited by the input. Held in state, it
+ * cost the field a second commit every time the lane changed size — once when
+ * the spinner arrived and again when it left — doubling the field's renders
+ * across a search for a value no JavaScript ever reads. The observation is
+ * shared as well: `observeResize` batches every field on the page into one
+ * callback per frame instead of one observer each.
+ *
  * Takes the lane's inset from the field's inline-end border, as the CSS
- * expression that positions it, and returns a ref callback for the lane plus
- * the style the input needs — `undefined` when there is no lane to clear.
+ * expression that positions it. Returns a ref callback for the lane, and the
+ * style for the input — which the caller applies only when it renders a lane,
+ * something it already knows without measuring anything.
  */
 export function useEndLaneReserve(
   laneInset: string,
 ): [(node: HTMLElement | null) => void, stylex.StyleXStyles] {
-  const [width, setWidth] = useState(0);
-  const observerRef = useRef<ResizeObserver | null>(null);
-
-  useEffect(
-    () => () => {
-      observerRef.current?.disconnect();
-      observerRef.current = null;
-    },
-    [],
-  );
-
   const laneRef = useCallback((node: HTMLElement | null) => {
-    observerRef.current?.disconnect();
-    observerRef.current = null;
-
     if (node == null) {
-      // No lane rendered: nothing to reserve. Not a measurement of zero — the
-      // lane is gone, and the input takes the room back.
-      setWidth(0);
       return;
     }
+    // The lane's parent: the field wrapper in both callers, and an ancestor
+    // of the input either way, which is what inheritance needs.
+    const host = node.parentElement;
 
-    // jsdom implements no ResizeObserver, and this runs in every consumer's
-    // component tests. `offsetWidth` is 0 there too, so the reserve is simply
-    // absent rather than wrong.
-    if (typeof ResizeObserver === 'undefined') {
-      setWidth(node.offsetWidth);
-      return;
-    }
-
-    const observer = new ResizeObserver(entries => {
-      const entry = entries[0];
-      if (entry == null) {
-        return;
-      }
+    observeResize(node, () => {
       // Border box: the lane's own padding and border are part of what the
-      // input has to clear. `borderBoxSize` is the value the observer already
-      // computed, so it costs no layout; the fallback for a browser without
-      // it reads `offsetWidth`, which is border-box too — `contentRect` is
-      // not, and would under-reserve the moment the lane grows a padding.
-      const next =
-        entry.borderBoxSize?.[0]?.inlineSize ??
-        (entry.target as HTMLElement).offsetWidth;
-      // Round up. A fractional width left as-is reserves a hair too little and
-      // the glyph's last subpixel column still lands on the caret.
-      setWidth(Math.ceil(next));
+      // input has to clear. Rounded up, because a fractional width left as-is
+      // reserves a hair too little and the glyph's last subpixel column still
+      // lands on the caret.
+      host?.style.setProperty(
+        LANE_WIDTH_VAR,
+        `${Math.ceil(node.getBoundingClientRect().width)}px`,
+      );
     });
-    observer.observe(node);
-    observerRef.current = observer;
-    setWidth(Math.ceil(node.getBoundingClientRect().width));
+
+    // React 19 runs a ref callback's return value as its cleanup, so the
+    // observer is released exactly when the lane unmounts.
+    return () => {
+      unobserveResize(node);
+      // The room the lane claimed goes back to the input. Removing beats
+      // setting 0px: the rule's fallback is already that, and this leaves no
+      // stale property behind on the DOM.
+      host?.style.removeProperty(LANE_WIDTH_VAR);
+    };
   }, []);
 
-  return [laneRef, width > 0 ? reserveStyles.reserve(laneInset, width) : undefined];
+  return [laneRef, reserveStyles.reserve(laneInset)];
 }

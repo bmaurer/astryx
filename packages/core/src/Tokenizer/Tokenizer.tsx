@@ -474,6 +474,11 @@ export function Tokenizer<T extends SearchableItem>({
   // `endContent`, a clear button, or all three — so its width is measured
   // rather than assumed, and the input reserves it.
   const [laneRef, laneReserve] = useEndLaneReserve(END_LANE_INSET);
+  // Whether a lane renders at all — known from props and state, without
+  // measuring anything, which is why the reserve costs no extra commit.
+  const hasEndLane = Boolean(
+    isLoading || endContent || (hasClear && value.length > 0 && !isDisabled),
+  );
   const [isFocusedWithin, setIsFocusedWithin] = useState(false);
   const isTruncated =
     !isFocusedWithin && tokenOverflowBehavior !== 'none' && value.length > 0;
@@ -840,7 +845,7 @@ export function Tokenizer<T extends SearchableItem>({
               : undefined,
           // Not for the collapsed states above: those give the input no width
           // to pad, and `inputAtMax` zeroes its padding outright.
-          !(isAtMax || isTruncated) && laneReserve,
+          !(isAtMax || isTruncated) && hasEndLane && laneReserve,
         ]}
       />
       {htmlName != null &&
@@ -855,9 +860,7 @@ export function Tokenizer<T extends SearchableItem>({
             disabled={isDisabled}
           />
         ))}
-      {(isLoading ||
-        endContent ||
-        (hasClear && value.length > 0 && !isDisabled)) && (
+      {hasEndLane && (
         <div
           ref={laneRef}
           {...stylex.props(styles.endSection, endSectionSizeStyles[size])}>
