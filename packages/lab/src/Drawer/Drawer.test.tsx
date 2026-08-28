@@ -1063,6 +1063,21 @@ describe('Drawer', () => {
       expect(HTMLDialogElement.prototype.close).toHaveBeenCalledTimes(1);
       expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalledTimes(1);
       expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true');
+
+      vi.mocked(HTMLDialogElement.prototype.close).mockClear();
+      vi.mocked(HTMLDialogElement.prototype.show).mockClear();
+      rerender(
+        <Drawer
+          isOpen
+          onOpenChange={() => {}}
+          label="Details"
+          modality="nonModal">
+          Content
+        </Drawer>,
+      );
+      expect(HTMLDialogElement.prototype.close).toHaveBeenCalledTimes(1);
+      expect(HTMLDialogElement.prototype.show).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole('dialog')).not.toHaveAttribute('aria-modal');
     });
   });
 
