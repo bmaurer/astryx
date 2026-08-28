@@ -5,7 +5,6 @@
 import {useCallback, type CSSProperties, type ReactNode} from 'react';
 
 import {AvatarStatusDot} from '@astryxdesign/core/Avatar';
-import type {ISODateString} from '@astryxdesign/core/Calendar';
 import {
   ChatComposer,
   ChatMessage,
@@ -14,20 +13,7 @@ import {
   ChatToolCalls,
 } from '@astryxdesign/core/Chat';
 import {CodeBlock} from '@astryxdesign/core/CodeBlock';
-import {DateInput} from '@astryxdesign/core/DateInput';
-import {
-  DateRangeInput,
-  type DateRange,
-} from '@astryxdesign/core/DateRangeInput';
-import {
-  DateTimeInput,
-  type ISODateTimeString,
-} from '@astryxdesign/core/DateTimeInput';
 import {DropdownMenu, DropdownMenuItem} from '@astryxdesign/core/DropdownMenu';
-import {FileInput} from '@astryxdesign/core/FileInput';
-import {MultiSelector} from '@astryxdesign/core/MultiSelector';
-import {NumberInput} from '@astryxdesign/core/NumberInput';
-import {Selector} from '@astryxdesign/core/Selector';
 import {StatusDot} from '@astryxdesign/core/StatusDot';
 import {Step, Stepper} from '@astryxdesign/core/Stepper';
 import {
@@ -36,24 +22,6 @@ import {
   type TableColumn,
   useTableRowStatus,
 } from '@astryxdesign/core/Table';
-import {TextArea} from '@astryxdesign/core/TextArea';
-import {TimeInput} from '@astryxdesign/core/TimeInput';
-import {Tokenizer} from '@astryxdesign/core/Tokenizer';
-import type {SearchableItem, SearchSource} from '@astryxdesign/core/Typeahead';
-import type {ISOTimeString} from '@astryxdesign/core';
-
-const PEOPLE: SearchableItem[] = [
-  {id: 'ada', label: 'Ada Lovelace'},
-  {id: 'grace', label: 'Grace Hopper'},
-];
-
-const PEOPLE_SOURCE: SearchSource = {
-  search: query =>
-    PEOPLE.filter(person =>
-      person.label.toLowerCase().includes(query.toLowerCase()),
-    ),
-  bootstrap: () => PEOPLE,
-};
 
 interface StatusRow extends Record<string, unknown> {
   id: string;
@@ -127,11 +95,6 @@ export function NeutralContrastComponents() {
     [],
   );
   const rowStatus = useTableRowStatus<StatusRow>({getStatus: getRowStatus});
-  const errorStatus = {
-    type: 'error' as const,
-    message: 'Contrast-critical error state',
-  };
-
   return (
     <div style={{display: 'grid', gap: 24}}>
       <div>
@@ -173,82 +136,9 @@ export function NeutralContrastComponents() {
       </Section>
 
       <CategoryHeading
-        title="Forms and actions"
-        description="Shared validation boundaries and destructive actions across different component structures and surfaces."
+        title="Actions and procedures"
+        description="Destructive actions and procedural feedback across different component structures and surfaces."
       />
-      <Section title="Extended input family — semantic boundaries">
-        <div style={GRID_STYLE}>
-          <TextArea
-            label="TextArea"
-            value="Over the character limit"
-            onChange={() => {}}
-            status={errorStatus}
-          />
-          <FileInput
-            label="FileInput"
-            value={null}
-            onChange={() => {}}
-            status={errorStatus}
-          />
-          <DateInput
-            label="DateInput"
-            value={'2026-08-27' as ISODateString}
-            onChange={() => {}}
-            status={errorStatus}
-          />
-          <DateRangeInput
-            label="DateRangeInput"
-            value={
-              {
-                start: '2026-08-25' as ISODateString,
-                end: '2026-08-27' as ISODateString,
-              } satisfies DateRange
-            }
-            onChange={() => {}}
-            status={errorStatus}
-          />
-          <DateTimeInput
-            label="DateTimeInput"
-            value={'2026-08-27T14:30' as ISODateTimeString}
-            onChange={() => {}}
-            status={errorStatus}
-          />
-          <NumberInput
-            label="NumberInput"
-            value={42}
-            onChange={() => {}}
-            status={errorStatus}
-          />
-          <TimeInput
-            label="TimeInput"
-            value={'14:30' as ISOTimeString}
-            onChange={() => {}}
-            status={errorStatus}
-          />
-          <Selector
-            label="Selector"
-            options={['Red', 'Orange', 'Yellow']}
-            value="Orange"
-            onChange={() => {}}
-            status={errorStatus}
-          />
-          <MultiSelector
-            label="MultiSelector"
-            options={['Red', 'Orange', 'Yellow']}
-            value={['Red', 'Orange']}
-            onChange={() => {}}
-            status={errorStatus}
-          />
-          <Tokenizer
-            label="Tokenizer"
-            searchSource={PEOPLE_SOURCE}
-            value={PEOPLE}
-            onChange={() => {}}
-            status={errorStatus}
-          />
-        </div>
-      </Section>
-
       <Section title="Stepper and destructive menu">
         <div style={{display: 'grid', gap: 16}}>
           <Stepper activeStep={1} orientation="horizontal">
