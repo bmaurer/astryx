@@ -75,6 +75,14 @@ const STATUS_COLOR_ROLES = {
     warning: 'var(--color-text-yellow)',
     error: 'var(--color-text-red)',
   },
+  graphic: {
+    info: 'light-dark(#0068cc, #529fff)',
+    success: 'light-dark(#098123, #62b466)',
+    // Yellow T55 is one palette step lighter than ProgressBar's T50 fill and
+    // still clears 3:1 against both the white card and T95 body surfaces.
+    warning: 'light-dark(#a17f00, #f1d27c)',
+    error: 'light-dark(#ca3f3e, #ec746e)',
+  },
   surface: {
     info: 'var(--color-background-blue)',
     success: 'var(--color-background-green)',
@@ -610,18 +618,17 @@ export const neutralTheme = defineTheme({
       },
     },
 
-    // Stepper status glyphs are foreground marks, not filled badges. Map them
-    // to the shared foreground role so their hue stays aligned without using a
-    // fill stop directly on the page surface.
+    // Stepper status glyphs are backgroundless graphics, so they can use the
+    // brighter 3:1 graphic role instead of the darker 4.5:1 text role.
     'step-indicator': {
-      'status:accent': {'--color-accent': STATUS_COLOR_ROLES.foreground.info},
+      'status:accent': {'--color-accent': STATUS_COLOR_ROLES.graphic.info},
       'status:success': {
-        '--color-success': STATUS_COLOR_ROLES.foreground.success,
+        '--color-success': STATUS_COLOR_ROLES.graphic.success,
       },
       'status:warning': {
-        '--color-warning': STATUS_COLOR_ROLES.foreground.warning,
+        '--color-warning': STATUS_COLOR_ROLES.graphic.warning,
       },
-      'status:error': {'--color-error': STATUS_COLOR_ROLES.foreground.error},
+      'status:error': {'--color-error': STATUS_COLOR_ROLES.graphic.error},
     },
 
     // Chat statuses are also foreground content. ChatMessageMetadata only
@@ -656,16 +663,16 @@ export const neutralTheme = defineTheme({
         '--color-icon-red': STATUS_COLOR_ROLES.fill.error,
       },
       'color:accent+presentation:icon': {
-        '--color-accent': STATUS_COLOR_ROLES.foreground.info,
+        '--color-accent': STATUS_COLOR_ROLES.graphic.info,
       },
       'color:success+presentation:icon': {
-        '--color-success': STATUS_COLOR_ROLES.foreground.success,
+        '--color-success': STATUS_COLOR_ROLES.graphic.success,
       },
       'color:warning+presentation:icon': {
-        '--color-warning': STATUS_COLOR_ROLES.foreground.warning,
+        '--color-warning': STATUS_COLOR_ROLES.graphic.warning,
       },
       'color:error+presentation:icon': {
-        '--color-error': STATUS_COLOR_ROLES.foreground.error,
+        '--color-error': STATUS_COLOR_ROLES.graphic.error,
       },
     },
 
