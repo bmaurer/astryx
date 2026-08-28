@@ -533,6 +533,7 @@ export function ToastViewport({
                   autoHideDuration={dur}
                   isExiting={isExiting}
                   onDismiss={reason => removeToast(entry.id, reason)}
+                  renderContent={o.renderContent}
                 />
               </div>
             </div>
