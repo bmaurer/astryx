@@ -82,6 +82,7 @@ import {domainTokenDefaults} from './domainTokens';
 import type {SyntaxThemeDefinition} from './syntax';
 import {registerTheme} from './themeRegistry';
 import {deepMergeComponents} from './mergeComponents';
+import {defineTonalPalettes, type ThemePalettes} from './palettes';
 
 // =============================================================================
 // Types
@@ -181,9 +182,9 @@ export interface DefineThemeInput {
 
   /**
    * Base theme to extend. When provided, the new theme starts with everything
-   * the base resolved to — tokens, component overrides, icons, indicators, and
-   * its `onDark`/`onLight` surfaces — then applies this input on top. The base
-   * theme's values have lowest precedence.
+   * the base resolved to — tokens, palette metadata, component overrides,
+   * icons, indicators, and its `onDark`/`onLight` surfaces — then applies this
+   * input on top. The base theme's values have lowest precedence.
    *
    * The result is flat: an extended theme carries its inheritance in its own
    * resolved output, so `astryx theme build` emits one self-contained
@@ -299,6 +300,20 @@ export interface DefineThemeInput {
    * ```
    */
   color?: ColorScaleConfig;
+  /**
+   * Approved tonal palettes for theme authors, agents, audit tools, custom
+   * components, and data visualization.
+   *
+   * Palettes are metadata rather than CSS variables: components should use
+   * semantic tokens first. Use a palette stop only when no semantic token fits,
+   * and document the selected family, tone, and contrast relationship.
+   *
+   * Every family contains a complete light ramp and may provide a separate
+   * dark ramp. `defineTheme` validates the canonical 0–100 steps and preserves
+   * this metadata in built themes. Child themes inherit families by name and
+   * can replace a complete family.
+   */
+  palettes?: ThemePalettes;
   /** Token overrides — flat map of CSS custom property names to values.
    *  Values can be a string or [light, dark] tuple.
    *  Only include tokens you want to override; defaults fill the rest. */
@@ -387,6 +402,8 @@ export interface DefinedTheme {
   name: string;
   /** Token overrides — only the tokens the consumer specified */
   tokens: Record<string, string>;
+  /** Approved tonal palettes available to authoring and audit tooling. */
+  palettes?: ThemePalettes;
   /** Component style overrides */
   components?: ComponentStyleMap;
   /** Icon registry */
@@ -683,9 +700,21 @@ export function defineTheme(input: DefineThemeInput): DefinedTheme {
       ? {...base.indicators, ...input.indicators}
       : (input.indicators ?? base?.indicators);
 
+  // Palette families are authoring metadata, not CSS token generators. Merge
+  // by family name so an extending theme can replace one complete ramp while
+  // retaining the rest of its base theme's approved palette vocabulary.
+  const inputPalettes = input.palettes
+    ? defineTonalPalettes(input.palettes)
+    : undefined;
+  const palettes =
+    inputPalettes && base?.palettes
+      ? {...base.palettes, ...inputPalettes}
+      : (inputPalettes ?? base?.palettes);
+
   const theme: DefinedTheme = {
     name: input.name,
     tokens,
+    palettes,
     components,
     icons,
     indicators,

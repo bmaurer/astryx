@@ -5,13 +5,15 @@
 // can prove each one still reaches the pixels. Not shipped; not published; a
 // test fixture. Regenerate with: pnpm visual:probe-theme
 //
-// defineTheme takes six things and this covers all six:
-//   components  270 targets, 875 selectors (generated from the docs)
+// defineTheme has six visual inputs and this covers all six:
+//   components  271 targets, 877 selectors (generated from the docs)
 //   tokens      custom properties, read back off the themed element
 //   icons       every registry entry swapped for a marked glyph
 //   indicators  check / radio / checkbox swapped — the swap that reaches furthest
 //   fonts       a family name nothing else could produce
 //   syntax      one unmistakable colour per code token
+// Palette metadata emits no CSS; its contract is covered by theme unit and
+// production-build tests rather than this visual fixture.
 //
 // Only `components` is generated; the rest are fixed values that live in
 // probeConfig.ts, because they are a contract to assert against rather than a
@@ -972,6 +974,14 @@ export const probeTheme = defineTheme({
         color: 'hsl(193.2 91% 12%)',
         borderColor: 'hsl(161.1 93% 25%)',
         outlineColor: 'hsl(157.5 84% 25%)',
+      },
+    },
+    'carousel-scroller': {
+      base: {
+        backgroundColor: 'hsl(330.8 89% 63%)',
+        color: 'hsl(272.4 89% 12%)',
+        borderColor: 'hsl(38.3 84% 25%)',
+        outlineColor: 'hsl(243.2 82% 25%)',
       },
     },
     center: {
@@ -4359,6 +4369,12 @@ export const probeTheme = defineTheme({
         color: 'hsl(264.3 82% 12%)',
         borderColor: 'hsl(22.0 83% 25%)',
         outlineColor: 'hsl(220.9 77% 25%)',
+      },
+      'size:xl': {
+        backgroundColor: 'hsl(66.5 82% 64%)',
+        color: 'hsl(228.9 83% 12%)',
+        borderColor: 'hsl(259.5 74% 25%)',
+        outlineColor: 'hsl(299.9 71% 25%)',
       },
       'shade:default': {
         backgroundColor: 'hsl(94.7 82% 60%)',
