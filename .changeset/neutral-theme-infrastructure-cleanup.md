@@ -9,4 +9,4 @@ deduplicate semantic state colors, remove redundant radius overrides, align the
 error hover treatment, adopt the approved balanced OKLCH categorical palette,
 and fix the setup/font documentation. The CLI template ships the same theme.
 
-@rubycheung
+@rubyycheung
