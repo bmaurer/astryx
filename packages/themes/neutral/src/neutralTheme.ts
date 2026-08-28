@@ -650,6 +650,20 @@ export const neutralTheme = defineTheme({
         '--color-error': STATUS_COLOR_ROLES.foreground.error,
       },
     },
+    'chat-tool-call-status': {
+      'status:running': {
+        backgroundColor: STATUS_COLOR_ROLES.surface.info,
+        color: STATUS_COLOR_ROLES.foreground.info,
+      },
+      'status:complete': {
+        backgroundColor: STATUS_COLOR_ROLES.surface.success,
+        color: STATUS_COLOR_ROLES.foreground.success,
+      },
+      'status:error': {
+        backgroundColor: STATUS_COLOR_ROLES.surface.error,
+        color: STATUS_COLOR_ROLES.foreground.error,
+      },
+    },
 
     // Table row status has two visual roles. A plain dot is a filled plate and
     // therefore matches StatusDot/Badge; an icon is a foreground glyph and
