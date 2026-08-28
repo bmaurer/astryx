@@ -9,7 +9,7 @@ import {
 } from '@/app/(sandbox)/pages/color-studio/colorUtils';
 import {ThemePalettePreview} from '@/components/ThemePalettePreview';
 import type {TonalColor} from '@/components/ThemePalettePreview';
-import {NeutralContrastComponents} from './NeutralContrastComponents';
+import {NeutralSyntaxColors} from './NeutralSyntaxColors';
 
 const TONE_STEPS = [
   0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95,
@@ -125,7 +125,7 @@ export default function NeutralPalettePage() {
       subtitle="Approved balanced OKLCH palette applied to the neutral theme. The component sections below use the real theme tokens in light and dark mode; the audit drawer reports token usage and contrast."
       tonalColors={TONAL_COLORS}
       coreSwatches={CORE}
-      extraSections={<NeutralContrastComponents />}
+      leadingExtras={<NeutralSyntaxColors />}
     />
   );
 }
