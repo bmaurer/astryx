@@ -14,10 +14,11 @@ import {Card} from '@astryxdesign/core/Card';
 import {TextInput} from '@astryxdesign/core/TextInput';
 import {Badge} from '@astryxdesign/core/Badge';
 import {Button} from '@astryxdesign/core/Button';
+import {Icon} from '@astryxdesign/core/Icon';
 import {VStack, HStack} from '@astryxdesign/core/Layout';
 import {Text, Heading} from '@astryxdesign/core/Text';
 import {Theme} from '@astryxdesign/core/theme';
-import type {DefinedTheme} from '@astryxdesign/core/theme';
+import {tokenDefaults, type DefinedTheme} from '@astryxdesign/core/theme';
 import {LayerProvider} from '@astryxdesign/core/Layer';
 import {neutralTheme} from '@astryxdesign/theme-neutral/built';
 
@@ -299,6 +300,9 @@ export interface CoreSwatch {
   dark?: {hex: string; name: string};
 }
 
+type Mode = 'light' | 'dark';
+type ModeSection = React.ReactNode | ((mode: Mode) => React.ReactNode);
+
 export interface ThemePalettePreviewProps {
   /** The Astryx theme object */
   theme: DefinedTheme;
@@ -311,9 +315,9 @@ export interface ThemePalettePreviewProps {
   /** Core palette swatches. When omitted, the Core Palette section is hidden. */
   coreSwatches?: CoreSwatch[];
   /** Additional sections to render at the end of each mode column */
-  extraSections?: React.ReactNode;
+  extraSections?: ModeSection;
   /** Additional sections to render before the headers (TextRampSection) in each mode column */
-  leadingExtras?: React.ReactNode;
+  leadingExtras?: ModeSection;
   /** Hide the title, subtitle, and tonal section (useful when embedded in another layout) */
   componentPreviewOnly?: boolean;
   /**
@@ -331,8 +335,6 @@ export interface ThemePalettePreviewProps {
    */
   shadowDescription?: string;
 }
-
-type Mode = 'light' | 'dark';
 
 const VAR_SURFACES = {
   body: 'var(--color-background-body)',
@@ -545,49 +547,47 @@ function CoreSection({swatches, mode}: {swatches: CoreSwatch[]; mode?: Mode}) {
   );
 }
 
-function TextRampSection() {
-  const base = 14;
-  const ratio = 1.25;
+function TextRampSection({theme}: {theme: DefinedTheme}) {
   const sizes = {
-    h1: (base * ratio ** 4).toFixed(1),
-    h2: (base * ratio ** 3).toFixed(1),
-    h3: (base * ratio ** 2).toFixed(1),
-    h4: (base * ratio ** 1).toFixed(1),
-    body: base.toFixed(1),
-    supporting: '12.0',
+    h1: theme.tokens['--text-heading-1-size'],
+    h2: theme.tokens['--text-heading-2-size'],
+    h3: theme.tokens['--text-heading-3-size'],
+    h4: theme.tokens['--text-heading-4-size'],
+    body: theme.tokens['--text-body-size'],
+    supporting: theme.tokens['--text-supporting-size'],
   };
   return (
     <div style={S.section}>
-      <h3 style={S.sectionTitle}>Text Hierarchy (1.25 scale, 14px base)</h3>
+      <h3 style={S.sectionTitle}>Text Hierarchy</h3>
       <VStack gap={2}>
         <HStack gap={2} vAlign="end">
           <Heading level={1}>Heading 1</Heading>
           <Text type="supporting" color="secondary">
-            {sizes.h1}px
+            {sizes.h1}
           </Text>
         </HStack>
         <HStack gap={2} vAlign="end">
           <Heading level={2}>Heading 2</Heading>
           <Text type="supporting" color="secondary">
-            {sizes.h2}px
+            {sizes.h2}
           </Text>
         </HStack>
         <HStack gap={2} vAlign="end">
           <Heading level={3}>Heading 3</Heading>
           <Text type="supporting" color="secondary">
-            {sizes.h3}px
+            {sizes.h3}
           </Text>
         </HStack>
         <HStack gap={2} vAlign="end">
           <Heading level={4}>Heading 4</Heading>
           <Text type="supporting" color="secondary">
-            {sizes.h4}px
+            {sizes.h4}
           </Text>
         </HStack>
         <HStack gap={2} vAlign="end">
           <Text type="body">Body — primary</Text>
           <Text type="supporting" color="secondary">
-            {sizes.body}px
+            {sizes.body}
           </Text>
         </HStack>
         <HStack gap={2} vAlign="end">
@@ -595,13 +595,13 @@ function TextRampSection() {
             Body — secondary
           </Text>
           <Text type="supporting" color="secondary">
-            {sizes.body}px
+            {sizes.body}
           </Text>
         </HStack>
         <HStack gap={2} vAlign="end">
           <Text type="supporting">Supporting</Text>
           <Text type="supporting" color="secondary">
-            {sizes.supporting}px
+            {sizes.supporting}
           </Text>
         </HStack>
         <HStack gap={2} vAlign="end">
@@ -609,7 +609,7 @@ function TextRampSection() {
             Disabled
           </Text>
           <Text type="supporting" color="secondary">
-            {sizes.body}px
+            {sizes.body}
           </Text>
         </HStack>
       </VStack>
@@ -651,44 +651,379 @@ function CategoricalBadgeSection() {
   );
 }
 
-function ButtonSection() {
+const BUTTON_VARIANTS = [
+  'primary',
+  'secondary',
+  'ghost',
+  'destructive',
+] as const;
+
+function splitColorArgs(input: string): string[] {
+  const parts: string[] = [];
+  let current = '';
+  let depth = 0;
+
+  for (const char of input) {
+    if (char === '(') {
+      depth += 1;
+    } else if (char === ')') {
+      depth -= 1;
+    }
+
+    if (char === ',' && depth === 0) {
+      parts.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  parts.push(current.trim());
+  return parts;
+}
+
+function resolveThemeColor(
+  theme: DefinedTheme,
+  value: string,
+  mode: Mode,
+): string {
+  const expression = value.trim();
+  if (expression.startsWith('light-dark(')) {
+    const choices = splitColorArgs(expression.slice('light-dark('.length, -1));
+    return resolveThemeColor(theme, choices[mode === 'light' ? 0 : 1], mode);
+  }
+  if (expression.startsWith('var(')) {
+    const [name, fallback] = splitColorArgs(expression.slice(4, -1));
+    const token = theme.tokens[name] ?? tokenDefaults[name] ?? fallback;
+    if (!token) {
+      throw new Error(`Unable to resolve ${name}`);
+    }
+    return resolveThemeColor(theme, token, mode);
+  }
+  return expression;
+}
+
+interface RGBA {
+  rgb: [number, number, number];
+  alpha: number;
+}
+
+function parseColor(value: string): RGBA {
+  const color = value.trim().toLowerCase();
+  if (color === 'transparent') {
+    return {rgb: [0, 0, 0], alpha: 0};
+  }
+
+  if (color.startsWith('#')) {
+    const hex = color.slice(1);
+    const expanded =
+      hex.length === 3 || hex.length === 4
+        ? [...hex].map(character => character + character).join('')
+        : hex;
+    return {
+      rgb: [0, 2, 4].map(index =>
+        Number.parseInt(expanded.slice(index, index + 2), 16),
+      ) as [number, number, number],
+      alpha:
+        expanded.length === 8
+          ? Number.parseInt(expanded.slice(6, 8), 16) / 255
+          : 1,
+    };
+  }
+
+  const rgbMatch = color.match(/^rgba?\((.+)\)$/);
+  if (rgbMatch) {
+    const channels = rgbMatch[1]
+      .replace('/', ' ')
+      .split(/[\s,]+/)
+      .filter(Boolean);
+    return {
+      rgb: channels.slice(0, 3).map(Number) as [number, number, number],
+      alpha: channels[3] == null ? 1 : Number(channels[3]),
+    };
+  }
+
+  throw new Error(`Unsupported contrast-audit color: ${value}`);
+}
+
+function compositeColor(foreground: string, background: string): string {
+  const fg = parseColor(foreground);
+  const bg = parseColor(background);
+  return `#${fg.rgb
+    .map((channel, index) =>
+      Math.round(channel * fg.alpha + bg.rgb[index] * (1 - fg.alpha))
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`;
+}
+
+function relativeLuminance(color: string): number {
+  const channels = parseColor(color).rgb.map(channel => {
+    const value = channel / 255;
+    return value <= 0.04045
+      ? value / 12.92
+      : Math.pow((value + 0.055) / 1.055, 2.4);
+  });
+  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+}
+
+function contrastRatio(foreground: string, background: string): number {
+  const values = [
+    relativeLuminance(foreground),
+    relativeLuminance(background),
+  ].sort((a, b) => b - a);
+  return (values[0] + 0.05) / (values[1] + 0.05);
+}
+
+function resolveToken(theme: DefinedTheme, name: string, mode: Mode): string {
+  const value = theme.tokens[name] ?? tokenDefaults[name];
+  if (!value) {
+    throw new Error(`Unable to resolve ${name}`);
+  }
+  return resolveThemeColor(theme, value, mode);
+}
+
+function getButtonContrast(theme: DefinedTheme, mode: Mode) {
+  const body = resolveToken(theme, '--color-background-body', mode);
+  const surface = resolveToken(theme, '--color-background-surface', mode);
+  const hover = resolveToken(theme, '--color-overlay-hover', mode);
+  const pressed = resolveToken(theme, '--color-overlay-pressed', mode);
+  const surfaces = [body, surface];
+  const defaults = {
+    primary: {
+      backgroundColor: 'var(--color-accent)',
+      color: 'var(--color-on-accent)',
+    },
+    secondary: {
+      backgroundColor: 'var(--color-neutral)',
+      color: 'var(--color-text-primary)',
+    },
+    ghost: {
+      backgroundColor: 'transparent',
+      color: 'var(--color-text-primary)',
+    },
+    destructive: {
+      backgroundColor: 'var(--color-error)',
+      color: 'var(--color-on-error)',
+    },
+  } as const;
+
+  const rows = BUTTON_VARIANTS.map(variant => {
+    const override = theme.components?.button?.[`variant:${variant}`] ?? {};
+    const foreground = resolveThemeColor(
+      theme,
+      String(override.color ?? defaults[variant].color),
+      mode,
+    );
+    const backgroundValue = String(
+      override.backgroundColor ?? defaults[variant].backgroundColor,
+    );
+    const background =
+      backgroundValue === 'transparent'
+        ? backgroundValue
+        : resolveThemeColor(theme, backgroundValue, mode);
+    const resolvedBackground = (parent: string) =>
+      background === 'transparent'
+        ? parent
+        : compositeColor(background, parent);
+    const worst = (overlay?: string) =>
+      Math.min(
+        ...surfaces.map(parent => {
+          const base = resolvedBackground(parent);
+          return contrastRatio(
+            foreground,
+            overlay ? compositeColor(overlay, base) : base,
+          );
+        }),
+      );
+    const spinner = Math.min(
+      ...surfaces.map(parent => {
+        const base = resolvedBackground(parent);
+        return contrastRatio(foreground, base);
+      }),
+    );
+
+    return {
+      name: variant[0].toUpperCase() + variant.slice(1),
+      rest: worst(),
+      hover: worst(hover),
+      pressed: worst(pressed),
+      spinner,
+    };
+  });
+  return rows;
+}
+
+const buttonRowLabelStyle: React.CSSProperties = {
+  fontSize: 10,
+  fontFamily: MONO,
+  opacity: 0.6,
+  marginBottom: 6,
+};
+
+function ButtonSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
+  const audit = getButtonContrast(theme, mode);
   return (
     <div style={S.section}>
       <h3 style={S.sectionTitle}>Buttons</h3>
       <VStack gap={4}>
         <div>
-          <div
-            style={{
-              fontSize: 10,
-              fontFamily: MONO,
-              opacity: 0.6,
-              marginBottom: 6,
-            }}>
-            Default
-          </div>
-          <HStack gap={3} vAlign="center">
-            <Button label="Primary" variant="primary" />
-            <Button label="Secondary" variant="secondary" />
-            <Button label="Ghost" variant="ghost" />
-            <Button label="Destructive" variant="destructive" />
+          <div style={buttonRowLabelStyle}>Default</div>
+          <HStack gap={3} vAlign="center" wrap="wrap">
+            {BUTTON_VARIANTS.map(variant => (
+              <Button key={variant} label={variant} variant={variant} />
+            ))}
           </HStack>
         </div>
         <div>
-          <div
-            style={{
-              fontSize: 10,
-              fontFamily: MONO,
-              opacity: 0.6,
-              marginBottom: 6,
-            }}>
-            Disabled
-          </div>
-          <HStack gap={3} vAlign="center">
-            <Button label="Primary" variant="primary" isDisabled />
-            <Button label="Secondary" variant="secondary" isDisabled />
-            <Button label="Ghost" variant="ghost" isDisabled />
-            <Button label="Destructive" variant="destructive" isDisabled />
+          <div style={buttonRowLabelStyle}>Loading — non-interactive</div>
+          <HStack gap={3} vAlign="center" wrap="wrap">
+            {BUTTON_VARIANTS.map(variant => (
+              <Button
+                key={variant}
+                label={`${variant} loading`}
+                variant={variant}
+                isLoading
+              />
+            ))}
           </HStack>
+        </div>
+        <div>
+          <div style={buttonRowLabelStyle}>Icon-only and icon + label</div>
+          <HStack gap={3} vAlign="center" wrap="wrap">
+            {BUTTON_VARIANTS.map(variant => (
+              <Button
+                key={variant}
+                label={`${variant} icon button`}
+                variant={variant}
+                icon={
+                  <Icon
+                    icon={variant === 'destructive' ? 'close' : 'check'}
+                    color="inherit"
+                  />
+                }
+                isIconOnly
+              />
+            ))}
+            <Button
+              label="Icon and label"
+              variant="secondary"
+              icon={<Icon icon="check" color="inherit" />}
+            />
+          </HStack>
+        </div>
+        <div>
+          <div style={buttonRowLabelStyle}>Sizes and links</div>
+          <HStack gap={3} vAlign="center" wrap="wrap">
+            <Button label="Small" variant="primary" size="sm" />
+            <Button label="Medium" variant="primary" size="md" />
+            <Button label="Large" variant="primary" size="lg" />
+            <Button
+              label="Primary link"
+              variant="primary"
+              href="/pages/neutral-palette/"
+            />
+            <Button
+              label="Ghost link"
+              variant="ghost"
+              href="/pages/neutral-palette/"
+            />
+          </HStack>
+        </div>
+        <div>
+          <div style={buttonRowLabelStyle}>
+            Disabled — visual review only; WCAG contrast exempt
+          </div>
+          <HStack gap={3} vAlign="center" wrap="wrap">
+            {BUTTON_VARIANTS.map(variant => (
+              <Button
+                key={variant}
+                label={variant}
+                variant={variant}
+                isDisabled
+              />
+            ))}
+          </HStack>
+        </div>
+        <div>
+          <div style={buttonRowLabelStyle}>
+            Measured text contrast — worst of body and surface
+          </div>
+          <div style={{overflowX: 'auto'}}>
+            <table
+              style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                fontSize: 11,
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+              <thead>
+                <tr>
+                  {[
+                    'Variant',
+                    'Rest',
+                    'Hover',
+                    'Pressed',
+                    'Spinner',
+                    'WCAG',
+                  ].map(label => (
+                    <th
+                      key={label}
+                      style={{
+                        padding: '7px 8px',
+                        borderBottom: '1px solid var(--color-border)',
+                        textAlign: label === 'Variant' ? 'left' : 'right',
+                      }}>
+                      {label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {audit.map(row => {
+                  const passes =
+                    Math.min(row.rest, row.hover, row.pressed) >= 4.5 &&
+                    row.spinner >= 3;
+                  return (
+                    <tr key={row.name}>
+                      <td style={{padding: '7px 8px'}}>{row.name}</td>
+                      {[row.rest, row.hover, row.pressed, row.spinner].map(
+                        (ratio, index) => (
+                          <td
+                            key={index}
+                            style={{padding: '7px 8px', textAlign: 'right'}}>
+                            {ratio.toFixed(2)}:1
+                          </td>
+                        ),
+                      )}
+                      <td
+                        style={{
+                          padding: '7px 8px',
+                          textAlign: 'right',
+                          color: passes
+                            ? 'var(--color-success)'
+                            : 'var(--color-error)',
+                          fontWeight: 700,
+                        }}>
+                        {passes ? 'Pass' : 'Fail'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p
+            style={{
+              margin: '8px 0 0',
+              color: 'var(--color-text-secondary)',
+              fontSize: 10,
+              lineHeight: 1.5,
+            }}>
+            Labels require 4.5:1. Spinner measures the meaningful arc against
+            the button background; 3:1 is required. Its faint track is
+            decorative. Disabled controls are exempt.
+          </p>
         </div>
       </VStack>
     </div>
@@ -755,10 +1090,7 @@ function CheckboxRadioSwitchSection() {
             isDisabled
           />
         </VStack>
-        <RadioList
-          label="Display mode"
-          value="comfortable"
-          onChange={() => {}}>
+        <RadioList label="Display mode" value="comfortable" onChange={() => {}}>
           <RadioListItem value="compact" label="Compact" />
           <RadioListItem value="comfortable" label="Comfortable" />
           <RadioListItem value="spacious" label="Spacious" />
@@ -1044,7 +1376,6 @@ function TonalSection({
           margin: 0,
           marginBottom: 20,
         }}>
-        
         Full HCT tonal ramps: 21 perceptually uniform steps from black (T0) to
         white (T100).
         {isDark && (
@@ -1131,7 +1462,16 @@ function TonalSection({
                 })}
               </div>
               <span style={S.tonalHct}>
-                H:{hct.hue.toFixed(0)} C:{hct.chroma.toFixed(0)}
+                H:
+                {typeof effectiveTones?.hue === 'number'
+                  ? effectiveTones.hue
+                  : hct.hue.toFixed(0)}{' '}
+                C:
+                {typeof effectiveTones?.chroma === 'number'
+                  ? effectiveTones.chroma < 1
+                    ? effectiveTones.chroma.toFixed(3)
+                    : effectiveTones.chroma.toFixed(0)
+                  : hct.chroma.toFixed(0)}
               </span>
             </div>
           );
@@ -1166,8 +1506,8 @@ function ModeColumn({
   theme: DefinedTheme;
   mode: Mode;
   coreSwatches?: CoreSwatch[];
-  extraSections?: React.ReactNode;
-  leadingExtras?: React.ReactNode;
+  extraSections?: ModeSection;
+  leadingExtras?: ModeSection;
   shadowDescription?: string;
   /**
    * Pending-overrides CSS custom properties spread onto the column's
@@ -1206,20 +1546,24 @@ function ModeColumn({
           {coreSwatches && coreSwatches.length > 0 && (
             <CoreSection swatches={coreSwatches} mode={mode} />
           )}
-          {leadingExtras}
-          <TextRampSection />
+          {typeof leadingExtras === 'function'
+            ? leadingExtras(mode)
+            : leadingExtras}
+          <TextRampSection theme={theme} />
           <SemanticBadgeSection />
           <CategoricalBadgeSection />
           <BannerSection />
           <InputSection />
-          <ButtonSection />
+          <ButtonSection theme={theme} mode={mode} />
           <SpinnerSection />
           <ProgressBarSection />
           <CheckboxRadioSwitchSection />
           <CardVariantsSection />
           <SurfacesSection mode={mode} />
           <ElevationsSection mode={mode} description={shadowDescription} />
-          {extraSections}
+          {typeof extraSections === 'function'
+            ? extraSections(mode)
+            : extraSections}
         </div>
       </LayerProvider>
     </Theme>
