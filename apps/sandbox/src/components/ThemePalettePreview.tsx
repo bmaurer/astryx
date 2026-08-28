@@ -4,17 +4,22 @@
 
 import {useMemo, useReducer} from 'react';
 
-import {Banner} from '@astryxdesign/core/Banner';
+import {Banner, type BannerStatus} from '@astryxdesign/core/Banner';
 import {Spinner} from '@astryxdesign/core/Spinner';
-import {ProgressBar} from '@astryxdesign/core/ProgressBar';
+import {
+  ProgressBar,
+  type ProgressBarVariant,
+} from '@astryxdesign/core/ProgressBar';
 import {CheckboxInput} from '@astryxdesign/core/CheckboxInput';
 import {RadioList, RadioListItem} from '@astryxdesign/core/RadioList';
 import {Switch} from '@astryxdesign/core/Switch';
 import {Card} from '@astryxdesign/core/Card';
 import {TextInput} from '@astryxdesign/core/TextInput';
-import {Badge} from '@astryxdesign/core/Badge';
+import {FieldStatus} from '@astryxdesign/core/FieldStatus';
+import {Badge, type BadgeVariant} from '@astryxdesign/core/Badge';
 import {Button} from '@astryxdesign/core/Button';
 import {Icon} from '@astryxdesign/core/Icon';
+import {Token, type TokenColor} from '@astryxdesign/core/Token';
 import {VStack, HStack} from '@astryxdesign/core/Layout';
 import {Text, Heading} from '@astryxdesign/core/Text';
 import {Theme} from '@astryxdesign/core/theme';
@@ -617,36 +622,269 @@ function TextRampSection({theme}: {theme: DefinedTheme}) {
   );
 }
 
-function SemanticBadgeSection() {
+const SEMANTIC_BADGE_VARIANTS = [
+  'info',
+  'success',
+  'warning',
+  'error',
+  'neutral',
+] as const satisfies readonly BadgeVariant[];
+
+const CATEGORICAL_BADGE_VARIANTS = [
+  'blue',
+  'cyan',
+  'green',
+  'orange',
+  'pink',
+  'purple',
+  'red',
+  'teal',
+  'yellow',
+] as const satisfies readonly BadgeVariant[];
+
+const TOKEN_COLORS = [
+  'default',
+  'red',
+  'orange',
+  'yellow',
+  'green',
+  'teal',
+  'cyan',
+  'blue',
+  'purple',
+  'pink',
+  'gray',
+] as const satisfies readonly TokenColor[];
+
+function BadgeContrastSection({
+  title,
+  variants,
+  theme,
+  mode,
+}: {
+  title: string;
+  variants: readonly BadgeVariant[];
+  theme: DefinedTheme;
+  mode: Mode;
+}) {
+  const audit = getBadgeContrast(theme, mode, variants);
   return (
     <div style={S.section}>
-      <h3 style={S.sectionTitle}>Semantic Badges</h3>
-      <HStack gap={2} wrap="wrap">
-        <Badge variant="success" label="Success" />
-        <Badge variant="error" label="Error" />
-        <Badge variant="warning" label="Warning" />
-        <Badge variant="info" label="Info" />
-        <Badge variant="neutral" label="Neutral" />
-      </HStack>
+      <h3 style={S.sectionTitle}>{title}</h3>
+      <div style={{overflowX: 'auto'}}>
+        <table
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: 11,
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+          <thead>
+            <tr>
+              {[
+                'Variant',
+                'Rendered examples',
+                'Worst placement',
+                'Contrast',
+                'Label',
+                'Icon',
+              ].map(label => (
+                <th
+                  key={label}
+                  style={{
+                    padding: '7px 8px',
+                    borderBottom: '1px solid var(--color-border)',
+                    textAlign:
+                      label === 'Contrast' ||
+                      label === 'Label' ||
+                      label === 'Icon'
+                        ? 'right'
+                        : 'left',
+                  }}>
+                  {label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {audit.map(row => {
+              const labelPasses = row.ratio != null && row.ratio >= 4.5;
+              const iconPasses = row.ratio != null && row.ratio >= 3;
+              return (
+                <tr key={row.variant}>
+                  <td style={{padding: '8px'}}>{row.name}</td>
+                  <td style={{padding: '8px'}}>
+                    <HStack gap={1} wrap="wrap">
+                      <Badge variant={row.variant} label={row.name} />
+                      <Badge
+                        variant={row.variant}
+                        icon={
+                          <Icon
+                            icon={row.variant === 'error' ? 'close' : 'check'}
+                            size="xsm"
+                          />
+                        }
+                        label={row.name}
+                      />
+                    </HStack>
+                  </td>
+                  <td style={{padding: '8px'}}>{row.surface ?? '—'}</td>
+                  <td style={{padding: '8px', textAlign: 'right'}}>
+                    {row.ratio == null ? '—' : `${row.ratio.toFixed(2)}:1`}
+                  </td>
+                  {[
+                    {passes: labelPasses, requirement: '4.5:1'},
+                    {passes: iconPasses, requirement: '3:1'},
+                  ].map(({passes, requirement}) => (
+                    <td
+                      key={requirement}
+                      style={{
+                        padding: '8px',
+                        textAlign: 'right',
+                        color:
+                          row.ratio == null
+                            ? 'var(--color-text-secondary)'
+                            : passes
+                              ? 'var(--color-success)'
+                              : 'var(--color-error)',
+                        fontWeight: 700,
+                      }}>
+                      {row.ratio == null
+                        ? 'Not measured'
+                        : passes
+                          ? `Pass ≥${requirement}`
+                          : `Fail <${requirement}`}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p
+        style={{
+          margin: '8px 0 0',
+          color: 'var(--color-text-secondary)',
+          fontSize: 10,
+          lineHeight: 1.5,
+        }}>
+        Badge labels require 4.5:1. Meaningful icons require 3:1. Icon defaults
+        to the badge foreground, so both use the measured ratio shown here. The
+        example icon is decorative because its visible label repeats the same
+        meaning. If a consumer overrides the icon color, that color needs its
+        own audit. The pill boundary is not measured separately because the
+        visible label identifies the badge.
+      </p>
     </div>
   );
 }
 
-function CategoricalBadgeSection() {
+function TokenContrastSection({
+  theme,
+  mode,
+}: {
+  theme: DefinedTheme;
+  mode: Mode;
+}) {
+  const audit = getTokenContrast(theme, mode);
   return (
     <div style={S.section}>
-      <h3 style={S.sectionTitle}>Categorical Badges</h3>
-      <HStack gap={2} wrap="wrap">
-        <Badge variant="blue" label="Blue" />
-        <Badge variant="cyan" label="Cyan" />
-        <Badge variant="green" label="Green" />
-        <Badge variant="orange" label="Orange" />
-        <Badge variant="pink" label="Pink" />
-        <Badge variant="purple" label="Purple" />
-        <Badge variant="red" label="Red" />
-        <Badge variant="teal" label="Teal" />
-        <Badge variant="yellow" label="Yellow" />
-      </HStack>
+      <h3 style={S.sectionTitle}>Tokens</h3>
+      <div style={{overflowX: 'auto'}}>
+        <table
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: 11,
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+          <thead>
+            <tr>
+              {[
+                'Color',
+                'Rendered examples',
+                'Rest',
+                'Hover',
+                'Pressed',
+                'WCAG',
+              ].map(label => (
+                <th
+                  key={label}
+                  style={{
+                    padding: '7px 8px',
+                    borderBottom: '1px solid var(--color-border)',
+                    textAlign:
+                      label === 'Color' || label === 'Rendered examples'
+                        ? 'left'
+                        : 'right',
+                  }}>
+                  {label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {audit.map(row => {
+              const ratios = [row.rest, row.hover, row.pressed];
+              const measured = ratios.every(
+                (ratio): ratio is number => ratio != null,
+              );
+              const passes = measured && Math.min(...ratios) >= 4.5;
+              return (
+                <tr key={row.color}>
+                  <td style={{padding: '8px'}}>{row.name}</td>
+                  <td style={{padding: '8px'}}>
+                    <HStack gap={1} wrap="wrap">
+                      <Token color={row.color} label={row.name} />
+                      <Token
+                        color={row.color}
+                        label={row.name}
+                        icon={<Icon icon="check" size="xsm" />}
+                        onClick={() => {}}
+                        onRemove={() => {}}
+                      />
+                    </HStack>
+                  </td>
+                  {ratios.map((ratio, index) => (
+                    <td
+                      key={index}
+                      style={{padding: '8px', textAlign: 'right'}}>
+                      {ratio == null ? '—' : `${ratio.toFixed(2)}:1`}
+                    </td>
+                  ))}
+                  <td
+                    style={{
+                      padding: '8px',
+                      textAlign: 'right',
+                      color: !measured
+                        ? 'var(--color-text-secondary)'
+                        : passes
+                          ? 'var(--color-success)'
+                          : 'var(--color-error)',
+                      fontWeight: 700,
+                    }}>
+                    {!measured ? 'Not measured' : passes ? 'Pass' : 'Fail'}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p
+        style={{
+          margin: '8px 0 0',
+          color: 'var(--color-text-secondary)',
+          fontSize: 10,
+          lineHeight: 1.5,
+        }}>
+        Colored Tokens use the same background/text pairs as categorical Badges;
+        default and gray match the neutral Badge. Labels require 4.5:1 through
+        rest, hover, and pressed states. Leading and remove icons inherit the
+        same foreground and clear their 3:1 requirement whenever the label
+        passes. Disabled Tokens are contrast-exempt.
+      </p>
     </div>
   );
 }
@@ -692,19 +930,26 @@ function resolveThemeColor(
   theme: DefinedTheme,
   value: string,
   mode: Mode,
+  local: Record<string, string | undefined> = {},
 ): string {
   const expression = value.trim();
   if (expression.startsWith('light-dark(')) {
     const choices = splitColorArgs(expression.slice('light-dark('.length, -1));
-    return resolveThemeColor(theme, choices[mode === 'light' ? 0 : 1], mode);
+    return resolveThemeColor(
+      theme,
+      choices[mode === 'light' ? 0 : 1],
+      mode,
+      local,
+    );
   }
   if (expression.startsWith('var(')) {
     const [name, fallback] = splitColorArgs(expression.slice(4, -1));
-    const token = theme.tokens[name] ?? tokenDefaults[name] ?? fallback;
+    const token =
+      local[name] ?? theme.tokens[name] ?? tokenDefaults[name] ?? fallback;
     if (!token) {
       throw new Error(`Unable to resolve ${name}`);
     }
-    return resolveThemeColor(theme, token, mode);
+    return resolveThemeColor(theme, token, mode, local);
   }
   return expression;
 }
@@ -718,6 +963,12 @@ function parseColor(value: string): RGBA {
   const color = value.trim().toLowerCase();
   if (color === 'transparent') {
     return {rgb: [0, 0, 0], alpha: 0};
+  }
+  if (color === 'black') {
+    return {rgb: [0, 0, 0], alpha: 1};
+  }
+  if (color === 'white') {
+    return {rgb: [255, 255, 255], alpha: 1};
   }
 
   if (color.startsWith('#')) {
@@ -764,6 +1015,18 @@ function compositeColor(foreground: string, background: string): string {
     .join('')}`;
 }
 
+function mixColors(base: string, tint: string, tintWeight: number): string {
+  const baseColor = parseColor(base);
+  const tintColor = parseColor(tint);
+  return `#${baseColor.rgb
+    .map((channel, index) =>
+      Math.round(channel * (1 - tintWeight) + tintColor.rgb[index] * tintWeight)
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`;
+}
+
 function relativeLuminance(color: string): number {
   const channels = parseColor(color).rgb.map(channel => {
     const value = channel / 255;
@@ -788,6 +1051,1033 @@ function resolveToken(theme: DefinedTheme, name: string, mode: Mode): string {
     throw new Error(`Unable to resolve ${name}`);
   }
   return resolveThemeColor(theme, value, mode);
+}
+
+const BADGE_DEFAULTS = {
+  neutral: {
+    backgroundColor: 'var(--color-neutral)',
+    color: 'var(--color-text-primary)',
+  },
+  info: {
+    backgroundColor: 'var(--color-accent)',
+    color: 'var(--color-on-accent)',
+  },
+  success: {
+    backgroundColor: 'var(--color-success)',
+    color: 'var(--color-on-success)',
+  },
+  warning: {
+    backgroundColor: 'var(--color-warning)',
+    color: 'var(--color-on-warning)',
+  },
+  error: {
+    backgroundColor: 'var(--color-error)',
+    color: 'var(--color-on-error)',
+  },
+  blue: {
+    backgroundColor: 'var(--color-background-blue)',
+    color: 'var(--color-text-blue)',
+  },
+  cyan: {
+    backgroundColor: 'var(--color-background-cyan)',
+    color: 'var(--color-text-cyan)',
+  },
+  green: {
+    backgroundColor: 'var(--color-background-green)',
+    color: 'var(--color-text-green)',
+  },
+  orange: {
+    backgroundColor: 'var(--color-background-orange)',
+    color: 'var(--color-text-orange)',
+  },
+  pink: {
+    backgroundColor: 'var(--color-background-pink)',
+    color: 'var(--color-text-pink)',
+  },
+  purple: {
+    backgroundColor: 'var(--color-background-purple)',
+    color: 'var(--color-text-purple)',
+  },
+  red: {
+    backgroundColor: 'var(--color-background-red)',
+    color: 'var(--color-text-red)',
+  },
+  teal: {
+    backgroundColor: 'var(--color-background-teal)',
+    color: 'var(--color-text-teal)',
+  },
+  yellow: {
+    backgroundColor: 'var(--color-background-yellow)',
+    color: 'var(--color-text-yellow)',
+  },
+} as const;
+
+const TOKEN_DEFAULTS = {
+  default: {
+    backgroundColor: 'var(--color-neutral)',
+    color: 'var(--color-text-primary)',
+  },
+  red: BADGE_DEFAULTS.red,
+  orange: BADGE_DEFAULTS.orange,
+  yellow: BADGE_DEFAULTS.yellow,
+  green: BADGE_DEFAULTS.green,
+  teal: BADGE_DEFAULTS.teal,
+  cyan: BADGE_DEFAULTS.cyan,
+  blue: BADGE_DEFAULTS.blue,
+  purple: BADGE_DEFAULTS.purple,
+  pink: BADGE_DEFAULTS.pink,
+  gray: {
+    backgroundColor: 'var(--color-background-gray)',
+    color: 'var(--color-text-gray)',
+  },
+} as const;
+
+function getBadgeContrast(
+  theme: DefinedTheme,
+  mode: Mode,
+  variants: readonly BadgeVariant[],
+) {
+  const surfaces = [
+    ['Body', '--color-background-body'],
+    ['Surface', '--color-background-surface'],
+    ['Card', '--color-background-card'],
+  ] as const;
+
+  return variants.map(variant => {
+    try {
+      const defaults = BADGE_DEFAULTS[variant as keyof typeof BADGE_DEFAULTS];
+      if (!defaults) {
+        throw new Error(`No audit defaults for badge variant ${variant}`);
+      }
+      const badgeBlock = theme.components?.badge ?? {};
+      const override = badgeBlock[`variant:${variant}`] ?? {};
+      const foreground = resolveThemeColor(
+        theme,
+        String(override.color ?? badgeBlock.color ?? defaults.color),
+        mode,
+      );
+      const background = resolveThemeColor(
+        theme,
+        String(
+          override.backgroundColor ??
+            badgeBlock.backgroundColor ??
+            defaults.backgroundColor,
+        ),
+        mode,
+      );
+      const placements = surfaces.map(([name, token]) => {
+        const parent = resolveToken(theme, token, mode);
+        const resolvedBackground = compositeColor(background, parent);
+        const resolvedForeground = compositeColor(
+          foreground,
+          resolvedBackground,
+        );
+        return {
+          name,
+          ratio: contrastRatio(resolvedForeground, resolvedBackground),
+        };
+      });
+      const weakest = placements.reduce((minimum, placement) =>
+        placement.ratio < minimum.ratio ? placement : minimum,
+      );
+
+      return {
+        variant,
+        name: variant[0].toUpperCase() + variant.slice(1),
+        surface: weakest.name,
+        ratio: weakest.ratio,
+      };
+    } catch {
+      // Keep experimental themes renderable when they use CSS color syntax
+      // that this lightweight audit cannot flatten to an sRGB pair.
+      return {
+        variant,
+        name: variant[0].toUpperCase() + variant.slice(1),
+        surface: undefined,
+        ratio: undefined,
+      };
+    }
+  });
+}
+
+function getTokenContrast(theme: DefinedTheme, mode: Mode) {
+  const surfaces = [
+    '--color-background-body',
+    '--color-background-surface',
+    '--color-background-card',
+  ] as const;
+
+  return TOKEN_COLORS.map(color => {
+    try {
+      const defaults = TOKEN_DEFAULTS[color];
+      const tokenBlock = theme.components?.token ?? {};
+      const override = tokenBlock[`color:${color}`] ?? {};
+      const foreground = resolveThemeColor(
+        theme,
+        String(override.color ?? tokenBlock.color ?? defaults.color),
+        mode,
+      );
+      const background = resolveThemeColor(
+        theme,
+        String(
+          override.backgroundColor ??
+            tokenBlock.backgroundColor ??
+            defaults.backgroundColor,
+        ),
+        mode,
+      );
+      const hover = resolveToken(theme, '--color-overlay-hover', mode);
+      const pressed = resolveToken(theme, '--color-overlay-pressed', mode);
+      const ratio = (overlay?: string) =>
+        Math.min(
+          ...surfaces.map(surfaceToken => {
+            const parent = resolveToken(theme, surfaceToken, mode);
+            const base = compositeColor(background, parent);
+            const stateBackground = overlay
+              ? compositeColor(overlay, base)
+              : base;
+            const resolvedForeground = compositeColor(
+              foreground,
+              stateBackground,
+            );
+            return contrastRatio(resolvedForeground, stateBackground);
+          }),
+        );
+
+      return {
+        color,
+        name: color[0].toUpperCase() + color.slice(1),
+        rest: ratio(),
+        hover: ratio(hover),
+        pressed: ratio(pressed),
+      };
+    } catch {
+      return {
+        color,
+        name: color[0].toUpperCase() + color.slice(1),
+        rest: undefined,
+        hover: undefined,
+        pressed: undefined,
+      };
+    }
+  });
+}
+
+const BANNER_DEFAULTS = {
+  info: {
+    backgroundColor: 'var(--color-accent-muted)',
+    iconColor: 'var(--color-accent)',
+  },
+  success: {
+    backgroundColor: 'var(--color-success-muted)',
+    iconColor: 'var(--color-success)',
+  },
+  warning: {
+    backgroundColor: 'var(--color-warning-muted)',
+    iconColor: 'var(--color-warning)',
+  },
+  error: {
+    backgroundColor: 'var(--color-error-muted)',
+    iconColor: 'var(--color-error)',
+  },
+} as const;
+
+const FIELD_STATUS_TYPES = ['success', 'warning', 'error'] as const;
+
+const FIELD_STATUS_DEFAULTS = {
+  success: {
+    backgroundColor: 'var(--color-success-muted)',
+    color: 'var(--color-text-green)',
+  },
+  warning: {
+    backgroundColor: 'var(--color-warning-muted)',
+    color: 'var(--color-text-yellow)',
+  },
+  error: {
+    backgroundColor: 'var(--color-error-muted)',
+    color: 'var(--color-text-red)',
+  },
+} as const;
+
+function getFieldStatusContrast(theme: DefinedTheme, mode: Mode) {
+  const surfaces = [
+    '--color-background-body',
+    '--color-background-surface',
+    '--color-background-card',
+  ] as const;
+
+  return FIELD_STATUS_TYPES.map(status => {
+    try {
+      const fieldStatusBlock = theme.components?.['field-status'] ?? {};
+      const statusOverride = fieldStatusBlock[`type:${status}`] ?? {};
+      const local = Object.fromEntries(
+        Object.entries({...fieldStatusBlock.base, ...statusOverride}).filter(
+          (entry): entry is [string, string] =>
+            entry[0].startsWith('--') && typeof entry[1] === 'string',
+        ),
+      );
+      const foreground = resolveThemeColor(
+        theme,
+        String(
+          statusOverride.color ??
+            fieldStatusBlock.color ??
+            FIELD_STATUS_DEFAULTS[status].color,
+        ),
+        mode,
+        local,
+      );
+      const background = resolveThemeColor(
+        theme,
+        String(
+          statusOverride.backgroundColor ??
+            fieldStatusBlock.backgroundColor ??
+            FIELD_STATUS_DEFAULTS[status].backgroundColor,
+        ),
+        mode,
+        local,
+      );
+      const ratio = Math.min(
+        ...surfaces.map(surfaceToken => {
+          const parent = resolveToken(theme, surfaceToken, mode);
+          const resolvedBackground = compositeColor(background, parent);
+          return contrastRatio(
+            compositeColor(foreground, resolvedBackground),
+            resolvedBackground,
+          );
+        }),
+      );
+
+      const bannerBlock = theme.components?.banner ?? {};
+      const bannerOverride = bannerBlock[`status:${status}`] ?? {};
+      const bannerLocal = Object.fromEntries(
+        Object.entries({...bannerBlock.base, ...bannerOverride}).filter(
+          (entry): entry is [string, string] =>
+            entry[0].startsWith('--') && typeof entry[1] === 'string',
+        ),
+      );
+      const bannerForeground = resolveThemeColor(
+        theme,
+        'var(--color-text-primary)',
+        mode,
+        bannerLocal,
+      );
+      const bannerBackground = resolveThemeColor(
+        theme,
+        BANNER_DEFAULTS[status].backgroundColor,
+        mode,
+        bannerLocal,
+      );
+
+      return {
+        status,
+        name: status[0].toUpperCase() + status.slice(1),
+        ratio,
+        matchesBanner:
+          foreground.toLowerCase() === bannerForeground.toLowerCase() &&
+          background.toLowerCase() === bannerBackground.toLowerCase(),
+      };
+    } catch {
+      return {
+        status,
+        name: status[0].toUpperCase() + status.slice(1),
+        ratio: undefined,
+        matchesBanner: false,
+      };
+    }
+  });
+}
+
+function getInputContrast(theme: DefinedTheme, mode: Mode) {
+  try {
+    const parentTokens = [
+      '--color-background-body',
+      '--color-background-surface',
+      '--color-background-card',
+    ] as const;
+    const parents = parentTokens.map(token => resolveToken(theme, token, mode));
+    const inputBlock = theme.components?.['text-input'] ?? {};
+    const inputLocal = Object.fromEntries(
+      Object.entries(inputBlock.base ?? {}).filter(
+        (entry): entry is [string, string] =>
+          entry[0].startsWith('--') && typeof entry[1] === 'string',
+      ),
+    );
+    const inputBackground = resolveThemeColor(
+      theme,
+      String(
+        inputBlock.base?.backgroundColor ?? 'var(--color-background-surface)',
+      ),
+      mode,
+      inputLocal,
+    );
+    const labelBlock = theme.components?.['field-label'] ?? {};
+    const labelLocal = Object.fromEntries(
+      Object.entries(labelBlock.base ?? {}).filter(
+        (entry): entry is [string, string] =>
+          entry[0].startsWith('--') && typeof entry[1] === 'string',
+      ),
+    );
+    const labelColor = resolveThemeColor(
+      theme,
+      String(labelBlock.base?.color ?? 'var(--color-text-secondary)'),
+      mode,
+      labelLocal,
+    );
+    const valueColor = resolveThemeColor(
+      theme,
+      'var(--color-text-primary)',
+      mode,
+      inputLocal,
+    );
+    const secondaryText = resolveThemeColor(
+      theme,
+      'var(--color-text-secondary)',
+      mode,
+      inputLocal,
+    );
+    const iconColor = resolveThemeColor(
+      theme,
+      'var(--color-icon-secondary)',
+      mode,
+      inputLocal,
+    );
+    const defaultBorder = resolveThemeColor(
+      theme,
+      String(inputBlock.base?.borderColor ?? 'var(--color-border-emphasized)'),
+      mode,
+      inputLocal,
+    );
+    const focusBorder = resolveThemeColor(
+      theme,
+      'var(--color-accent)',
+      mode,
+      inputLocal,
+    );
+    const againstParents = (foreground: string) =>
+      Math.min(...parents.map(parent => contrastRatio(foreground, parent)));
+    const againstInput = (foreground: string) =>
+      contrastRatio(foreground, inputBackground);
+    const boundaryRatio = (foreground: string) =>
+      Math.min(againstInput(foreground), againstParents(foreground));
+
+    const rows = [
+      {
+        key: 'label',
+        relationship: 'Label, description, optional / required',
+        ratio: againstParents(labelColor),
+        minimum: 4.5,
+        note: 'Text',
+      },
+      {
+        key: 'value',
+        relationship: 'Value and read-only value',
+        ratio: againstInput(valueColor),
+        minimum: 4.5,
+        note: 'Text',
+      },
+      {
+        key: 'placeholder',
+        relationship: 'Placeholder',
+        ratio: againstInput(secondaryText),
+        minimum: 4.5,
+        note: 'Text',
+      },
+      {
+        key: 'boundary',
+        relationship: 'Default control boundary',
+        ratio: boundaryRatio(defaultBorder),
+        minimum: 3,
+        note: 'Non-text',
+      },
+      {
+        key: 'focus',
+        relationship: 'Focus border color',
+        ratio: boundaryRatio(focusBorder),
+        minimum: 3,
+        note: 'Color only',
+      },
+      {
+        key: 'icons',
+        relationship: 'Start, clear, and label-info icons',
+        ratio: Math.min(againstInput(iconColor), againstParents(labelColor)),
+        minimum: 3,
+        note: 'When meaningful',
+      },
+      {
+        key: 'spinner',
+        relationship: 'Loading spinner arc',
+        ratio: againstInput(focusBorder),
+        minimum: 3,
+        note: 'Track is decorative',
+      },
+    ];
+
+    const statusRows = FIELD_STATUS_TYPES.map(status => {
+      const statusBlock = inputBlock[`status:${status}`] ?? {};
+      const local = Object.fromEntries(
+        Object.entries({...inputBlock.base, ...statusBlock}).filter(
+          (entry): entry is [string, string] =>
+            entry[0].startsWith('--') && typeof entry[1] === 'string',
+        ),
+      );
+      const color = resolveThemeColor(
+        theme,
+        String(statusBlock.borderColor ?? `var(--color-${status})`),
+        mode,
+        local,
+      );
+      return {
+        key: status,
+        relationship: `${status[0].toUpperCase() + status.slice(1)} border and status icon`,
+        ratio: boundaryRatio(color),
+        minimum: 3,
+        note: 'Non-text',
+      };
+    });
+
+    return [...rows, ...statusRows];
+  } catch {
+    return [
+      ['label', 'Label, description, optional / required', 4.5, 'Text'],
+      ['value', 'Value and read-only value', 4.5, 'Text'],
+      ['placeholder', 'Placeholder', 4.5, 'Text'],
+      ['boundary', 'Default control boundary', 3, 'Non-text'],
+      ['focus', 'Focus border color', 3, 'Color only'],
+      ['icons', 'Start, clear, and label-info icons', 3, 'When meaningful'],
+      ['spinner', 'Loading spinner arc', 3, 'Track is decorative'],
+      ...FIELD_STATUS_TYPES.map(status => [
+        status,
+        `${status[0].toUpperCase() + status.slice(1)} border and status icon`,
+        3,
+        'Non-text',
+      ]),
+    ].map(([key, relationship, minimum, note]) => ({
+      key: String(key),
+      relationship: String(relationship),
+      ratio: undefined,
+      minimum: Number(minimum),
+      note: String(note),
+    }));
+  }
+}
+
+const CONTROL_AUDIT_ROWS = [
+  ['checkbox-label', 'Checkbox', 'Label and description', 4.5, 'Text'],
+  ['checkbox-off', 'Checkbox', 'Unchecked boundary', 3, 'Control boundary'],
+  ['checkbox-on', 'Checkbox', 'Checked fill', 3, 'Control boundary'],
+  ['checkbox-mark', 'Checkbox', 'Check / indeterminate mark', 3, 'State'],
+  ['checkbox-loading', 'Checkbox', 'Loading spinner arc', 3, 'Busy state'],
+  ['checkbox-focus', 'Checkbox', 'Focus indicator', 3, 'Focus'],
+  ['radio-label', 'Radio', 'Label and description', 4.5, 'Text'],
+  ['radio-off', 'Radio', 'Unchecked boundary', 3, 'Control boundary'],
+  ['radio-on', 'Radio', 'Selected fill', 3, 'Control boundary'],
+  ['radio-dot', 'Radio', 'Selected dot', 3, 'State'],
+  ['radio-focus', 'Radio', 'Focus indicator', 3, 'Focus'],
+  ['switch-label', 'Switch', 'Label and description', 4.5, 'Text'],
+  ['switch-off', 'Switch', 'Off track', 3, 'Control boundary'],
+  ['switch-off-thumb', 'Switch', 'Off thumb', 3, 'State'],
+  ['switch-on', 'Switch', 'On track', 3, 'Control boundary'],
+  ['switch-on-thumb', 'Switch', 'On thumb', 3, 'State'],
+  ['switch-loading', 'Switch', 'Loading spinner arc', 3, 'Busy state'],
+  ['switch-focus', 'Switch', 'Focus indicator', 3, 'Focus'],
+] as const;
+
+function getControlContrast(theme: DefinedTheme, mode: Mode) {
+  try {
+    const parents = [
+      '--color-background-body',
+      '--color-background-surface',
+      '--color-background-card',
+    ].map(token => resolveToken(theme, token, mode));
+    const surface = resolveToken(theme, '--color-background-surface', mode);
+    const primary = resolveToken(theme, '--color-text-primary', mode);
+    const secondary = resolveToken(theme, '--color-text-secondary', mode);
+    const emphasized = resolveToken(theme, '--color-border-emphasized', mode);
+    const accent = resolveToken(theme, '--color-accent', mode);
+    const onAccent = resolveToken(theme, '--color-on-accent', mode);
+    const tint = resolveToken(theme, '--color-tint-hover', mode);
+    const focus = resolveToken(theme, '--focus-outline-color', mode);
+    const switchBlock = theme.components?.switch ?? {};
+    const switchLocal = Object.fromEntries(
+      Object.entries(switchBlock.base ?? {}).filter(
+        (entry): entry is [string, string] =>
+          entry[0].startsWith('--') && typeof entry[1] === 'string',
+      ),
+    );
+    const switchOff = resolveThemeColor(
+      theme,
+      String(
+        switchBlock.base?.backgroundColor ?? 'var(--color-background-gray)',
+      ),
+      mode,
+      switchLocal,
+    );
+    const switchThumbBlock = theme.components?.['switch-thumb'] ?? {};
+    const switchThumb = resolveThemeColor(
+      theme,
+      String(
+        switchThumbBlock.base?.backgroundColor ??
+          'var(--color-background-surface)',
+      ),
+      mode,
+      switchLocal,
+    );
+    const uncheckedHoverFill = mixColors(surface, tint, 0.05);
+    const uncheckedHoverBorder = mixColors(emphasized, tint, 0.2);
+    const checkedHoverFill = mixColors(accent, tint, 0.15);
+    const switchOffHover = mixColors(switchOff, tint, 0.05);
+    const againstParents = (foreground: string) =>
+      Math.min(...parents.map(parent => contrastRatio(foreground, parent)));
+    const boundary = (foreground: string, fill: string) =>
+      Math.min(contrastRatio(foreground, fill), againstParents(foreground));
+
+    const values: Record<
+      (typeof CONTROL_AUDIT_ROWS)[number][0],
+      {rest: number; hover?: number}
+    > = {
+      'checkbox-label': {rest: againstParents(secondary)},
+      'checkbox-off': {
+        rest: boundary(emphasized, surface),
+        hover: boundary(uncheckedHoverBorder, uncheckedHoverFill),
+      },
+      'checkbox-on': {
+        rest: againstParents(accent),
+        hover: againstParents(checkedHoverFill),
+      },
+      'checkbox-mark': {
+        rest: contrastRatio(onAccent, accent),
+        hover: contrastRatio(onAccent, checkedHoverFill),
+      },
+      'checkbox-loading': {
+        rest: Math.min(
+          contrastRatio(accent, surface),
+          contrastRatio(onAccent, accent),
+        ),
+        hover: Math.min(
+          contrastRatio(accent, uncheckedHoverFill),
+          contrastRatio(onAccent, checkedHoverFill),
+        ),
+      },
+      'checkbox-focus': {rest: againstParents(focus)},
+      'radio-label': {
+        rest: Math.min(againstParents(primary), againstParents(secondary)),
+      },
+      'radio-off': {
+        rest: boundary(emphasized, surface),
+        hover: boundary(uncheckedHoverBorder, uncheckedHoverFill),
+      },
+      'radio-on': {
+        rest: againstParents(accent),
+        hover: againstParents(checkedHoverFill),
+      },
+      'radio-dot': {
+        rest: contrastRatio(onAccent, accent),
+        hover: contrastRatio(onAccent, checkedHoverFill),
+      },
+      'radio-focus': {rest: againstParents(focus)},
+      'switch-label': {rest: againstParents(secondary)},
+      'switch-off': {
+        rest: againstParents(switchOff),
+        hover: againstParents(switchOffHover),
+      },
+      'switch-off-thumb': {
+        rest: contrastRatio(switchThumb, switchOff),
+        hover: contrastRatio(switchThumb, switchOffHover),
+      },
+      'switch-on': {
+        rest: againstParents(accent),
+        hover: againstParents(checkedHoverFill),
+      },
+      'switch-on-thumb': {
+        rest: contrastRatio(switchThumb, accent),
+        hover: contrastRatio(switchThumb, checkedHoverFill),
+      },
+      'switch-loading': {rest: contrastRatio(accent, switchThumb)},
+      'switch-focus': {rest: againstParents(focus)},
+    };
+
+    return CONTROL_AUDIT_ROWS.map(
+      ([key, component, relationship, minimum, note]) => ({
+        key,
+        component,
+        relationship,
+        minimum,
+        note,
+        ...values[key],
+      }),
+    );
+  } catch {
+    return CONTROL_AUDIT_ROWS.map(
+      ([key, component, relationship, minimum, note]) => ({
+        key,
+        component,
+        relationship,
+        minimum,
+        note,
+        rest: undefined,
+        hover: undefined,
+      }),
+    );
+  }
+}
+
+const PROGRESS_VARIANTS = [
+  'accent',
+  'success',
+  'warning',
+  'error',
+  'neutral',
+] as const satisfies readonly ProgressBarVariant[];
+
+function getSpinnerContrast(theme: DefinedTheme, mode: Mode) {
+  try {
+    const parents = [
+      '--color-background-body',
+      '--color-background-surface',
+      '--color-background-card',
+    ].map(token => resolveToken(theme, token, mode));
+    const minimumOnParents = (foreground: string) =>
+      Math.min(...parents.map(parent => contrastRatio(foreground, parent)));
+    const primary = resolveToken(theme, '--color-text-primary', mode);
+    const label = minimumOnParents(primary);
+    const accent = resolveToken(theme, '--color-accent', mode);
+    const secondary = resolveToken(theme, '--color-text-secondary', mode);
+    const onDark = resolveToken(theme, '--color-on-dark', mode);
+    const media = resolveToken(theme, '--color-on-light', mode);
+    const onAccent = resolveToken(theme, '--color-on-accent', mode);
+
+    return [
+      {
+        shade: 'default',
+        name: 'Default',
+        arc: minimumOnParents(accent),
+        label,
+        context: 'Body / surface / card',
+      },
+      {
+        shade: 'subtle',
+        name: 'Subtle',
+        arc: minimumOnParents(secondary),
+        label,
+        context: 'Body / surface / card',
+      },
+      {
+        shade: 'onMedia',
+        name: 'On media',
+        arc: contrastRatio(onDark, media),
+        label: undefined,
+        context: 'Dark media surface',
+      },
+      {
+        shade: 'inherit',
+        name: 'Inherit',
+        arc: contrastRatio(onAccent, accent),
+        label: undefined,
+        context: 'Accent context shown',
+      },
+    ] as const;
+  } catch {
+    return [
+      ['default', 'Default', 'Body / surface / card'],
+      ['subtle', 'Subtle', 'Body / surface / card'],
+      ['onMedia', 'On media', 'Dark media surface'],
+      ['inherit', 'Inherit', 'Accent context shown'],
+    ].map(([shade, name, context]) => ({
+      shade,
+      name,
+      arc: undefined,
+      label: undefined,
+      context,
+    }));
+  }
+}
+
+function getProgressContrast(theme: DefinedTheme, mode: Mode) {
+  const fallbackRows = PROGRESS_VARIANTS.map(variant => ({
+    variant,
+    name: variant[0].toUpperCase() + variant.slice(1),
+    fillTrack: undefined,
+    trackParent: undefined,
+    markOnFill: undefined,
+    markOnTrack: undefined,
+    markFocus: undefined,
+  }));
+
+  try {
+    const parents = [
+      '--color-background-body',
+      '--color-background-surface',
+      '--color-background-card',
+    ].map(token => resolveToken(theme, token, mode));
+    const progressBlock = theme.components?.['progress-bar'] ?? {};
+    const progressFillBlock = theme.components?.['progress-bar-fill'] ?? {};
+    const progressMarkBlock = theme.components?.['progress-bar-mark'] ?? {};
+    const primary = resolveToken(theme, '--color-text-primary', mode);
+    const secondary = resolveToken(theme, '--color-text-secondary', mode);
+    const labels = Math.min(
+      ...parents.flatMap(parent => [
+        contrastRatio(primary, parent),
+        contrastRatio(secondary, parent),
+      ]),
+    );
+    const fillDefaults = {
+      accent: 'var(--color-accent)',
+      success: 'var(--color-success)',
+      warning: 'var(--color-warning)',
+      error: 'var(--color-error)',
+      neutral: 'var(--color-text-disabled)',
+    } as const;
+    const markDefaults = {
+      accent: 'var(--color-on-accent)',
+      success: 'var(--color-on-success)',
+      warning: 'var(--color-on-warning)',
+      error: 'var(--color-on-error)',
+      neutral: 'var(--color-text-primary)',
+    } as const;
+
+    return {
+      labels,
+      rows: PROGRESS_VARIANTS.map(variant => {
+        const variantBlock = progressBlock[`variant:${variant}`] ?? {};
+        const fillVariantBlock = progressFillBlock[`variant:${variant}`] ?? {};
+        const markFillVariantBlock =
+          progressMarkBlock[`variant:${variant}+placement:fill`] ??
+          progressMarkBlock[`variant:${variant}`] ??
+          {};
+        const local = Object.fromEntries(
+          Object.entries({...progressBlock.base, ...variantBlock}).filter(
+            (entry): entry is [string, string] =>
+              entry[0].startsWith('--') && typeof entry[1] === 'string',
+          ),
+        );
+        const track = resolveThemeColor(
+          theme,
+          'var(--color-background-muted)',
+          mode,
+          local,
+        );
+        const fill = resolveThemeColor(
+          theme,
+          String(fillVariantBlock.backgroundColor ?? fillDefaults[variant]),
+          mode,
+          local,
+        );
+        const markFill = resolveThemeColor(
+          theme,
+          String(markFillVariantBlock.backgroundColor ?? markDefaults[variant]),
+          mode,
+          local,
+        );
+        const markTrack = resolveThemeColor(
+          theme,
+          'var(--color-text-primary)',
+          mode,
+          local,
+        );
+        const focus = resolveThemeColor(
+          theme,
+          'var(--focus-outline-color)',
+          mode,
+          local,
+        );
+
+        return {
+          variant,
+          name: variant[0].toUpperCase() + variant.slice(1),
+          fillTrack: contrastRatio(fill, track),
+          trackParent: Math.min(
+            ...parents.map(parent => contrastRatio(track, parent)),
+          ),
+          markOnFill: contrastRatio(markFill, fill),
+          markOnTrack: contrastRatio(markTrack, track),
+          markFocus: Math.min(
+            contrastRatio(focus, fill),
+            contrastRatio(focus, track),
+          ),
+        };
+      }),
+    };
+  } catch {
+    return {labels: undefined, rows: fallbackRows};
+  }
+}
+
+function getBannerContrast(theme: DefinedTheme, mode: Mode) {
+  const surfaces = [
+    '--color-background-body',
+    '--color-background-surface',
+    '--color-background-card',
+  ] as const;
+
+  return BANNER_STATUSES.map(status => {
+    try {
+      const bannerBlock = theme.components?.banner ?? {};
+      const statusOverride = bannerBlock[`status:${status}`] ?? {};
+      const local = Object.fromEntries(
+        Object.entries({...bannerBlock.base, ...statusOverride}).filter(
+          (entry): entry is [string, string] =>
+            entry[0].startsWith('--') && typeof entry[1] === 'string',
+        ),
+      );
+      const background = resolveThemeColor(
+        theme,
+        String(
+          statusOverride.backgroundColor ??
+            bannerBlock.backgroundColor ??
+            BANNER_DEFAULTS[status].backgroundColor,
+        ),
+        mode,
+        local,
+      );
+      const title = resolveThemeColor(
+        theme,
+        'var(--color-text-primary)',
+        mode,
+        local,
+      );
+      const description = resolveThemeColor(
+        theme,
+        'var(--color-text-secondary)',
+        mode,
+        local,
+      );
+      const statusIcon = resolveThemeColor(
+        theme,
+        BANNER_DEFAULTS[status].iconColor,
+        mode,
+        local,
+      );
+      const hover = resolveThemeColor(
+        theme,
+        theme.tokens['--color-overlay-hover'] ??
+          tokenDefaults['--color-overlay-hover'],
+        mode,
+        local,
+      );
+      const pressed = resolveThemeColor(
+        theme,
+        theme.tokens['--color-overlay-pressed'] ??
+          tokenDefaults['--color-overlay-pressed'],
+        mode,
+        local,
+      );
+      const bannerBackgrounds = surfaces.map(surfaceToken => {
+        const parent = resolveToken(theme, surfaceToken, mode);
+        return compositeColor(background, parent);
+      });
+      const contrastOnHeaders = (foreground: string, overlay?: string) =>
+        Math.min(
+          ...bannerBackgrounds.map(headerBackground => {
+            const stateBackground = overlay
+              ? compositeColor(overlay, headerBackground)
+              : headerBackground;
+            return contrastRatio(
+              compositeColor(foreground, stateBackground),
+              stateBackground,
+            );
+          }),
+        );
+
+      const focusToken =
+        theme.tokens['--focus-outline-color'] ??
+        tokenDefaults['--focus-outline-color'];
+      if (!focusToken) {
+        throw new Error('Unable to resolve --focus-outline-color');
+      }
+      const focusColor = resolveThemeColor(theme, focusToken, mode, local);
+      const focus = contrastOnHeaders(focusColor);
+      const buttonAudit = (variant: 'secondary' | 'ghost') => {
+        const defaults = {
+          secondary: {
+            backgroundColor: 'var(--color-neutral)',
+            color: 'var(--color-text-primary)',
+          },
+          ghost: {
+            backgroundColor: 'transparent',
+            color: 'var(--color-text-primary)',
+          },
+        } as const;
+        const override = theme.components?.button?.[`variant:${variant}`] ?? {};
+        const foreground = resolveThemeColor(
+          theme,
+          String(override.color ?? defaults[variant].color),
+          mode,
+          local,
+        );
+        const backgroundValue = String(
+          override.backgroundColor ?? defaults[variant].backgroundColor,
+        );
+        const background =
+          backgroundValue === 'transparent'
+            ? backgroundValue
+            : resolveThemeColor(theme, backgroundValue, mode, local);
+        const ratio = (overlay?: string) =>
+          Math.min(
+            ...bannerBackgrounds.map(headerBackground => {
+              const base =
+                background === 'transparent'
+                  ? headerBackground
+                  : compositeColor(background, headerBackground);
+              const stateBackground = overlay
+                ? compositeColor(overlay, base)
+                : base;
+              return contrastRatio(
+                compositeColor(foreground, stateBackground),
+                stateBackground,
+              );
+            }),
+          );
+
+        return {
+          variant,
+          name: variant[0].toUpperCase() + variant.slice(1),
+          rest: ratio(),
+          hover: ratio(hover),
+          pressed: ratio(pressed),
+          spinnerOrIcon: ratio(),
+          focus,
+        };
+      };
+
+      return {
+        status,
+        name: status[0].toUpperCase() + status.slice(1),
+        text: Math.min(
+          contrastOnHeaders(title),
+          contrastOnHeaders(description),
+        ),
+        statusIcon: contrastOnHeaders(statusIcon),
+        buttons: [buttonAudit('secondary'), buttonAudit('ghost')],
+      };
+    } catch {
+      return {
+        status,
+        name: status[0].toUpperCase() + status.slice(1),
+        text: undefined,
+        statusIcon: undefined,
+        buttons: [
+          {
+            variant: 'secondary' as const,
+            name: 'Secondary',
+            rest: undefined,
+            hover: undefined,
+            pressed: undefined,
+            spinnerOrIcon: undefined,
+            focus: undefined,
+          },
+          {
+            variant: 'ghost' as const,
+            name: 'Ghost',
+            rest: undefined,
+            hover: undefined,
+            pressed: undefined,
+            spinnerOrIcon: undefined,
+            focus: undefined,
+          },
+        ],
+      };
+    }
+  });
 }
 
 function getButtonContrast(theme: DefinedTheme, mode: Mode) {
@@ -1124,82 +2414,457 @@ function ButtonSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
   );
 }
 
-function SpinnerSection() {
+function SpinnerSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
+  const audit = getSpinnerContrast(theme, mode);
+
   return (
-    <div>
+    <div style={S.section}>
       <h3 style={S.sectionTitle}>Spinners</h3>
-      <HStack gap={4} vAlign="center">
-        <Spinner size="sm" />
-        <Spinner size="md" />
-        <Spinner size="lg" />
-      </HStack>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+          gap: 12,
+        }}>
+        <div style={{padding: 12}}>
+          <div style={buttonRowLabelStyle}>Default</div>
+          <HStack gap={3} vAlign="center">
+            <Spinner size="sm" />
+            <Spinner size="md" label="Loading" />
+          </HStack>
+        </div>
+        <div style={{padding: 12}}>
+          <div style={buttonRowLabelStyle}>Subtle</div>
+          <Spinner shade="subtle" label="Loading" />
+        </div>
+        <div
+          style={{
+            padding: 12,
+            borderRadius: 8,
+            background: 'var(--color-on-light)',
+            color: 'var(--color-on-dark)',
+          }}>
+          <div style={{...buttonRowLabelStyle, opacity: 0.8}}>On media</div>
+          <Spinner shade="onMedia" aria-label="Loading media" />
+        </div>
+        <div
+          style={{
+            padding: 12,
+            borderRadius: 8,
+            background: 'var(--color-accent)',
+            color: 'var(--color-on-accent)',
+          }}>
+          <div style={{...buttonRowLabelStyle, opacity: 0.8}}>Inherited</div>
+          <Spinner shade="inherit" aria-label="Loading action" />
+        </div>
+      </div>
+      <div style={{overflowX: 'auto', marginTop: 12}}>
+        <table
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: 11,
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+          <thead>
+            <tr>
+              {['Shade', 'Context', 'Active arc', 'Visible label', 'WCAG'].map(
+                label => (
+                  <th
+                    key={label}
+                    style={{
+                      padding: '7px 8px',
+                      borderBottom: '1px solid var(--color-border)',
+                      textAlign:
+                        label === 'Shade' || label === 'Context'
+                          ? 'left'
+                          : 'right',
+                    }}>
+                    {label}
+                  </th>
+                ),
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {audit.map(row => {
+              const measured = row.arc != null;
+              const passes =
+                measured &&
+                row.arc >= 3 &&
+                (row.label == null || row.label >= 4.5);
+              return (
+                <tr key={row.shade}>
+                  <td style={{padding: '8px'}}>{row.name}</td>
+                  <td style={{padding: '8px'}}>{row.context}</td>
+                  {[row.arc, row.label].map((ratio, index) => (
+                    <td
+                      key={index}
+                      style={{padding: '8px', textAlign: 'right'}}>
+                      {ratio == null ? '—' : `${ratio.toFixed(2)}:1`}
+                    </td>
+                  ))}
+                  <td
+                    style={{
+                      padding: '8px',
+                      textAlign: 'right',
+                      color: !measured
+                        ? 'var(--color-text-secondary)'
+                        : passes
+                          ? 'var(--color-success)'
+                          : 'var(--color-error)',
+                      fontWeight: 700,
+                    }}>
+                    {!measured ? 'Not measured' : passes ? 'Pass' : 'Fail'}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p
+        style={{
+          margin: '8px 0 0',
+          color: 'var(--color-text-secondary)',
+          fontSize: 10,
+          lineHeight: 1.5,
+        }}>
+        The moving arc communicates loading and requires 3:1 against its actual
+        background. The faint circular track is redundant and may be decorative.
+        Visible labels require 4.5:1. Inherit is context-dependent, so the shown
+        result is specifically the accent context above.
+      </p>
     </div>
   );
 }
 
-function ProgressBarSection() {
+function ProgressBarSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
+  const audit = getProgressContrast(theme, mode);
+  const marks = [
+    {value: 25, label: 'Quarter'},
+    {value: 80, label: 'Goal'},
+  ];
+
   return (
-    <div>
-      <h3 style={S.sectionTitle}>Progress</h3>
+    <div style={S.section}>
+      <h3 style={S.sectionTitle}>Progress bars</h3>
       <VStack gap={3}>
-        <ProgressBar value={75} label="Progress" hasValueLabel />
+        {PROGRESS_VARIANTS.map((variant, index) => (
+          <ProgressBar
+            key={variant}
+            value={45 + index * 10}
+            label={`${variant[0].toUpperCase() + variant.slice(1)} progress`}
+            variant={variant}
+            hasValueLabel
+            marks={marks}
+          />
+        ))}
         <ProgressBar
-          value={40}
-          label="Upload"
-          variant="success"
-          hasValueLabel
+          isIndeterminate
+          label="Indeterminate progress"
+          variant="accent"
         />
         <ProgressBar
-          value={90}
-          label="Storage"
-          variant="warning"
+          value={60}
+          label="Disabled progress"
+          variant="neutral"
           hasValueLabel
+          isDisabled
         />
-        <ProgressBar isIndeterminate label="Loading..." />
       </VStack>
+      <div style={{...buttonRowLabelStyle, marginTop: 14}}>
+        Label and value text:{' '}
+        {audit.labels == null ? 'not measured' : `${audit.labels.toFixed(2)}:1`}
+        {audit.labels != null && (audit.labels >= 4.5 ? ' · Pass' : ' · Fail')}
+      </div>
+      <div style={{overflowX: 'auto'}}>
+        <table
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: 11,
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+          <thead>
+            <tr>
+              {[
+                'Variant',
+                'Fill / track',
+                'Track / parent',
+                'Mark / fill',
+                'Mark / track',
+                'Mark focus',
+                'WCAG',
+              ].map(label => (
+                <th
+                  key={label}
+                  style={{
+                    padding: '7px 8px',
+                    borderBottom: '1px solid var(--color-border)',
+                    textAlign: label === 'Variant' ? 'left' : 'right',
+                  }}>
+                  {label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {audit.rows.map(row => {
+              const ratios = [
+                row.fillTrack,
+                row.trackParent,
+                row.markOnFill,
+                row.markOnTrack,
+                row.markFocus,
+              ];
+              const measured = ratios.every(
+                (ratio): ratio is number => ratio != null,
+              );
+              const passes = measured && Math.min(...ratios) >= 3;
+              return (
+                <tr key={row.variant}>
+                  <td style={{padding: '8px'}}>{row.name}</td>
+                  {ratios.map((ratio, index) => (
+                    <td
+                      key={index}
+                      style={{padding: '8px', textAlign: 'right'}}>
+                      {ratio == null ? '—' : `${ratio.toFixed(2)}:1`}
+                    </td>
+                  ))}
+                  <td
+                    style={{
+                      padding: '8px',
+                      textAlign: 'right',
+                      color: !measured
+                        ? 'var(--color-text-secondary)'
+                        : passes
+                          ? 'var(--color-success)'
+                          : 'var(--color-error)',
+                      fontWeight: 700,
+                    }}>
+                    {!measured ? 'Not measured' : passes ? 'Pass' : 'Fail'}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p
+        style={{
+          margin: '8px 0 0',
+          color: 'var(--color-text-secondary)',
+          fontSize: 10,
+          lineHeight: 1.5,
+        }}>
+        Fill must contrast with the track, and the track must remain visible
+        against its parent because it defines the total range. Target marks are
+        meaningful and require 3:1 on either fill or track; their keyboard focus
+        indicator is measured separately. Determinate and indeterminate fills
+        use the same pair. Disabled progress is an inactive-control exception.
+      </p>
     </div>
   );
 }
 
-function CheckboxRadioSwitchSection() {
+function CheckboxRadioSwitchSection({
+  theme,
+  mode,
+}: {
+  theme: DefinedTheme;
+  mode: Mode;
+}) {
+  const audit = getControlContrast(theme, mode);
+
   return (
-    <div>
+    <div style={S.section}>
       <h3 style={S.sectionTitle}>Controls</h3>
       <VStack gap={4}>
-        <VStack gap={2}>
-          <CheckboxInput
-            label="Enable notifications"
-            value={true}
+        <div>
+          <div style={buttonRowLabelStyle}>Checkbox states</div>
+          <VStack gap={2}>
+            <CheckboxInput
+              label="Unchecked"
+              description="Default boundary and label treatment"
+              value={false}
+              onChange={() => {}}
+            />
+            <CheckboxInput label="Checked" value={true} onChange={() => {}} />
+            <CheckboxInput
+              label="Indeterminate"
+              value="indeterminate"
+              onChange={() => {}}
+            />
+            <CheckboxInput
+              label="Loading"
+              value={true}
+              onChange={() => {}}
+              isLoading
+            />
+            <CheckboxInput
+              label="Read-only"
+              value={true}
+              onChange={() => {}}
+              isReadOnly
+            />
+            <CheckboxInput
+              label="Disabled"
+              value={true}
+              onChange={() => {}}
+              isDisabled
+            />
+            <CheckboxInput
+              label="Error status"
+              value={false}
+              onChange={() => {}}
+              status={{type: 'error', message: 'This choice is required.'}}
+            />
+          </VStack>
+        </div>
+        <div>
+          <div style={buttonRowLabelStyle}>Radio states</div>
+          <RadioList
+            label="Display mode"
+            value="comfortable"
             onChange={() => {}}
-          />
-          <CheckboxInput
-            label="Auto-save drafts"
-            value={false}
-            onChange={() => {}}
-          />
-          <CheckboxInput
-            label="Show previews"
-            value={true}
-            onChange={() => {}}
-            isDisabled
-          />
-        </VStack>
-        <RadioList label="Display mode" value="comfortable" onChange={() => {}}>
-          <RadioListItem value="compact" label="Compact" />
-          <RadioListItem value="comfortable" label="Comfortable" />
-          <RadioListItem value="spacious" label="Spacious" />
-        </RadioList>
-        <VStack gap={2}>
-          <Switch label="Dark mode" value={true} onChange={() => {}} />
-          <Switch label="Reduce motion" value={false} onChange={() => {}} />
-          <Switch
-            label="High contrast"
-            value={false}
-            onChange={() => {}}
-            isDisabled
-          />
-        </VStack>
+            status={{
+              type: 'warning',
+              message: 'This changes the page density.',
+            }}>
+            <RadioListItem
+              value="compact"
+              label="Compact"
+              description="More information in less space"
+            />
+            <RadioListItem value="comfortable" label="Comfortable" />
+            <RadioListItem value="spacious" label="Spacious" isDisabled />
+          </RadioList>
+        </div>
+        <div>
+          <div style={buttonRowLabelStyle}>Switch states</div>
+          <VStack gap={2}>
+            <Switch label="Off" value={false} onChange={() => {}} />
+            <Switch label="On" value={true} onChange={() => {}} />
+            <Switch
+              label="On with description"
+              description="Supporting text uses the secondary text token"
+              value={true}
+              onChange={() => {}}
+            />
+            <Switch
+              label="Loading"
+              value={true}
+              onChange={() => {}}
+              isLoading
+            />
+            <Switch
+              label="Disabled"
+              value={false}
+              onChange={() => {}}
+              isDisabled
+            />
+            <Switch
+              label="Success status"
+              value={true}
+              onChange={() => {}}
+              status={{type: 'success', message: 'Setting saved.'}}
+            />
+          </VStack>
+        </div>
       </VStack>
+      <div style={{overflowX: 'auto', marginTop: 14}}>
+        <table
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: 11,
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+          <thead>
+            <tr>
+              {[
+                'Control',
+                'Relationship',
+                'Rest',
+                'Hover',
+                'Requirement',
+                'Note',
+                'WCAG',
+              ].map(label => (
+                <th
+                  key={label}
+                  style={{
+                    padding: '7px 8px',
+                    borderBottom: '1px solid var(--color-border)',
+                    textAlign:
+                      label === 'Control' ||
+                      label === 'Relationship' ||
+                      label === 'Note'
+                        ? 'left'
+                        : 'right',
+                  }}>
+                  {label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {audit.map(row => {
+              const measured = row.rest != null;
+              const passes =
+                measured &&
+                row.rest >= row.minimum &&
+                (row.hover == null || row.hover >= row.minimum);
+              return (
+                <tr key={row.key}>
+                  <td style={{padding: '8px'}}>{row.component}</td>
+                  <td style={{padding: '8px'}}>{row.relationship}</td>
+                  {[row.rest, row.hover].map((ratio, index) => (
+                    <td
+                      key={index}
+                      style={{padding: '8px', textAlign: 'right'}}>
+                      {ratio == null ? '—' : `${ratio.toFixed(2)}:1`}
+                    </td>
+                  ))}
+                  <td style={{padding: '8px', textAlign: 'right'}}>
+                    {row.minimum}:1
+                  </td>
+                  <td style={{padding: '8px'}}>{row.note}</td>
+                  <td
+                    style={{
+                      padding: '8px',
+                      textAlign: 'right',
+                      color: !measured
+                        ? 'var(--color-text-secondary)'
+                        : passes
+                          ? 'var(--color-success)'
+                          : 'var(--color-error)',
+                      fontWeight: 700,
+                    }}>
+                    {!measured ? 'Not measured' : passes ? 'Pass' : 'Fail'}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p
+        style={{
+          margin: '8px 0 0',
+          color: 'var(--color-text-secondary)',
+          fontSize: 10,
+          lineHeight: 1.5,
+        }}>
+        Indicators are aria-hidden but visually meaningful: they are the visible
+        control and selected-state representation, so their boundaries and marks
+        require 3:1. Loading arcs remain meaningful while interaction is
+        temporarily blocked; their faint tracks are decorative. Focus rings are
+        measured against every parent surface. Disabled treatment is
+        contrast-exempt; Checkbox read-only remains active-looking and is not
+        exempt. Validation messages reuse the FieldStatus profile above.
+      </p>
     </div>
   );
 }
@@ -1369,58 +3034,423 @@ function ElevationsSection({
   );
 }
 
-function BannerSection() {
+const BANNER_STATUSES = [
+  'info',
+  'success',
+  'warning',
+  'error',
+] as const satisfies readonly BannerStatus[];
+
+function BannerSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
+  const audit = getBannerContrast(theme, mode);
   return (
     <div style={S.section}>
       <h3 style={S.sectionTitle}>Banners</h3>
       <VStack gap={2}>
+        {BANNER_STATUSES.map(status => (
+          <Banner
+            key={status}
+            status={status}
+            title={`${status[0].toUpperCase() + status.slice(1)} banner title`}
+            description={`Description text for the ${status} state.`}
+            endContent={
+              <>
+                <Button label="Details" variant="ghost" size="sm" />
+                <Button label="Review" variant="secondary" size="sm" />
+              </>
+            }
+            isDismissable
+          />
+        ))}
         <Banner
           status="info"
-          title="Info banner title"
-          description="Description text for the info state."
+          title="Loading and disabled actions"
+          description="Loading is measured; disabled contrast is exempt."
+          endContent={
+            <>
+              <Button label="Loading" variant="secondary" size="sm" isLoading />
+              <Button label="Disabled" variant="ghost" size="sm" isDisabled />
+            </>
+          }
         />
         <Banner
-          status="success"
-          title="Success banner title"
-          description="Description text for the success state."
-        />
-        <Banner
-          status="warning"
-          title="Warning banner title"
-          description="Description text for the warning state."
-        />
-        <Banner
-          status="error"
-          title="Error banner title"
-          description="Description text for the error state."
-        />
+          status="info"
+          title="Collapsible content"
+          description="The content area uses the standard card surface."
+          collapsible={{defaultIsOpen: true}}>
+          <Text type="supporting">
+            Rich banner content follows the normal card text requirements.
+          </Text>
+        </Banner>
       </VStack>
+      <div style={{overflowX: 'auto', marginTop: 12}}>
+        <table
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: 11,
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+          <thead>
+            <tr>
+              {['Status', 'Text', 'Status icon', 'WCAG'].map(label => (
+                <th
+                  key={label}
+                  style={{
+                    padding: '7px 8px',
+                    borderBottom: '1px solid var(--color-border)',
+                    textAlign: label === 'Status' ? 'left' : 'right',
+                  }}>
+                  {label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {audit.map(row => {
+              const measured = row.text != null && row.statusIcon != null;
+              const passes = measured && row.text >= 4.5;
+              return (
+                <tr key={row.status}>
+                  <td style={{padding: '8px'}}>{row.name}</td>
+                  {[row.text, row.statusIcon].map((ratio, index) => (
+                    <td
+                      key={index}
+                      style={{padding: '8px', textAlign: 'right'}}>
+                      {ratio == null ? '—' : `${ratio.toFixed(2)}:1`}
+                    </td>
+                  ))}
+                  <td
+                    style={{
+                      padding: '8px',
+                      textAlign: 'right',
+                      color: !measured
+                        ? 'var(--color-text-secondary)'
+                        : passes
+                          ? 'var(--color-success)'
+                          : 'var(--color-error)',
+                      fontWeight: 700,
+                    }}>
+                    {!measured ? 'Not measured' : passes ? 'Pass' : 'Fail'}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div style={{...buttonRowLabelStyle, marginTop: 16}}>
+        Button states on the tinted header
+      </div>
+      <div style={{overflowX: 'auto'}}>
+        <table
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: 11,
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+          <thead>
+            <tr>
+              {[
+                'Status',
+                'Button',
+                'Rest',
+                'Hover',
+                'Pressed',
+                'Spinner / icon',
+                'Focus',
+                'WCAG',
+              ].map(label => (
+                <th
+                  key={label}
+                  style={{
+                    padding: '7px 8px',
+                    borderBottom: '1px solid var(--color-border)',
+                    textAlign:
+                      label === 'Status' || label === 'Button'
+                        ? 'left'
+                        : 'right',
+                  }}>
+                  {label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {audit.flatMap(row =>
+              row.buttons.map(button => {
+                const ratios = [
+                  button.rest,
+                  button.hover,
+                  button.pressed,
+                  button.spinnerOrIcon,
+                  button.focus,
+                ];
+                const measured = ratios.every(
+                  (ratio): ratio is number => ratio != null,
+                );
+                const passes =
+                  button.rest != null &&
+                  button.hover != null &&
+                  button.pressed != null &&
+                  button.spinnerOrIcon != null &&
+                  button.focus != null &&
+                  Math.min(button.rest, button.hover, button.pressed) >= 4.5 &&
+                  button.spinnerOrIcon >= 3 &&
+                  button.focus >= 3;
+                return (
+                  <tr key={`${row.status}-${button.variant}`}>
+                    <td style={{padding: '8px'}}>{row.name}</td>
+                    <td style={{padding: '8px'}}>{button.name}</td>
+                    {ratios.map((ratio, index) => (
+                      <td
+                        key={index}
+                        style={{padding: '8px', textAlign: 'right'}}>
+                        {ratio == null ? '—' : `${ratio.toFixed(2)}:1`}
+                      </td>
+                    ))}
+                    <td
+                      style={{
+                        padding: '8px',
+                        textAlign: 'right',
+                        color: !measured
+                          ? 'var(--color-text-secondary)'
+                          : passes
+                            ? 'var(--color-success)'
+                            : 'var(--color-error)',
+                        fontWeight: 700,
+                      }}>
+                      {!measured ? 'Not measured' : passes ? 'Pass' : 'Fail'}
+                    </td>
+                  </tr>
+                );
+              }),
+            )}
+          </tbody>
+        </table>
+      </div>
+      <p
+        style={{
+          margin: '8px 0 0',
+          color: 'var(--color-text-secondary)',
+          fontSize: 10,
+          lineHeight: 1.5,
+        }}>
+        Title, description, and action labels require 4.5:1. Spinner, dismiss,
+        and disclosure glyphs require 3:1; focus indicators require 3:1 against
+        the adjacent header. The default status icon is decorative because the
+        visible title and live region communicate the same status, but its ratio
+        is shown for visual consistency. Disabled actions are exempt from
+        contrast requirements. Content below the header uses the standard card
+        surface.
+      </p>
     </div>
   );
 }
 
-function InputSection() {
+function FieldStatusSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
+  const audit = getFieldStatusContrast(theme, mode);
+  const messages = {
+    success: 'Looks good!',
+    warning: 'This value may cause issues.',
+    error: 'This field is required.',
+  } as const;
+
+  return (
+    <div style={S.section}>
+      <h3 style={S.sectionTitle}>Field status messages</h3>
+      <p
+        style={{
+          margin: '0 0 12px',
+          color: 'var(--color-text-secondary)',
+          fontSize: 11,
+          lineHeight: 1.5,
+        }}>
+        Field validation uses the same success, warning, and error background +
+        foreground pairs as Banner. FieldStatus has no info state.
+      </p>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: 16,
+        }}>
+        {FIELD_STATUS_TYPES.map(status => (
+          <div key={status}>
+            <div style={buttonRowLabelStyle}>
+              {status[0].toUpperCase() + status.slice(1)} · attached
+            </div>
+            <TextInput
+              label={`${status[0].toUpperCase() + status.slice(1)} field`}
+              value="Example value"
+              onChange={() => {}}
+              status={{type: status, message: messages[status]}}
+            />
+            <div style={{...buttonRowLabelStyle, marginTop: 14}}>
+              {status[0].toUpperCase() + status.slice(1)} · detached
+            </div>
+            <FieldStatus
+              type={status}
+              message={messages[status]}
+              variant="detached"
+            />
+          </div>
+        ))}
+      </div>
+      <div style={{overflowX: 'auto', marginTop: 14}}>
+        <table
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: 11,
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+          <thead>
+            <tr>
+              {[
+                'Status',
+                'Message',
+                'Detached icon',
+                'Banner pair',
+                'WCAG',
+              ].map(label => (
+                <th
+                  key={label}
+                  style={{
+                    padding: '7px 8px',
+                    borderBottom: '1px solid var(--color-border)',
+                    textAlign: label === 'Status' ? 'left' : 'right',
+                  }}>
+                  {label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {audit.map(row => {
+              const measured = row.ratio != null;
+              const passes = measured && row.ratio >= 4.5 && row.matchesBanner;
+              return (
+                <tr key={row.status}>
+                  <td style={{padding: '8px'}}>{row.name}</td>
+                  <td style={{padding: '8px', textAlign: 'right'}}>
+                    {row.ratio == null ? '—' : `${row.ratio.toFixed(2)}:1`}
+                  </td>
+                  <td style={{padding: '8px', textAlign: 'right'}}>
+                    {row.ratio == null ? '—' : `${row.ratio.toFixed(2)}:1`}
+                  </td>
+                  <td style={{padding: '8px', textAlign: 'right'}}>
+                    {row.matchesBanner ? 'Same' : 'Different'}
+                  </td>
+                  <td
+                    style={{
+                      padding: '8px',
+                      textAlign: 'right',
+                      color: !measured
+                        ? 'var(--color-text-secondary)'
+                        : passes
+                          ? 'var(--color-success)'
+                          : 'var(--color-error)',
+                      fontWeight: 700,
+                    }}>
+                    {!measured ? 'Not measured' : passes ? 'Pass' : 'Fail'}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p
+        style={{
+          margin: '8px 0 0',
+          color: 'var(--color-text-secondary)',
+          fontSize: 10,
+          lineHeight: 1.5,
+        }}>
+        Message text requires 4.5:1. The detached icon inherits the same
+        foreground and is decorative because the visible message carries the
+        status; its ratio is still shown. Attached messages rely on the input’s
+        status icon and border, which are audited with inputs.
+      </p>
+    </div>
+  );
+}
+
+function InputSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
+  const audit = getInputContrast(theme, mode);
+  const inputExampleStyle: React.CSSProperties = {minWidth: 0};
+
   return (
     <div style={S.section}>
       <h3 style={S.sectionTitle}>Inputs</h3>
-      <VStack gap={3}>
-        <TextInput
-          label="Default"
-          placeholder="Placeholder text"
-          value=""
-          onChange={() => {}}
-        />
+      <div style={buttonRowLabelStyle}>Content and behavior</div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+          gap: 16,
+        }}>
+        <div style={inputExampleStyle}>
+          <TextInput
+            label="Default"
+            placeholder="Placeholder text"
+            value=""
+            onChange={() => {}}
+          />
+        </div>
+        <div style={inputExampleStyle}>
+          <TextInput
+            label="With adornments"
+            description="Description and optional indicator"
+            isOptional
+            labelTooltip="More information"
+            startIcon={<Icon icon="search" size="sm" />}
+            value="Search query"
+            onChange={() => {}}
+            hasClear
+          />
+        </div>
+        <div style={inputExampleStyle}>
+          <TextInput
+            label="Read-only"
+            value="Visible, submitted value"
+            onChange={() => {}}
+            isReadOnly
+          />
+        </div>
+        <div style={inputExampleStyle}>
+          <TextInput
+            label="Loading"
+            value="Checking value"
+            onChange={() => {}}
+            isLoading
+          />
+        </div>
+        <div style={inputExampleStyle}>
+          <TextInput
+            label="Disabled"
+            value="Cannot edit"
+            onChange={() => {}}
+            isDisabled
+          />
+        </div>
+      </div>
+      <div style={{...buttonRowLabelStyle, marginTop: 18}}>
+        Validation borders and on-field icons
+      </div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+          gap: 16,
+        }}>
         <TextInput
           label="Success"
           value="Valid input"
           onChange={() => {}}
           status={{type: 'success', message: 'Looks good!'}}
-        />
-        <TextInput
-          label="Error"
-          value="Invalid input"
-          onChange={() => {}}
-          status={{type: 'error', message: 'This field is required.'}}
         />
         <TextInput
           label="Warning"
@@ -1429,12 +3459,100 @@ function InputSection() {
           status={{type: 'warning', message: 'This value may cause issues.'}}
         />
         <TextInput
-          label="Disabled"
-          value="Cannot edit"
+          label="Error"
+          value="Invalid input"
           onChange={() => {}}
-          isDisabled
+          status={{type: 'error', message: 'This field is required.'}}
         />
-      </VStack>
+        <TextInput
+          label="Tooltip status"
+          value="Focus the status icon"
+          onChange={() => {}}
+          status={{type: 'error', message: 'This field is required.'}}
+          statusVariant="tooltip"
+        />
+      </div>
+      <div style={{overflowX: 'auto', marginTop: 14}}>
+        <table
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: 11,
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+          <thead>
+            <tr>
+              {[
+                'Relationship',
+                'Worst contrast',
+                'Requirement',
+                'Note',
+                'WCAG',
+              ].map(label => (
+                <th
+                  key={label}
+                  style={{
+                    padding: '7px 8px',
+                    borderBottom: '1px solid var(--color-border)',
+                    textAlign:
+                      label === 'Relationship' || label === 'Note'
+                        ? 'left'
+                        : 'right',
+                  }}>
+                  {label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {audit.map(row => {
+              const measured = row.ratio != null;
+              const passes = measured && row.ratio >= row.minimum;
+              return (
+                <tr key={row.key}>
+                  <td style={{padding: '8px'}}>{row.relationship}</td>
+                  <td style={{padding: '8px', textAlign: 'right'}}>
+                    {row.ratio == null ? '—' : `${row.ratio.toFixed(2)}:1`}
+                  </td>
+                  <td style={{padding: '8px', textAlign: 'right'}}>
+                    {row.minimum}:1
+                  </td>
+                  <td style={{padding: '8px'}}>{row.note}</td>
+                  <td
+                    style={{
+                      padding: '8px',
+                      textAlign: 'right',
+                      color: !measured
+                        ? 'var(--color-text-secondary)'
+                        : passes
+                          ? 'var(--color-success)'
+                          : 'var(--color-error)',
+                      fontWeight: 700,
+                    }}>
+                    {!measured ? 'Not measured' : passes ? 'Pass' : 'Fail'}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p
+        style={{
+          margin: '8px 0 0',
+          color: 'var(--color-text-secondary)',
+          fontSize: 10,
+          lineHeight: 1.5,
+        }}>
+        Active text and placeholders require 4.5:1. Control boundaries,
+        meaningful icons, spinner arcs, and focus indicators require 3:1. The
+        hover inset is supplemental—the persistent border remains the control
+        boundary. The contrasting focus border carries the AA focus-indicator
+        check; its faint 2px inset is supplemental. The two-pixel perimeter-area
+        rule is WCAG 2.2 AAA, not AA. Spinner tracks and redundant status glyphs
+        may be decorative. Disabled controls are exempt from WCAG contrast
+        requirements; read-only controls are not and remain at full contrast.
+      </p>
     </div>
   );
 }
@@ -1644,14 +3762,26 @@ function ModeColumn({
             ? leadingExtras(mode)
             : leadingExtras}
           <TextRampSection theme={theme} />
-          <SemanticBadgeSection />
-          <CategoricalBadgeSection />
-          <BannerSection />
-          <InputSection />
+          <BadgeContrastSection
+            title="Semantic Badges"
+            variants={SEMANTIC_BADGE_VARIANTS}
+            theme={theme}
+            mode={mode}
+          />
+          <BadgeContrastSection
+            title="Categorical Badges"
+            variants={CATEGORICAL_BADGE_VARIANTS}
+            theme={theme}
+            mode={mode}
+          />
+          <TokenContrastSection theme={theme} mode={mode} />
+          <BannerSection theme={theme} mode={mode} />
+          <FieldStatusSection theme={theme} mode={mode} />
+          <InputSection theme={theme} mode={mode} />
           <ButtonSection theme={theme} mode={mode} />
-          <SpinnerSection />
-          <ProgressBarSection />
-          <CheckboxRadioSwitchSection />
+          <SpinnerSection theme={theme} mode={mode} />
+          <ProgressBarSection theme={theme} mode={mode} />
+          <CheckboxRadioSwitchSection theme={theme} mode={mode} />
           <CardVariantsSection />
           <SurfacesSection mode={mode} />
           <ElevationsSection mode={mode} description={shadowDescription} />

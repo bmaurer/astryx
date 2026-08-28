@@ -15,10 +15,11 @@
  *   Red H=25    Orange H=65    Yellow H=90    Green H=145
  *   Teal H=180  Cyan H=215     Blue H=250     Purple H=320  Pink H=355
  *
- * Filled semantic states use contrast-locked vivid stops. Categorical states
- * use dark text on pastel surfaces in light mode and light text on translucent
- * tinted surfaces in dark mode. Every Badge label/fill pair is held to WCAG
- * AA by `scripts/check-badge-contrast.test.mjs`.
+ * Filled semantic states use contrast-locked vivid stops shared by Badge,
+ * StatusDot, and ProgressBar. Categorical states use dark text on pastel
+ * surfaces in light mode and light text on translucent tinted surfaces in dark
+ * mode. Every Badge label/fill pair is held to WCAG AA by
+ * `scripts/check-badge-contrast.test.mjs`.
  *
  * Only overrides tokens that differ from the defaults.
  */
@@ -75,7 +76,10 @@ const FILLED_STATE_TEXT = {
  * light neutral track, while the bright warning fill needs a darker one.
  */
 const PROGRESS_TRACK = 'light-dark(#d4d4d4, #3b3b3b)';
-const PROGRESS_WARNING_TRACK = 'light-dark(#777777, #3b3b3b)';
+// Warning keeps the exact filled Badge yellow. Its track uses the yellow
+// palette's #927300 stop (light T50 / dark T45 after the dark-ramp transform),
+// which clears 3:1 against both the bright fill and every parent surface.
+const PROGRESS_WARNING_TRACK = '#927300';
 
 export const neutralTheme = defineTheme({
   name: 'neutral',
@@ -488,6 +492,18 @@ export const neutralTheme = defineTheme({
       },
     },
 
+    // Token uses the same categorical color language as Badge. Core already
+    // maps red–pink and gray to the shared --color-background-X / --color-text-X
+    // pairs, so those variants stay aligned automatically. Only the default
+    // Token needs a redirect: match Badge neutral to the gray palette pair
+    // instead of using the generic translucent --color-neutral wash.
+    token: {
+      'color:default': {
+        backgroundColor: 'var(--color-background-gray)',
+        color: 'var(--color-text-gray)',
+      },
+    },
+
     // =========================================================================
     // StatusDot — fill uses the SAME vivid stops as the filled semantic Badge
     // (and ProgressBar), so a dot and its badge read as one status language.
@@ -543,6 +559,15 @@ export const neutralTheme = defineTheme({
     // Status overrides reference --color-text-{hue} so text/icon colors
     // stay in sync with the palette anchors automatically.
     banner: {
+      base: {
+        // Secondary actions sit inside a tinted header. The global neutral
+        // wash darkens light surfaces and lightens dark surfaces, which moves
+        // colored Banner text toward the action fill in both modes. Invert
+        // that wash locally so action surfaces add contrast instead.
+        '--color-neutral': 'light-dark(#FFFFFF33, #00000033)',
+        '--color-overlay-hover': 'light-dark(#FFFFFF1A, #0000001A)',
+        '--color-overlay-pressed': 'light-dark(#FFFFFF33, #00000033)',
+      },
       'status:info': {
         '--color-accent-muted': 'var(--color-background-blue)',
         '--color-text-primary': 'var(--color-text-blue)',
@@ -570,12 +595,12 @@ export const neutralTheme = defineTheme({
     },
 
     // =========================================================================
-    // TextInput — no per-status overrides needed. The global tokens
-    // --color-{success,error,warning} carry the correct values in both
-    // modes (light=T40 dark colored, dark=T80 light pastel) for both
-    // surfaces the input border/icon touches: the input surface
-    // (white/T15-dark) and the status message bubble (light pastel T90 /
-    // dark T20). Verified all six combinations clear AA non-text 3:1.
+    // TextInput / FieldStatus — no per-status overrides needed. FieldStatus
+    // deliberately uses the same muted background + colored foreground pairs
+    // as Banner for success, warning, and error. The global tokens also carry
+    // the correct values for the input border/icon in both modes (light=T40
+    // dark colored, dark=T80 light pastel). Verified the message pairs clear
+    // AA text 4.5:1 and the input affordances clear AA non-text 3:1.
     // =========================================================================
 
     // =========================================================================
@@ -593,9 +618,9 @@ export const neutralTheme = defineTheme({
       base: {
         '--color-background-muted': PROGRESS_TRACK,
       },
-      // Vivid stops match the filled semantic badge colors (info/success/
-      // warning/error variants in the badge override above). Same hex
-      // values; documented per role with palette provenance.
+      // Vivid stops exactly match the filled semantic badge colors. Warning
+      // needs a yellow-family track because its bright fill cannot reach 3:1
+      // against the shared light neutral track.
       'variant:accent': {
         '--color-accent': FILLED_STATE_COLORS.info,
       },
@@ -608,6 +633,20 @@ export const neutralTheme = defineTheme({
       },
       'variant:error': {
         '--color-error': FILLED_STATE_COLORS.error,
+      },
+    },
+    // The live neutral variant carries the same high-emphasis neutral color as
+    // the primary Button: near-black in light mode and near-white in dark mode.
+    // This targets the fill rather than rebinding --color-text-disabled on the
+    // ProgressBar root, so genuinely disabled progress remains muted.
+    'progress-bar-fill': {
+      'variant:neutral': {
+        backgroundColor: 'var(--color-accent)',
+      },
+    },
+    'progress-bar-mark': {
+      'variant:neutral+placement:fill': {
+        backgroundColor: 'var(--color-on-accent)',
       },
     },
 

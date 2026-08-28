@@ -5,7 +5,6 @@
 import {useCallback, type CSSProperties, type ReactNode} from 'react';
 
 import {AvatarStatusDot} from '@astryxdesign/core/Avatar';
-import {Button} from '@astryxdesign/core/Button';
 import type {ISODateString} from '@astryxdesign/core/Calendar';
 import {
   ChatComposer,
@@ -41,7 +40,6 @@ import {
 } from '@astryxdesign/core/Table';
 import {TextArea} from '@astryxdesign/core/TextArea';
 import {TimeInput} from '@astryxdesign/core/TimeInput';
-import {Token} from '@astryxdesign/core/Token';
 import {Tokenizer} from '@astryxdesign/core/Tokenizer';
 import type {SearchableItem, SearchSource} from '@astryxdesign/core/Typeahead';
 import type {ISOTimeString} from '@astryxdesign/core';
@@ -153,7 +151,7 @@ export function NeutralContrastComponents() {
     <div style={{display: 'grid', gap: 24}}>
       <div>
         <h2 style={{fontSize: 20, margin: '0 0 6px'}}>
-          Extended contrast coverage
+          Additional component coverage
         </h2>
         <p
           style={{
@@ -162,8 +160,8 @@ export function NeutralContrastComponents() {
             fontSize: 12,
             lineHeight: 1.5,
           }}>
-          Components below extend the standard badge, banner, input, button,
-          progress, control, and card examples above.
+          Components below cover color relationships that do not yet have a
+          dedicated audit section above.
         </p>
       </div>
 
@@ -171,14 +169,6 @@ export function NeutralContrastComponents() {
         title="Categorical color consumers"
         description="Components that expose the red, orange, yellow, green, teal, cyan, blue, purple, pink, and gray families directly."
       />
-      <Section title="Tokens — every categorical color">
-        <div style={{display: 'flex', flexWrap: 'wrap', gap: 8}}>
-          {CATEGORICAL.map(color => (
-            <Token key={color} color={color} label={color} />
-          ))}
-        </div>
-      </Section>
-
       <Section title="Icons — every categorical and semantic color">
         <div style={{display: 'flex', flexWrap: 'wrap', gap: 12}}>
           {CATEGORICAL.map(color => (
@@ -396,28 +386,6 @@ export function NeutralContrastComponents() {
               },
             ]}
           />
-        </div>
-      </Section>
-
-      <CategoryHeading
-        title="Interactive states"
-        description="Use the live examples to inspect focus indicators and hover or pressed overlays against each surface."
-      />
-      <Section title="Interactive state checks">
-        <p
-          style={{
-            margin: 0,
-            color: 'var(--color-text-secondary)',
-            fontSize: 12,
-            lineHeight: 1.5,
-          }}>
-          Tab through the inputs, cards, menu, and composer to inspect focus
-          indicators. Hover and press the interactive examples to inspect their
-          overlays. Disabled controls remain visible in the standard Controls
-          section below but are excluded from WCAG contrast requirements.
-        </p>
-        <div style={{marginTop: 12}}>
-          <Button label="Focus and hover test" variant="secondary" />
         </div>
       </Section>
     </div>

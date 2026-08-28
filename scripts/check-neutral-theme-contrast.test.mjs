@@ -69,6 +69,8 @@ function expectPairToPass(foreground, background, modeIndex, local = {}) {
 }
 
 function parseHex(color) {
+  if (color === 'black') return {rgb: [0, 0, 0], alpha: 1};
+  if (color === 'white') return {rgb: [255, 255, 255], alpha: 1};
   const hex = color.replace('#', '');
   return {
     rgb: [0, 2, 4].map(index =>
@@ -84,6 +86,18 @@ function composite(foreground, background) {
   return `#${fg.rgb
     .map((channel, index) =>
       Math.round(channel * fg.alpha + bg.rgb[index] * (1 - fg.alpha))
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`;
+}
+
+function mix(base, tint, tintWeight) {
+  const baseColor = parseHex(base);
+  const tintColor = parseHex(tint);
+  return `#${baseColor.rgb
+    .map((channel, index) =>
+      Math.round(channel * (1 - tintWeight) + tintColor.rgb[index] * tintWeight)
         .toString(16)
         .padStart(2, '0'),
     )
@@ -133,11 +147,13 @@ describe('neutral theme component-pair contrast', () => {
     'keeps every ProgressBar fill distinct from its track in $name mode',
     ({index}) => {
       const progress = neutralTheme.components['progress-bar'];
+      const progressFill = neutralTheme.components['progress-bar-fill'];
       const fillTokens = {
         accent: '--color-accent',
         success: '--color-success',
         warning: '--color-warning',
         error: '--color-error',
+        neutral: '--color-text-disabled',
       };
 
       for (const [variant, fillToken] of Object.entries(fillTokens)) {
@@ -146,7 +162,8 @@ describe('neutral theme component-pair contrast', () => {
           ...progress[`variant:${variant}`],
         };
         expectPairToPass(
-          `var(${fillToken})`,
+          progressFill?.[`variant:${variant}`]?.backgroundColor ??
+            `var(${fillToken})`,
           'var(--color-background-muted)',
           index,
           local,
@@ -154,6 +171,28 @@ describe('neutral theme component-pair contrast', () => {
       }
     },
   );
+
+  it('maps live neutral ProgressBar fill and marks to the primary Button pair', () => {
+    expect(
+      neutralTheme.components['progress-bar-fill']['variant:neutral']
+        .backgroundColor,
+    ).toBe('var(--color-accent)');
+    expect(
+      neutralTheme.components['progress-bar-mark'][
+        'variant:neutral+placement:fill'
+      ].backgroundColor,
+    ).toBe('var(--color-on-accent)');
+  });
+
+  it('keeps warning ProgressBar aligned with Badge on a yellow-family track', () => {
+    const progress = neutralTheme.components['progress-bar'];
+    expect(progress['variant:warning']['--color-background-muted']).toBe(
+      '#927300',
+    );
+    expect(progress['variant:warning']['--color-warning']).toBe(
+      neutralTheme.components.badge['variant:warning'].backgroundColor,
+    );
+  });
 
   it.each(MODES)(
     'keeps every Button variant readable through rest, hover, and pressed states in $name mode',
@@ -207,6 +246,453 @@ describe('neutral theme component-pair contrast', () => {
       }
     },
   );
+
+  it('maps the default Token to the same pair as the neutral Badge', () => {
+    expect(neutralTheme.components.token['color:default']).toEqual(
+      neutralTheme.components.badge['variant:neutral'],
+    );
+  });
+
+  it.each(MODES)(
+    'keeps every Token color readable through rest, hover, and pressed states in $name mode',
+    ({index}) => {
+      const backgrounds = [
+        resolve('var(--color-background-body)', index),
+        resolve('var(--color-background-surface)', index),
+        resolve('var(--color-background-card)', index),
+      ];
+      const hover = resolve('var(--color-overlay-hover)', index);
+      const pressed = resolve('var(--color-overlay-pressed)', index);
+      const tokenPairs = {
+        default: neutralTheme.components.token['color:default'],
+        red: {
+          backgroundColor: 'var(--color-background-red)',
+          color: 'var(--color-text-red)',
+        },
+        orange: {
+          backgroundColor: 'var(--color-background-orange)',
+          color: 'var(--color-text-orange)',
+        },
+        yellow: {
+          backgroundColor: 'var(--color-background-yellow)',
+          color: 'var(--color-text-yellow)',
+        },
+        green: {
+          backgroundColor: 'var(--color-background-green)',
+          color: 'var(--color-text-green)',
+        },
+        teal: {
+          backgroundColor: 'var(--color-background-teal)',
+          color: 'var(--color-text-teal)',
+        },
+        cyan: {
+          backgroundColor: 'var(--color-background-cyan)',
+          color: 'var(--color-text-cyan)',
+        },
+        blue: {
+          backgroundColor: 'var(--color-background-blue)',
+          color: 'var(--color-text-blue)',
+        },
+        purple: {
+          backgroundColor: 'var(--color-background-purple)',
+          color: 'var(--color-text-purple)',
+        },
+        pink: {
+          backgroundColor: 'var(--color-background-pink)',
+          color: 'var(--color-text-pink)',
+        },
+        gray: {
+          backgroundColor: 'var(--color-background-gray)',
+          color: 'var(--color-text-gray)',
+        },
+      };
+
+      for (const [name, pair] of Object.entries(tokenPairs)) {
+        const foreground = resolve(pair.color, index);
+        const tokenBackground = resolve(pair.backgroundColor, index);
+        for (const parent of backgrounds) {
+          const rest = composite(tokenBackground, parent);
+          for (const [state, background] of [
+            ['rest', rest],
+            ['hover', composite(hover, rest)],
+            ['pressed', composite(pressed, rest)],
+          ]) {
+            expect(
+              contrastRatio(foreground, background),
+              `${name} Token ${state}: ${foreground} on ${background}`,
+            ).toBeGreaterThanOrEqual(AA_TEXT);
+          }
+        }
+      }
+    },
+  );
+
+  it.each(MODES)(
+    'keeps Banner text, icons, controls, and actions readable in $name mode',
+    ({index}) => {
+      const parents = [
+        resolve('var(--color-background-body)', index),
+        resolve('var(--color-background-surface)', index),
+        resolve('var(--color-background-card)', index),
+      ];
+      const statuses = {
+        info: {
+          background: 'var(--color-accent-muted)',
+          icon: 'var(--color-accent)',
+        },
+        success: {
+          background: 'var(--color-success-muted)',
+          icon: 'var(--color-success)',
+        },
+        warning: {
+          background: 'var(--color-warning-muted)',
+          icon: 'var(--color-warning)',
+        },
+        error: {
+          background: 'var(--color-error-muted)',
+          icon: 'var(--color-error)',
+        },
+      };
+
+      for (const [status, defaults] of Object.entries(statuses)) {
+        const local = {
+          ...neutralTheme.components.banner.base,
+          ...neutralTheme.components.banner[`status:${status}`],
+        };
+        const bannerFill = resolve(defaults.background, index, local);
+        const title = resolve('var(--color-text-primary)', index, local);
+        const description = resolve(
+          'var(--color-text-secondary)',
+          index,
+          local,
+        );
+        const statusIcon = resolve(defaults.icon, index, local);
+        const focus = resolve('var(--color-accent)', index, local);
+        const actionFill = resolve('var(--color-neutral)', index, local);
+        const hover = resolve('var(--color-overlay-hover)', index, local);
+        const pressed = resolve('var(--color-overlay-pressed)', index, local);
+
+        for (const parent of parents) {
+          const header = composite(bannerFill, parent);
+          for (const [name, foreground, minimum] of [
+            ['title', title, AA_TEXT],
+            ['description', description, AA_TEXT],
+            ['status icon', statusIcon, AA_NON_TEXT],
+          ]) {
+            expect(
+              contrastRatio(foreground, header),
+              `${status} Banner ${name}: ${foreground} on ${header}`,
+            ).toBeGreaterThanOrEqual(minimum);
+          }
+
+          for (const [state, background] of [
+            ['rest', header],
+            ['hover', composite(hover, header)],
+            ['pressed', composite(pressed, header)],
+          ]) {
+            expect(
+              contrastRatio(title, background),
+              `${status} Banner ghost action ${state}: ${title} on ${background}`,
+            ).toBeGreaterThanOrEqual(AA_TEXT);
+          }
+
+          expect(
+            contrastRatio(focus, header),
+            `${status} Banner action focus: ${focus} on ${header}`,
+          ).toBeGreaterThanOrEqual(AA_NON_TEXT);
+
+          const actionRest = composite(actionFill, header);
+          for (const [state, background] of [
+            ['rest', actionRest],
+            ['hover', composite(hover, actionRest)],
+            ['pressed', composite(pressed, actionRest)],
+          ]) {
+            expect(
+              contrastRatio(title, background),
+              `${status} Banner action ${state}: ${title} on ${background}`,
+            ).toBeGreaterThanOrEqual(AA_TEXT);
+          }
+        }
+      }
+    },
+  );
+
+  it.each(MODES)(
+    'keeps FieldStatus aligned with Banner semantic pairs in $name mode',
+    ({index}) => {
+      const parents = [
+        resolve('var(--color-background-body)', index),
+        resolve('var(--color-background-surface)', index),
+        resolve('var(--color-background-card)', index),
+      ];
+      const pairs = {
+        success: {
+          background: 'var(--color-success-muted)',
+          foreground: 'var(--color-text-green)',
+        },
+        warning: {
+          background: 'var(--color-warning-muted)',
+          foreground: 'var(--color-text-yellow)',
+        },
+        error: {
+          background: 'var(--color-error-muted)',
+          foreground: 'var(--color-text-red)',
+        },
+      };
+
+      for (const [status, pair] of Object.entries(pairs)) {
+        const bannerLocal = {
+          ...neutralTheme.components.banner.base,
+          ...neutralTheme.components.banner[`status:${status}`],
+        };
+        const fieldForeground = resolve(pair.foreground, index);
+        const fieldBackground = resolve(pair.background, index);
+        const bannerForeground = resolve(
+          'var(--color-text-primary)',
+          index,
+          bannerLocal,
+        );
+        const bannerBackground = resolve(pair.background, index, bannerLocal);
+
+        expect(fieldForeground).toBe(bannerForeground);
+        expect(fieldBackground).toBe(bannerBackground);
+
+        for (const parent of parents) {
+          const background = composite(fieldBackground, parent);
+          expect(
+            contrastRatio(fieldForeground, background),
+            `${status} FieldStatus: ${fieldForeground} on ${background}`,
+          ).toBeGreaterThanOrEqual(AA_TEXT);
+        }
+      }
+    },
+  );
+
+  it.each(MODES)(
+    'keeps active TextInput content, boundaries, icons, and status affordances readable in $name mode',
+    ({index}) => {
+      const parents = [
+        resolve('var(--color-background-body)', index),
+        resolve('var(--color-background-surface)', index),
+        resolve('var(--color-background-card)', index),
+      ];
+      const inputBackground = resolve('var(--color-background-surface)', index);
+
+      for (const [name, token] of [
+        ['value', 'var(--color-text-primary)'],
+        ['placeholder', 'var(--color-text-secondary)'],
+      ]) {
+        const foreground = resolve(token, index);
+        expect(
+          contrastRatio(foreground, inputBackground),
+          `TextInput ${name}: ${foreground} on ${inputBackground}`,
+        ).toBeGreaterThanOrEqual(AA_TEXT);
+      }
+
+      const label = resolve('var(--color-text-secondary)', index);
+      for (const parent of parents) {
+        expect(
+          contrastRatio(label, parent),
+          `TextInput label: ${label} on ${parent}`,
+        ).toBeGreaterThanOrEqual(AA_TEXT);
+      }
+
+      for (const [name, token] of [
+        ['default boundary', 'var(--color-border-emphasized)'],
+        ['focus border', 'var(--color-accent)'],
+        ['start / clear icon', 'var(--color-icon-secondary)'],
+        ['loading spinner arc', 'var(--color-accent)'],
+        ['success border / icon', 'var(--color-success)'],
+        ['warning border / icon', 'var(--color-warning)'],
+        ['error border / icon', 'var(--color-error)'],
+      ]) {
+        const foreground = resolve(token, index);
+        expect(
+          contrastRatio(foreground, inputBackground),
+          `TextInput ${name}: ${foreground} on ${inputBackground}`,
+        ).toBeGreaterThanOrEqual(AA_NON_TEXT);
+      }
+    },
+  );
+
+  it.each(MODES)(
+    'keeps Checkbox, Radio, and Switch control states perceivable in $name mode',
+    ({index}) => {
+      const parents = [
+        resolve('var(--color-background-body)', index),
+        resolve('var(--color-background-surface)', index),
+        resolve('var(--color-background-card)', index),
+      ];
+      const surface = resolve('var(--color-background-surface)', index);
+      const primary = resolve('var(--color-text-primary)', index);
+      const secondary = resolve('var(--color-text-secondary)', index);
+      const emphasized = resolve('var(--color-border-emphasized)', index);
+      const accent = resolve('var(--color-accent)', index);
+      const onAccent = resolve('var(--color-on-accent)', index);
+      const tint = resolve('var(--color-tint-hover)', index);
+      const focus = accent;
+      const switchLocal = neutralTheme.components.switch.base;
+      const switchOff = resolve(
+        'var(--color-background-gray)',
+        index,
+        switchLocal,
+      );
+      const uncheckedHoverFill = mix(surface, tint, 0.05);
+      const uncheckedHoverBorder = mix(emphasized, tint, 0.2);
+      const checkedHoverFill = mix(accent, tint, 0.15);
+      const switchOffHover = mix(switchOff, tint, 0.05);
+      const againstParents = foreground =>
+        Math.min(...parents.map(parent => contrastRatio(foreground, parent)));
+      const expectNonText = (name, foreground, background) => {
+        expect(
+          contrastRatio(foreground, background),
+          `${name}: ${foreground} on ${background}`,
+        ).toBeGreaterThanOrEqual(AA_NON_TEXT);
+      };
+
+      for (const [name, foreground] of [
+        ['checkbox / switch label', secondary],
+        ['radio label', primary],
+        ['radio description', secondary],
+      ]) {
+        for (const parent of parents) {
+          expect(
+            contrastRatio(foreground, parent),
+            `${name}: ${foreground} on ${parent}`,
+          ).toBeGreaterThanOrEqual(AA_TEXT);
+        }
+      }
+
+      for (const parent of parents) {
+        expectNonText('unchecked control boundary', emphasized, parent);
+        expectNonText('unchecked hover boundary', uncheckedHoverBorder, parent);
+        expectNonText('selected control fill', accent, parent);
+        expectNonText('selected hover fill', checkedHoverFill, parent);
+        expectNonText('Switch off track', switchOff, parent);
+        expectNonText('Switch off hover track', switchOffHover, parent);
+        expectNonText('focus indicator', focus, parent);
+      }
+
+      expectNonText('unchecked boundary on fill', emphasized, surface);
+      expectNonText(
+        'unchecked hover boundary on fill',
+        uncheckedHoverBorder,
+        uncheckedHoverFill,
+      );
+      expectNonText('selected check / dot', onAccent, accent);
+      expectNonText('selected hover check / dot', onAccent, checkedHoverFill);
+      expectNonText('Switch off thumb', surface, switchOff);
+      expectNonText('Switch off hover thumb', surface, switchOffHover);
+      expectNonText('Switch on thumb', surface, accent);
+      expectNonText('Switch on hover thumb', surface, checkedHoverFill);
+      expectNonText('unchecked Checkbox spinner', accent, surface);
+      expectNonText('checked Checkbox spinner', onAccent, accent);
+      expectNonText('Switch spinner', accent, surface);
+      expect(againstParents(focus)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+    },
+  );
+
+  it.each(MODES)(
+    'keeps standalone Spinner arcs and labels readable in $name mode',
+    ({index}) => {
+      const parents = [
+        resolve('var(--color-background-body)', index),
+        resolve('var(--color-background-surface)', index),
+        resolve('var(--color-background-card)', index),
+      ];
+      const accent = resolve('var(--color-accent)', index);
+      const secondary = resolve('var(--color-text-secondary)', index);
+      const primary = resolve('var(--color-text-primary)', index);
+      const onDark = resolve('var(--color-on-dark)', index);
+      const media = resolve('var(--color-on-light)', index);
+      const onAccent = resolve('var(--color-on-accent)', index);
+
+      for (const parent of parents) {
+        expect(
+          contrastRatio(accent, parent),
+          `default Spinner arc: ${accent} on ${parent}`,
+        ).toBeGreaterThanOrEqual(AA_NON_TEXT);
+        expect(
+          contrastRatio(secondary, parent),
+          `subtle Spinner arc: ${secondary} on ${parent}`,
+        ).toBeGreaterThanOrEqual(AA_NON_TEXT);
+        expect(
+          contrastRatio(primary, parent),
+          `Spinner label: ${primary} on ${parent}`,
+        ).toBeGreaterThanOrEqual(AA_TEXT);
+      }
+
+      expect(contrastRatio(onDark, media)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+      expect(contrastRatio(onAccent, accent)).toBeGreaterThanOrEqual(
+        AA_NON_TEXT,
+      );
+    },
+  );
+
+  it.each(MODES)(
+    'keeps ProgressBar labels and target marks readable in $name mode',
+    ({index}) => {
+      const parents = [
+        resolve('var(--color-background-body)', index),
+        resolve('var(--color-background-surface)', index),
+        resolve('var(--color-background-card)', index),
+      ];
+      const primary = resolve('var(--color-text-primary)', index);
+      const secondary = resolve('var(--color-text-secondary)', index);
+      const progress = neutralTheme.components['progress-bar'];
+      const progressFill = neutralTheme.components['progress-bar-fill'];
+      const progressMark = neutralTheme.components['progress-bar-mark'];
+      const variants = {
+        accent: ['var(--color-accent)', 'var(--color-on-accent)'],
+        success: ['var(--color-success)', 'var(--color-on-success)'],
+        warning: ['var(--color-warning)', 'var(--color-on-warning)'],
+        error: ['var(--color-error)', 'var(--color-on-error)'],
+        neutral: ['var(--color-text-disabled)', 'var(--color-text-primary)'],
+      };
+
+      for (const parent of parents) {
+        expect(contrastRatio(primary, parent)).toBeGreaterThanOrEqual(AA_TEXT);
+        expect(contrastRatio(secondary, parent)).toBeGreaterThanOrEqual(
+          AA_TEXT,
+        );
+      }
+
+      for (const [variant, [fillToken, markToken]] of Object.entries(
+        variants,
+      )) {
+        const local = {
+          ...progress.base,
+          ...progress[`variant:${variant}`],
+        };
+        const fill = resolve(
+          progressFill?.[`variant:${variant}`]?.backgroundColor ?? fillToken,
+          index,
+          local,
+        );
+        const track = resolve('var(--color-background-muted)', index, local);
+        const markOnFill = resolve(
+          progressMark?.[`variant:${variant}+placement:fill`]
+            ?.backgroundColor ??
+            progressMark?.[`variant:${variant}`]?.backgroundColor ??
+            markToken,
+          index,
+          local,
+        );
+        const markOnTrack = resolve('var(--color-text-primary)', index, local);
+        expect(
+          contrastRatio(markOnFill, fill),
+          `${variant} ProgressBar mark on fill`,
+        ).toBeGreaterThanOrEqual(AA_NON_TEXT);
+        expect(
+          contrastRatio(markOnTrack, track),
+          `${variant} ProgressBar mark on track`,
+        ).toBeGreaterThanOrEqual(AA_NON_TEXT);
+      }
+    },
+  );
+
+  it.todo('makes the ProgressBar track visible against every parent surface');
+  it.todo('keeps ProgressBar mark focus visible on both fill and track');
 
   it.each(MODES)(
     'keeps every Button loading spinner distinct from its background in $name mode',
