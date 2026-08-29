@@ -91,6 +91,14 @@ const styles = stylex.create({
   trigger: {
     position: 'relative',
     WebkitTouchCallout: 'none',
+    WebkitUserSelect: {
+      default: null,
+      '@media (pointer: coarse)': 'none',
+    },
+    userSelect: {
+      default: null,
+      '@media (pointer: coarse)': 'none',
+    },
   },
   // Zero-size anchor placed at the cursor point within the trigger. The menu
   // is anchored to this element, so it sits under the cursor yet is positioned

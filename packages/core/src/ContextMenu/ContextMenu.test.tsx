@@ -11,6 +11,7 @@
 import {describe, it, expect, vi, beforeEach} from 'vitest';
 import {render, screen, fireEvent, act, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {readFileSync} from 'node:fs';
 import {ContextMenu} from './ContextMenu';
 import {
   ContextMenuItem,
@@ -348,6 +349,17 @@ describe('ContextMenu', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('suppresses native text selection on coarse pointers during long-press', () => {
+    const source = readFileSync(
+      'packages/core/src/ContextMenu/ContextMenu.tsx',
+      'utf8',
+    );
+
+    expect(source).toMatch(
+      /trigger:[\s\S]*?WebkitTouchCallout: 'none',[\s\S]*?WebkitUserSelect:[\s\S]*?'@media \(pointer: coarse\)': 'none',[\s\S]*?userSelect:[\s\S]*?'@media \(pointer: coarse\)': 'none'/,
+    );
   });
 
   it('cancels the long-press when the finger moves past the threshold', () => {
