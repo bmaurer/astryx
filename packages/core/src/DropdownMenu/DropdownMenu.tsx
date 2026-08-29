@@ -194,8 +194,8 @@ const bottomSheetStyles = stylex.create({
   },
   header: {
     display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacingVars['--spacing-1'],
     marginBottom: spacingVars['--spacing-2'],
   },
@@ -573,6 +573,7 @@ function DropdownMenuBottomSheet({
                   variant="ghost"
                   size="sm"
                   icon={<Icon icon="chevronLeft" size="sm" />}
+                  isIconOnly
                   onClick={() => setSubmenuPath(path => path.slice(0, -1))}
                 />
               )}

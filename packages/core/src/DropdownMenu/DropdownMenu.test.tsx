@@ -146,7 +146,10 @@ describe('DropdownMenu', () => {
       screen.getByRole('button', {name: 'Apollo launch'}),
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', {name: 'Back'}));
+    const backButton = screen.getByRole('button', {name: 'Back'});
+    expect(backButton).toHaveAttribute('aria-label', 'Back');
+    expect(backButton).not.toHaveTextContent('Back');
+    await user.click(backButton);
     const rootHeading = screen.getByRole('heading', {
       name: 'Project actions',
     });
