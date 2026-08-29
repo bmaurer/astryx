@@ -351,14 +351,14 @@ describe('ContextMenu', () => {
     }
   });
 
-  it('suppresses native text selection on coarse pointers during long-press', () => {
+  it('suppresses native text selection on the long-press trigger', () => {
     const source = readFileSync(
       'packages/core/src/ContextMenu/ContextMenu.tsx',
       'utf8',
     );
 
     expect(source).toMatch(
-      /trigger:[\s\S]*?WebkitTouchCallout: 'none',[\s\S]*?WebkitUserSelect:[\s\S]*?'@media \(pointer: coarse\)': 'none',[\s\S]*?userSelect:[\s\S]*?'@media \(pointer: coarse\)': 'none'/,
+      /trigger:[\s\S]*?WebkitTouchCallout: 'none',[\s\S]*?WebkitUserSelect: 'none',[\s\S]*?userSelect: 'none'/,
     );
   });
 
