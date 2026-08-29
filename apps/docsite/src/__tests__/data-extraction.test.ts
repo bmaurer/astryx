@@ -1027,6 +1027,18 @@ describe('DropdownMenu adaptive-presentation example', () => {
     );
     expect(bottomSheetExample!.source).not.toContain("type: 'divider'");
   });
+
+  it('registers the MoreMenu BottomSheet example', () => {
+    const moreMenuExamples = exampleRegistry['MoreMenu'] ?? [];
+    const bottomSheetExample = moreMenuExamples.find(example =>
+      /Bottom Sheet/i.test(example.name),
+    );
+
+    expect(bottomSheetExample).toBeDefined();
+    expect(bottomSheetExample!.source).toContain('presentation="bottom-sheet"');
+    expect(bottomSheetExample!.source).toContain('label="Project actions"');
+    expect(bottomSheetExample!.source).not.toContain("type: 'divider'");
+  });
 });
 
 // ── Vertical ToggleButtonGroup example (#2707) ─────────────────────────────
