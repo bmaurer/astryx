@@ -64,7 +64,7 @@ export const docs = {
         {
           name: 'width',
           type: 'number | string',
-          description: 'Width of the popover container. The layer still caps to the viewport and safe-area gutters before scrolling long content.',
+          description: 'Width of the popover container. The layer still caps to the viewport with alignment-aware safe-area gutters before scrolling long content.',
           default: "'auto'",
         },
         {
@@ -101,7 +101,7 @@ export const docs = {
         {
           name: 'hasAutoFocus',
           type: 'boolean',
-          description: 'Whether to auto-focus the first focusable element when the popover opens. Set to false for inline showcases or documentation previews.',
+          description: 'Whether to move focus into the popover when it opens. Keyboard activation focuses the first content control; pointer activation focuses the labeled dialog container so an action does not appear preselected. Set to false for inline showcases or documentation previews.',
           default: 'true',
         },
         {
@@ -340,11 +340,11 @@ export const docsDense = {
         isOpen: 'Whether popover shown in controlled mode.',
         onOpenChange: 'Callback fired when popover visibility changes.',
         isEnabled: 'When false, trigger interactions ignored.',
-        width: 'Popover container width; capped to viewport/safe-area gutters before long content scrolls.',
+        width: 'Popover container width; capped to alignment-aware viewport/safe-area gutters before long content scrolls.',
         label: 'Accessible label for popover dialog.',
         hasCloseButton: 'Whether to include hidden close button for accessibility.',
         closeButtonLabel: 'Label for hidden close button.',
-        hasAutoFocus: 'Auto-focus first element on open; false for showcases.',
+        hasAutoFocus: 'Move focus into the popover on open; keyboard targets the first control and pointer targets the dialog container.',
         hasLightDismiss: 'Outside click dismisses; false for explicit-dismiss surfaces (coachmarks).',
         hasEscapeDismiss: 'Escape dismisses; full effect only with hasLightDismiss=false.',
       },

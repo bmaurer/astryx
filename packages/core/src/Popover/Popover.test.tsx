@@ -66,8 +66,12 @@ describe('usePopover public return type', () => {
     const hasDismissalGuard: 'wasJustDismissed' extends keyof UsePopoverReturn
       ? true
       : false = false;
+    const hasInternalToggle: 'toggleWithOptions' extends keyof UsePopoverReturn
+      ? true
+      : false = false;
     expect(hasKeepOpenProps).toBe(false);
     expect(hasDismissalGuard).toBe(false);
+    expect(hasInternalToggle).toBe(false);
   });
 });
 
@@ -223,11 +227,16 @@ describe('Popover', () => {
     const layer = document.querySelector('[popover]');
     expect(layer).toHaveStyle({boxSizing: 'border-box'});
     expect(layer?.className).toContain('Popover__styles.viewportFit');
+    expect(layer?.className).toContain('Popover__styles.viewportAligned');
+    expect(layer?.className).toContain('Popover__styles.viewportStart');
     const surface = screen.getByTestId('popover-content').parentElement;
     expect(surface?.className).toContain('Popover__styles.surfaceViewportFit');
     const popoverSource = readFileSync(
       'packages/core/src/Popover/Popover.tsx',
       'utf8',
+    );
+    expect(popoverSource).toMatch(
+      /surfaceViewportFit:[\s\S]*?maxInlineSize: stylex\.firstThatWorks\(\s*POPOVER_MAX_INLINE_SIZE/,
     );
     expect(popoverSource).toMatch(
       /surfaceViewportFit:[\s\S]*?maxBlockSize: stylex\.firstThatWorks\(\s*POPOVER_MAX_BLOCK_SIZE/,
@@ -387,7 +396,7 @@ describe('Popover', () => {
     }
   });
 
-  it('caps match-trigger sizing to the available inline viewport', () => {
+  it('keeps aligned popovers anchored while applying viewport gutters', () => {
     render(
       <Popover content={<span>Content</span>} label="Test">
         <button type="button">Open</button>
@@ -396,9 +405,62 @@ describe('Popover', () => {
 
     fireEvent.click(screen.getByRole('button', {name: 'Open'}));
 
-    expect(document.querySelector('[popover]')).toHaveStyle(
-      'min-width: min(anchor-size(width),calc(100vi - max(var(--spacing-4),env(safe-area-inset-left)) - max(var(--spacing-4),env(safe-area-inset-right))))',
+    const layer = document.querySelector('[popover]');
+    expect(layer?.className).toContain('Popover__styles.viewportAligned');
+    expect(layer?.className).toContain('Popover__styles.viewportStart');
+    expect(layer).toHaveStyle(
+      'min-width: min(anchor-size(width),calc(100% - max(var(--spacing-4),env(safe-area-inset-left,0px),env(safe-area-inset-right,0px))))',
     );
+  });
+
+  it('mirrors the far-edge gutter for end-aligned popovers', () => {
+    render(
+      <Popover content={<span>Content</span>} label="Test" alignment="end">
+        <button type="button">Open</button>
+      </Popover>,
+    );
+
+    fireEvent.click(screen.getByRole('button', {name: 'Open'}));
+
+    const layer = document.querySelector('[popover]');
+    expect(layer?.className).toContain('Popover__styles.viewportAligned');
+    expect(layer?.className).toContain('Popover__styles.viewportEnd');
+    expect(layer?.className).not.toContain('Popover__styles.viewportStart');
+  });
+
+  it('reserves both inline gutters only for centered popovers', () => {
+    render(
+      <Popover content={<span>Content</span>} label="Test" alignment="center">
+        <button type="button">Open</button>
+      </Popover>,
+    );
+
+    fireEvent.click(screen.getByRole('button', {name: 'Open'}));
+
+    const layer = document.querySelector('[popover]');
+    expect(layer?.className).toContain('Popover__styles.viewportCentered');
+    expect(layer?.className).not.toContain('Popover__styles.viewportAligned');
+    expect(layer).toHaveStyle(
+      'min-width: min(anchor-size(width),calc(100vi - max(var(--spacing-4),env(safe-area-inset-left,0px)) - max(var(--spacing-4),env(safe-area-inset-right,0px))))',
+    );
+  });
+
+  it('uses block-axis gutters for side placement', () => {
+    render(
+      <Popover
+        content={<span>Content</span>}
+        label="Test"
+        placement="end"
+        alignment="start">
+        <button type="button">Open</button>
+      </Popover>,
+    );
+
+    fireEvent.click(screen.getByRole('button', {name: 'Open'}));
+
+    const layer = document.querySelector('[popover]');
+    expect(layer?.className).toContain('Popover__styles.viewportBlockStart');
+    expect(layer?.className).not.toContain('Popover__styles.viewportStart');
   });
 
   it('preserves the dialog aria-haspopup contract for render-prop triggers', () => {
@@ -663,6 +725,49 @@ describe('Popover', () => {
   });
 
   describe('focus restoration', () => {
+    it('focuses the dialog container after pointer activation', async () => {
+      render(
+        <Popover
+          content={<button type="button">Delete</button>}
+          label="Confirm deletion">
+          <button type="button">Open confirmation</button>
+        </Popover>,
+      );
+
+      fireEvent.click(screen.getByRole('button', {name: 'Open confirmation'}), {
+        detail: 1,
+      });
+
+      const dialog = screen.getByRole('dialog', {
+        name: 'Confirm deletion',
+        hidden: true,
+      });
+      await waitFor(() => expect(dialog).toHaveFocus());
+      expect(
+        screen.getByRole('button', {name: 'Delete', hidden: true}),
+      ).not.toHaveFocus();
+    });
+
+    it('focuses the first content control after keyboard activation', async () => {
+      render(
+        <Popover
+          content={<button type="button">Delete</button>}
+          label="Confirm deletion">
+          <button type="button">Open confirmation</button>
+        </Popover>,
+      );
+
+      fireEvent.click(screen.getByRole('button', {name: 'Open confirmation'}), {
+        detail: 0,
+      });
+
+      await waitFor(() =>
+        expect(
+          screen.getByRole('button', {name: 'Delete', hidden: true}),
+        ).toHaveFocus(),
+      );
+    });
+
     it('focuses the dialog container when content has no controls', async () => {
       render(
         <Popover content={<span>Read-only content</span>} label="Read only">

@@ -271,8 +271,13 @@ export interface UsePopoverReturn {
    * Show the popover.
    * @param options.skipAutoFocus - If true, don't auto-focus the first element.
    *   Useful when triggered by mouse click on an input that should retain focus.
+   * @param options.focusTarget - Choose the first content control (default) or
+   *   the dialog container as the initial focus target.
    */
-  show: (options?: {skipAutoFocus?: boolean}) => void;
+  show: (options?: {
+    skipAutoFocus?: boolean;
+    focusTarget?: 'first' | 'container';
+  }) => void;
 
   /**
    * Hide the popover
@@ -320,6 +325,10 @@ export interface UsePopoverReturn {
 
 interface InternalUsePopoverReturn extends UsePopoverReturn {
   wasJustDismissed: () => boolean;
+  toggleWithOptions: (options?: {
+    skipAutoFocus?: boolean;
+    focusTarget?: 'first' | 'container';
+  }) => void;
 }
 
 /**
@@ -392,6 +401,7 @@ function usePopoverImplementation(
 
   // Track whether to skip auto-focus for the current open event
   const skipAutoFocusRef = useRef(false);
+  const focusTargetRef = useRef<'first' | 'container'>('first');
 
   // Core layer for popover positioning
   const layer = useLayerInternal({
@@ -429,14 +439,24 @@ function usePopoverImplementation(
     if (layer.isOpen && hasAutoFocus && !skipAutoFocusRef.current) {
       // Use requestAnimationFrame to ensure DOM is ready
       requestAnimationFrame(() => {
-        focusInitialTarget();
+        const container = contentRef.current;
+        if (
+          focusTargetRef.current === 'container' &&
+          role === 'dialog' &&
+          container
+        ) {
+          attemptFocus(container);
+        } else {
+          focusInitialTarget();
+        }
       });
     }
-    // Reset the skip flag after the effect runs
+    // Reset per-open focus preferences after the popover closes.
     if (!layer.isOpen) {
       skipAutoFocusRef.current = false;
+      focusTargetRef.current = 'first';
     }
-  }, [layer.isOpen, hasAutoFocus, focusInitialTarget]);
+  }, [contentRef, layer.isOpen, hasAutoFocus, focusInitialTarget, role]);
 
   // Combined ref for trigger element (layer anchor + our ref)
   const triggerRef = useCallback(
@@ -449,24 +469,35 @@ function usePopoverImplementation(
 
   // Show function with optional skipAutoFocus
   const show = useCallback(
-    (showOptions?: {skipAutoFocus?: boolean}) => {
+    (showOptions?: {
+      skipAutoFocus?: boolean;
+      focusTarget?: 'first' | 'container';
+    }) => {
       skipAutoFocusRef.current = showOptions?.skipAutoFocus ?? false;
+      focusTargetRef.current = showOptions?.focusTarget ?? 'first';
       layer.show();
     },
     [layer],
   );
 
   // Toggle function
-  const toggle = useCallback(() => {
-    if (layer.wasJustDismissed()) {
-      return;
-    }
-    if (layer.isOpen) {
-      layer.hide();
-    } else {
-      show();
-    }
-  }, [layer, show]);
+  const toggleWithOptions = useCallback(
+    (showOptions?: {
+      skipAutoFocus?: boolean;
+      focusTarget?: 'first' | 'container';
+    }) => {
+      if (layer.wasJustDismissed()) {
+        return;
+      }
+      if (layer.isOpen) {
+        layer.hide();
+      } else {
+        show(showOptions);
+      }
+    },
+    [layer, show],
+  );
+  const toggle = useCallback(() => toggleWithOptions(), [toggleWithOptions]);
 
   // ARIA attributes for the trigger
   const triggerProps = {
@@ -558,6 +589,7 @@ function usePopoverImplementation(
     show,
     hide: layer.hide,
     toggle,
+    toggleWithOptions,
     wasJustDismissed: layer.wasJustDismissed,
     isOpen: layer.isOpen,
     id: layer.id,
@@ -567,7 +599,11 @@ function usePopoverImplementation(
 }
 
 export function usePopover(options: UsePopoverOptions = {}): UsePopoverReturn {
-  const {wasJustDismissed: _, ...popover} = usePopoverImplementation(options);
+  const {
+    wasJustDismissed: _,
+    toggleWithOptions: __,
+    ...popover
+  } = usePopoverImplementation(options);
   return popover;
 }
 

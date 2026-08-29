@@ -685,7 +685,7 @@ export const ViewportFit: Story = {
       story: {inline: false, height: '844px'},
       description: {
         story:
-          'Uses the actual Storybook viewport rather than a simulated phone frame. The Popover requests a 640px width and must cap to the real iframe viewport and safe-area gutters.',
+          'Uses the actual Storybook viewport rather than a simulated phone frame. The Popover requests a 640px width and must stay anchored to the trigger while preserving at least 16px safe-area-aware gutters from both viewport edges.',
       },
     },
   },
@@ -704,9 +704,9 @@ export const ViewportFit: Story = {
               </Heading>
               <Text type="body" wordBreak="break-word">
                 This intentionally requests a wider-than-mobile popover. The
-                layer should keep safe gutters, stay anchored near the trigger,
-                and allow long content to reflow instead of causing horizontal
-                page overflow.
+                layer should stay anchored to the trigger, preserve safe gutters
+                on both viewport edges, and allow long content to reflow instead
+                of causing horizontal page overflow.
               </Text>
               <Text type="supporting" wordBreak="break-word">
                 Long localized-token-like content:
