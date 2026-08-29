@@ -418,6 +418,9 @@ export function Popover({
   }, [measureOverflow]);
 
   useIsomorphicLayoutEffect(() => {
+    if (!popover.isOpen) {
+      return;
+    }
     const surface = popover.contentRef.current;
     if (!surface) {
       return;
@@ -460,6 +463,9 @@ export function Popover({
   }, [measureOverflow, popover.isOpen, scheduleOverflowMeasurement]);
 
   useIsomorphicLayoutEffect(() => {
+    if (!popover.isOpen) {
+      return;
+    }
     scheduleOverflowMeasurement();
   }, [content, popover.isOpen, scheduleOverflowMeasurement]);
 

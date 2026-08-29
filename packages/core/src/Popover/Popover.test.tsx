@@ -334,6 +334,59 @@ describe('Popover', () => {
     }
   });
 
+  it('observes overflow only while the popover is open', () => {
+    const resizeConstructed = vi.fn();
+    const resizeDisconnected = vi.fn();
+    const mutationConstructed = vi.fn();
+    const mutationDisconnected = vi.fn();
+
+    class ResizeObserverMock {
+      constructor() {
+        resizeConstructed();
+      }
+      observe = vi.fn();
+      unobserve = vi.fn();
+      disconnect = resizeDisconnected;
+    }
+
+    class MutationObserverMock {
+      constructor() {
+        mutationConstructed();
+      }
+      observe = vi.fn();
+      disconnect = mutationDisconnected;
+      takeRecords = vi.fn(() => []);
+    }
+
+    vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+    vi.stubGlobal('MutationObserver', MutationObserverMock);
+
+    const {unmount} = render(
+      <Popover content={<span>Content</span>} label="Test">
+        <button type="button">Open</button>
+      </Popover>,
+    );
+
+    try {
+      const trigger = screen.getByRole('button', {name: 'Open'});
+      expect(resizeConstructed).not.toHaveBeenCalled();
+      expect(mutationConstructed).not.toHaveBeenCalled();
+
+      fireEvent.click(trigger);
+      expect(resizeConstructed).toHaveBeenCalledTimes(1);
+      expect(mutationConstructed).toHaveBeenCalledTimes(1);
+
+      fireEvent.click(trigger);
+      expect(resizeDisconnected).toHaveBeenCalledTimes(1);
+      expect(mutationDisconnected).toHaveBeenCalledTimes(1);
+      expect(resizeConstructed).toHaveBeenCalledTimes(1);
+      expect(mutationConstructed).toHaveBeenCalledTimes(1);
+    } finally {
+      unmount();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('caps match-trigger sizing to the available inline viewport', () => {
     render(
       <Popover content={<span>Content</span>} label="Test">
