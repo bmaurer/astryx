@@ -189,7 +189,10 @@ const bottomSheetStyles = stylex.create({
     marginBottom: spacingVars['--spacing-2'],
   },
   action: {
-    paddingInlineStart: 0,
+    // Preserve ListItem's spacious padding (and therefore its interaction
+    // surface), then pull the row outward so its icon still aligns with the
+    // unpadded heading above it.
+    marginInlineStart: `calc(-1 * ${spacingVars['--spacing-3']})`,
   },
   destructiveAction: {
     '--_item-label-color': colorVars['--color-error'],
