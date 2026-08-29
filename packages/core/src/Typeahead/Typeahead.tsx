@@ -204,6 +204,34 @@ const styles = stylex.create({
     opacity: 0,
     position: 'absolute' as const,
   },
+  // Holds the field's width while the input is collapsed.
+  //
+  // A field's width must not depend on its value, and every other field keeps
+  // that promise for free: its `<input>` stays in flow, and the field is as
+  // wide as the input's own default size. This one takes the input out of
+  // flow when a token shows (`inputHidden`), and the input is the only child
+  // with an intrinsic width — so the field was left measuring the token. In
+  // any layout that sizes it to its content the field collapsed onto that
+  // token; measured in Chromium, 199px to 44px for a one-word value (#5560).
+  // Block-level parents hid it, because they fill their container whatever
+  // their content is, which is why no story caught it.
+  //
+  // So the field states the width it already had rather than inheriting it
+  // from the input: 181px is what a UA gives an `<input>` at this font, and
+  // the remaining 19px is this field's own padding and border. Only while the
+  // token shows, so an unselected field is untouched. `min-width` rather than
+  // `width`, so a block-level or stretched field still fills as it does now
+  // and this only floors it.
+  //
+  // A percentage cannot appear here: `min(200px, 100%)` would read as the
+  // repo's usual "yield when there is no room" shape, but a percentage
+  // min-width resolves against an indefinite containing block during
+  // shrink-to-fit — it computes to 0 and the floor silently does nothing
+  // (measured: the field stayed collapsed at 44px).
+  inputCollapsedWidth: {
+    '--typeahead-min-width': '200px',
+    minWidth: 'var(--typeahead-min-width)',
+  },
 });
 
 const wrapperSizeStyles = stylex.create({
@@ -440,6 +468,7 @@ export function Typeahead<T extends SearchableItem>({
           stylex.props(
             inputWrapperStyles.base,
             styles.wrapper,
+            showToken && styles.inputCollapsedWidth,
             sizeStyle,
             status && inputStatusBorderStyles[status.type],
             status && !isDisabled && inputStatusHoverShadowStyles[status.type],

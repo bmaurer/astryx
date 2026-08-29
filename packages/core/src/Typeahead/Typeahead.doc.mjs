@@ -197,6 +197,14 @@ export const docs = {
       {className: 'astryx-typeahead-empty-state'},
       {className: 'astryx-typeahead-item'},
     ],
+    vars: [
+      {
+        name: '--typeahead-min-width',
+        description:
+          "Floor for the field's width while a selected value is shown as a token. Selecting a value collapses the input, and the input is what gives the field its width — so without a floor the field shrinks onto the token in any layout that sizes it to its content (a flex item, inline-block, a shrink-to-fit grid track). The default is the width the field already has from a browser's default input size at the base font. Raise it for a roomier field, or lower it for a compact one; an unselected field is unaffected either way.",
+        default: '200px',
+      },
+    ],
   },
   usage: {
     description:

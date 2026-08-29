@@ -24,6 +24,7 @@ import {Typeahead} from './Typeahead';
 import {BaseTypeahead} from './BaseTypeahead';
 import type {SearchSource, SearchableItem} from './types';
 import {InternationalizationProvider} from '../i18n';
+import * as stylex from '@stylexjs/stylex';
 
 // Store original matches to restore later
 const originalMatches = HTMLElement.prototype.matches;
@@ -1443,5 +1444,64 @@ describe('Typeahead statusVariant forwarding', () => {
       'data-variant',
       'detached',
     );
+  });
+});
+
+// Collapsed-input width (#5560)
+//
+// jsdom performs no layout, so this asserts the declaration that produces
+// the behavior rather than a measured width, via StyleX probe classes: one
+// deterministic atomic class per property/value, so an element carries a
+// probe's classes exactly when it has the same declaration. The dev debug
+// class (contains "__") is excluded. The measured behavior it stands in for
+// is in the PR: 199px -> 44px before, 199px -> 200px after, in a flex
+// parent in Chromium.
+describe('collapsed-input width', () => {
+  const probe = stylex.create({
+    minWidth: {minWidth: 'var(--typeahead-min-width)'},
+  });
+
+  function atomicClasses(): string[] {
+    const {className = ''} = stylex.props(probe.minWidth);
+    const classes = className
+      .split(' ')
+      .filter(c => c !== '' && !c.includes('__'));
+    // A probe resolving to no atomic classes would make both assertions
+    // below vacuous, including the negative one; fail loudly instead.
+    expect(classes.length).toBeGreaterThan(0);
+    return classes;
+  }
+
+  function renderTypeahead(value: SearchableItem | null) {
+    const {container} = render(
+      <Typeahead
+        label="Fruit"
+        searchSource={fruitSource}
+        value={value}
+        onChange={() => {}}
+      />,
+    );
+    const wrapper = container.querySelector('.astryx-typeahead');
+    expect(wrapper).not.toBeNull();
+    return wrapper as HTMLElement;
+  }
+
+  it('floors the field width while a token is shown', () => {
+    // Without it the field has no width of its own: the input is the only
+    // child with an intrinsic width and the token collapse takes it out of
+    // flow, so a content-sized parent shrinks the field onto the token.
+    const wrapper = renderTypeahead(fruits[0]);
+    for (const cls of atomicClasses()) {
+      expect(wrapper).toHaveClass(cls);
+    }
+  });
+
+  it('leaves an unselected field untouched', () => {
+    // The floor is the collapse's own repair, not a new minimum for every
+    // Typeahead — an unselected field still sizes from its input.
+    const wrapper = renderTypeahead(null);
+    for (const cls of atomicClasses()) {
+      expect(wrapper).not.toHaveClass(cls);
+    }
   });
 });
