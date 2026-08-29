@@ -72,6 +72,11 @@ const styles = stylex.create({
   // Focus trap container
   contentWrapper: {
     position: 'relative',
+    // Pointer-open dialog popovers park focus on this wrapper so the first
+    // action does not look selected. The wrapper itself is not an action and
+    // should not receive the browser's default focus ring; interactive
+    // descendants retain their normal focus-visible treatment.
+    outline: 'none',
   },
   // Hidden close button wrapper - sr-only until focused, then positioned below
   // popover. Inline-axis centering (+ the translateY(100%) that drops it below

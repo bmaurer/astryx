@@ -725,7 +725,7 @@ describe('Popover', () => {
   });
 
   describe('focus restoration', () => {
-    it('focuses the dialog container after pointer activation', async () => {
+    it('focuses the dialog container without outlining an action after pointer activation', async () => {
       render(
         <Popover
           content={<button type="button">Delete</button>}
@@ -743,6 +743,7 @@ describe('Popover', () => {
         hidden: true,
       });
       await waitFor(() => expect(dialog).toHaveFocus());
+      expect(dialog).toHaveStyle({outline: 'none'});
       expect(
         screen.getByRole('button', {name: 'Delete', hidden: true}),
       ).not.toHaveFocus();
