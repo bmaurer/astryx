@@ -35,7 +35,10 @@ export const docs = {
   },
   theming: {
     targets: [
-      {className: 'astryx-dropdown-menu'},
+      {
+        className: 'astryx-dropdown-menu',
+        visualProps: ['presentation'],
+      },
       {
         className: 'astryx-dropdown-menu-item',
         visualProps: ['size', 'variant'],
