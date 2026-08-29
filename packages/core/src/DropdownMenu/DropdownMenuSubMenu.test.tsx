@@ -10,9 +10,11 @@ import {describe, it, expect, vi, beforeEach} from 'vitest';
 import {useState} from 'react';
 import {render, screen, waitFor, fireEvent, act} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as stylex from '@stylexjs/stylex';
 import {DropdownMenu} from './DropdownMenu';
 import {DropdownMenuItem} from './DropdownMenuItem';
 import {DropdownMenuSubMenu} from './DropdownMenuSubMenu';
+import {rtlStyles} from '../utils';
 
 beforeEach(() => {
   HTMLElement.prototype.showPopover = vi.fn(function (this: HTMLElement) {
@@ -185,6 +187,52 @@ describe('DropdownMenuSubMenu', () => {
       ).toHaveFocus();
     });
     await user.keyboard('{ArrowLeft}');
+    await waitFor(() => {
+      expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    });
+    expect(trigger).toHaveFocus();
+  });
+
+  it('mirrors its indicator and keyboard directions under RTL', async () => {
+    const user = userEvent.setup();
+    const {className: mirrorClassName} = stylex.props(rtlStyles.mirror);
+    const mirrorClasses = mirrorClassName?.split(' ') ?? [];
+    expect(mirrorClasses.length).toBeGreaterThan(0);
+    render(
+      <div dir="rtl" style={{direction: 'rtl'}}>
+        <MoveMenu />
+      </div>,
+    );
+
+    await user.click(screen.getByRole('button', {name: /Actions/}));
+    const trigger = screen.getByRole('menuitem', {
+      name: /Move to/,
+      hidden: true,
+    });
+    const indicator = trigger.querySelector('.astryx-icon');
+    expect(indicator).not.toBeNull();
+    for (const className of mirrorClasses) {
+      expect(indicator).toHaveClass(className);
+    }
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('menu', {name: 'Actions', hidden: true}),
+      ).toHaveFocus();
+    });
+    // jsdom does not propagate the ancestor's computed direction, so set the
+    // same RTL direction directly on each keyboard event owner.
+    trigger.style.direction = 'rtl';
+    trigger.focus();
+    await user.keyboard('{ArrowLeft}');
+    const flyout = screen.getByRole('menu', {name: /Move to/, hidden: true});
+    flyout.style.direction = 'rtl';
+    await waitFor(() => {
+      expect(
+        screen.getByRole('menuitem', {name: 'Folder A', hidden: true}),
+      ).toHaveFocus();
+    });
+    await user.keyboard('{ArrowRight}');
     await waitFor(() => {
       expect(trigger).toHaveAttribute('aria-expanded', 'false');
     });

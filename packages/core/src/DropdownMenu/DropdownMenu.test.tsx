@@ -13,10 +13,12 @@ import {describe, it, expect, vi, beforeEach} from 'vitest';
 import {render, screen, fireEvent, waitFor, act} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {useState} from 'react';
+import * as stylex from '@stylexjs/stylex';
 import {DropdownMenu} from './DropdownMenu';
 import {DropdownMenuItem} from './DropdownMenuItem';
 import {DropdownMenuDivider} from './DropdownMenuDivider';
 import {Divider} from '../Divider';
+import {rtlStyles} from '../utils';
 
 // Mock showPopover and hidePopover methods since they're not implemented in jsdom
 beforeEach(() => {
@@ -159,7 +161,10 @@ describe('DropdownMenu', () => {
       screen.getByRole('button', {name: 'Apollo launch'}),
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', {name: 'Back'}));
+    const backButton = screen.getByRole('button', {name: 'Back'});
+    expect(backButton).toHaveAttribute('aria-label', 'Back');
+    expect(backButton).not.toHaveTextContent('Back');
+    await user.click(backButton);
     const rootHeading = screen.getByRole('heading', {
       name: 'Project actions',
     });
@@ -211,6 +216,48 @@ describe('DropdownMenu', () => {
     expect(
       screen.queryByRole('button', {name: 'Apollo launch'}),
     ).not.toBeInTheDocument();
+  });
+
+  it('mirrors bottom-sheet drill-in affordances under RTL', async () => {
+    const user = userEvent.setup();
+    const {className: mirrorClassName} = stylex.props(rtlStyles.mirror);
+    const mirrorClasses = mirrorClassName?.split(' ') ?? [];
+    expect(mirrorClasses.length).toBeGreaterThan(0);
+
+    render(
+      <div dir="rtl">
+        <DropdownMenu
+          button={{label: 'Project actions'}}
+          presentation="bottom-sheet"
+          items={[
+            {
+              label: 'Move to project',
+              items: [{label: 'Apollo launch'}],
+            },
+          ]}
+        />
+      </div>,
+    );
+
+    await user.click(screen.getByRole('button', {name: /Project actions/}));
+    const submenuButton = screen.getByRole('button', {
+      name: 'Move to project',
+    });
+    const forwardIcon = submenuButton
+      .closest('li')
+      ?.querySelector('.astryx-icon');
+    expect(forwardIcon).not.toBeNull();
+    for (const className of mirrorClasses) {
+      expect(forwardIcon).toHaveClass(className);
+    }
+
+    await user.click(submenuButton);
+    const backButton = screen.getByRole('button', {name: 'Back'});
+    const backIcon = backButton.querySelector('.astryx-icon');
+    expect(backIcon).not.toBeNull();
+    for (const className of mirrorClasses) {
+      expect(backIcon).toHaveClass(className);
+    }
   });
 
   it('uses the BottomSheet for adaptive presentation on compact touch', async () => {
