@@ -75,6 +75,10 @@ import {
 import {mergeProps, rtlStyles} from '../utils';
 import type {BaseProps} from '../BaseProps';
 import {themeProps} from '../utils/themeProps';
+import {
+  getInteractionModality,
+  trackInteractionModality,
+} from '../utils/interactionModality';
 import {useTranslator} from '../i18n';
 
 const MENU_VIEWPORT_GUTTER = spacingVars['--spacing-4'];
@@ -407,19 +411,7 @@ function BottomSheetActionList({
           )
         }
         isDisabled={item.isDisabled}
-        onClick={event => {
-          // Keep a tapped action from holding a focus ring while the sheet
-          // animates closed. Keyboard and assistive-technology activation use
-          // detail 0 and retain the expected focus-visible behavior.
-          if (event.detail > 0) {
-            (event.currentTarget as HTMLElement).blur();
-          }
-          if (isSubmenu) {
-            onOpenSubmenu(item);
-          } else {
-            onSelect(item);
-          }
-        }}
+        onClick={() => (isSubmenu ? onOpenSubmenu(item) : onSelect(item))}
         xstyle={[
           bottomSheetStyles.action,
           isDestructive && bottomSheetStyles.destructiveAction,
@@ -647,13 +639,25 @@ function DropdownMenuPopover({
   const isControlled = controlledIsOpen !== undefined;
   const isOpen = isControlled ? controlledIsOpen : internalIsOpen;
 
-  // Close menu + return focus to trigger
+  useEffect(() => {
+    trackInteractionModality();
+  }, []);
+
+  // Keyboard dismissal returns focus to the trigger. Pointer dismissal leaves
+  // focus where the browser put it; Safari can otherwise paint a focus-visible
+  // ring on the trigger after a touch selection. Native popover restoration
+  // can happen before `toggle`, so explicitly blur that pointer-restored case.
   const handleLayerHide = useCallback(() => {
     onOpenChange?.(false);
     if (!isControlled) {
       setInternalIsOpen(false);
     }
-    buttonRef.current?.focus();
+    const trigger = buttonRef.current;
+    if (getInteractionModality() === 'keyboard') {
+      trigger?.focus();
+    } else if (document.activeElement === trigger) {
+      trigger?.blur();
+    }
   }, [isControlled, onOpenChange]);
 
   // Defer item focus until the layer has committed open, so focus restore
