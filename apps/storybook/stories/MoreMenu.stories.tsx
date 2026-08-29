@@ -290,7 +290,6 @@ export const BottomSheetPresentation: Story = {
             onClick: () => {},
           },
           {label: 'Share', icon: ShareIcon, onClick: () => {}},
-          {type: 'divider'},
           {
             label: 'Delete',
             icon: TrashIcon,
@@ -329,7 +328,6 @@ export const AdaptivePresentation: Story = {
         items={[
           {label: 'Edit', icon: PencilIcon, onClick: () => {}},
           {label: 'Share', icon: ShareIcon, onClick: () => {}},
-          {type: 'divider'},
           {
             label: 'Delete',
             icon: TrashIcon,

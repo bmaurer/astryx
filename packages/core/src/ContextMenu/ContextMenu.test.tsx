@@ -161,9 +161,15 @@ describe('ContextMenu', () => {
     await waitFor(() =>
       expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalledOnce(),
     );
+    const menu = screen.getByRole('menu', {
+      name: 'Row actions',
+      hidden: true,
+    });
+    expect(menu).toHaveAttribute('data-autofocus');
+    await waitFor(() => expect(menu).toHaveFocus());
     expect(
-      screen.getByRole('menu', {name: 'Row actions', hidden: true}),
-    ).toHaveAttribute('data-autofocus');
+      screen.getByRole('menuitem', {name: 'Edit', hidden: true}),
+    ).not.toHaveFocus();
     expect(HTMLElement.prototype.showPopover).not.toHaveBeenCalled();
   });
 

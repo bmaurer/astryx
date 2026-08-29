@@ -127,7 +127,14 @@ describe('DropdownMenu', () => {
     expect(
       screen.getByRole('dialog', {name: 'Project actions'}),
     ).toBeInTheDocument();
-    await user.click(screen.getByRole('button', {name: 'Edit project'}));
+    const editAction = screen.getByRole('button', {name: 'Edit project'});
+    await waitFor(() =>
+      expect(
+        screen.getByRole('dialog', {name: 'Project actions'}),
+      ).toContainElement(document.activeElement as HTMLElement),
+    );
+    expect(editAction).not.toHaveFocus();
+    await user.click(editAction);
 
     expect(onEdit).toHaveBeenCalledTimes(1);
     expect(trigger).toHaveAttribute('aria-expanded', 'false');

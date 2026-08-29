@@ -95,10 +95,26 @@ const readinessStyles = stylex.create({
 });
 
 const PROJECT_ACTIONS = [
-  'Edit project',
-  'Duplicate project',
-  'Share project',
-  'Archive project',
+  {
+    label: 'Edit project',
+    description: 'Update the project details.',
+    icon: PencilIcon,
+  },
+  {
+    label: 'Duplicate project',
+    description: 'Create a copy of this project.',
+    icon: DocumentDuplicateIcon,
+  },
+  {
+    label: 'Share project',
+    description: 'Invite people to collaborate.',
+    icon: ShareIcon,
+  },
+  {
+    label: 'Archive project',
+    description: 'Move this project out of active work.',
+    icon: ArchiveBoxIcon,
+  },
 ] as const;
 
 function CompactDrillInActionSheet() {
@@ -107,15 +123,17 @@ function CompactDrillInActionSheet() {
       button={{label: 'Project actions'}}
       presentation="bottom-sheet"
       items={[
-        {label: 'Rename project'},
+        {label: 'Rename project', icon: PencilIcon},
         {
           label: 'Move to project',
+          icon: FolderPlusIcon,
           items: PROJECT_DESTINATIONS.slice(0, 4).map(([label, team]) => ({
             label,
             description: team,
+            icon: FolderPlusIcon,
           })),
         },
-        {label: 'Archive project'},
+        {label: 'Archive project', icon: ArchiveBoxIcon},
       ]}
     />
   );
@@ -958,8 +976,8 @@ export const ActionSheetPresentation: Story = {
         presentation="bottom-sheet"
         button={{label: 'Project actions'}}
         items={PROJECT_ACTIONS.map(action => ({
-          label: action,
-          onClick: () => console.log(`${action} selected`),
+          ...action,
+          onClick: () => console.log(`${action.label} selected`),
         }))}
       />
     </div>
@@ -991,8 +1009,8 @@ export const AdaptiveActionPresentation: Story = {
         presentation="adaptive"
         button={{label: 'Project actions'}}
         items={PROJECT_ACTIONS.map(action => ({
-          label: action,
-          onClick: () => console.log(`${action} selected`),
+          ...action,
+          onClick: () => console.log(`${action.label} selected`),
         }))}
       />
     </div>

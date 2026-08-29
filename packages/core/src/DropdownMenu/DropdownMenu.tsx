@@ -190,10 +190,8 @@ const bottomSheetStyles = stylex.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacingVars['--spacing-1'],
+    paddingInline: spacingVars['--spacing-3'],
     marginBottom: spacingVars['--spacing-2'],
-  },
-  action: {
-    paddingInlineStart: 0,
   },
   destructiveAction: {
     '--_item-label-color': colorVars['--color-error'],
@@ -409,10 +407,7 @@ function BottomSheetActionList({
         }
         isDisabled={item.isDisabled}
         onClick={() => (isSubmenu ? onOpenSubmenu(item) : onSelect(item))}
-        xstyle={[
-          bottomSheetStyles.action,
-          isDestructive && bottomSheetStyles.destructiveAction,
-        ]}
+        xstyle={isDestructive ? bottomSheetStyles.destructiveAction : undefined}
       />
     );
   };
@@ -594,7 +589,7 @@ function DropdownMenuBottomSheet({
         finalFocusRef={buttonRef}
         label={sheetLabel}
         height="hug">
-        <Section padding={4}>
+        <Section paddingBlock={4} paddingInline={1}>
           <div
             ref={actionListRef}
             {...rest}

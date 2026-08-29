@@ -39,7 +39,9 @@ export function MenuBottomSheet({
         label={label}
         height="hug"
         purpose="info">
-        <Section padding={4}>{children}</Section>
+        <Section paddingBlock={4} paddingInline={1}>
+          {children}
+        </Section>
       </LazyBottomSheet>
     </Suspense>
   );
