@@ -1338,11 +1338,14 @@ export const neutralTheme = defineTheme({
         '--color-error': FILLED_STATE_COLORS.error,
       },
     },
-    // The live neutral variant carries the same high-emphasis neutral color as
-    // the primary Button: near-black in light mode and near-white in dark mode.
-    // This targets the fill rather than rebinding --color-text-disabled on the
-    // ProgressBar root, so genuinely disabled progress remains muted.
+    // Keep the live neutral fill and endpoint aligned with the primary Button
+    // without rebinding disabled progress on the ProgressBar root.
     'progress-bar-fill': {
+      'variant:neutral': {
+        '--color-text-disabled': 'var(--color-accent)',
+      },
+    },
+    'progress-bar-stop-indicator': {
       'variant:neutral': {
         '--color-text-disabled': 'var(--color-accent)',
       },
