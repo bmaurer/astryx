@@ -69,7 +69,7 @@ import {
   typographyVars,
   typeScaleVars,
 } from '../theme/tokens.stylex';
-import {mergeProps} from '../utils';
+import {mergeProps, rtlStyles} from '../utils';
 import {themeProps} from '../utils/themeProps';
 import type {BaseProps} from '../BaseProps';
 import {
@@ -528,6 +528,7 @@ export function DropdownMenuSubMenu(
         icon="chevronRight"
         size="sm"
         color="secondary"
+        xstyle={rtlStyles.mirror}
         {...themeProps('dropdown-menu-indicator-icon')}
       />
     </span>

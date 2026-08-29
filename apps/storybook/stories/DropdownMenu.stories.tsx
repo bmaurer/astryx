@@ -1044,7 +1044,23 @@ export const CompactDrillInPresentation: Story = {
     const trigger = canvasElement.querySelector('button');
     if (trigger instanceof HTMLElement) {
       trigger.click();
+      await new Promise<void>(resolve =>
+        requestAnimationFrame(() => resolve()),
+      );
+      const submenuRow = Array.from(canvasElement.querySelectorAll('li')).find(
+        item => item.textContent?.includes('Move to project'),
+      );
+      submenuRow?.querySelector('button')?.click();
     }
+  },
+};
+
+export const CompactDrillInPresentationRTL: Story = {
+  ...CompactDrillInPresentation,
+  name: 'Presentation / compact drill-in hierarchy / RTL',
+  globals: {
+    viewport: {value: 'mobile1', isRotated: false},
+    direction: 'rtl',
   },
 };
 

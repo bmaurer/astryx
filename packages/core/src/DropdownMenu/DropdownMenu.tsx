@@ -72,7 +72,7 @@ import {
   durationVars,
   easeVars,
 } from '../theme/tokens.stylex';
-import {mergeProps} from '../utils';
+import {mergeProps, rtlStyles} from '../utils';
 import type {BaseProps} from '../BaseProps';
 import {themeProps} from '../utils/themeProps';
 import {useTranslator} from '../i18n';
@@ -84,6 +84,7 @@ const MENU_MAX_BLOCK_SIZE = `min(300px, calc(100dvb - max(${MENU_VIEWPORT_GUTTER
 const MENU_MAX_BLOCK_SIZE_FALLBACK = `min(300px, calc(100vh - ${MENU_VIEWPORT_GUTTER} - ${MENU_VIEWPORT_GUTTER}))`;
 const MENU_POSITION_AREA_MAX_INLINE_SIZE = `calc(100% - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)))`;
 const MENU_POSITION_AREA_MAX_INLINE_SIZE_FALLBACK = `calc(100% - ${MENU_VIEWPORT_GUTTER})`;
+const MENU_INLINE_EDGE_GUTTER = `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px))`;
 
 const styles = stylex.create({
   dropdown: {
@@ -127,16 +128,10 @@ const styles = stylex.create({
     ),
   },
   popoverViewportStart: {
-    marginInlineEnd: {
-      default: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px))`,
-      ':is([dir="rtl"] *)': `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px))`,
-    },
+    marginInlineEnd: MENU_INLINE_EDGE_GUTTER,
   },
   popoverViewportEnd: {
-    marginInlineStart: {
-      default: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px))`,
-      ':is([dir="rtl"] *)': `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px))`,
-    },
+    marginInlineStart: MENU_INLINE_EDGE_GUTTER,
   },
   popoverViewportBlockStart: {
     marginBlockEnd: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-bottom, 0px))`,
@@ -145,14 +140,8 @@ const styles = stylex.create({
     marginBlockStart: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-top, 0px))`,
   },
   popoverViewportCentered: {
-    marginInlineStart: {
-      default: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px))`,
-      ':is([dir="rtl"] *)': `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px))`,
-    },
-    marginInlineEnd: {
-      default: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px))`,
-      ':is([dir="rtl"] *)': `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px))`,
-    },
+    marginInlineStart: MENU_INLINE_EDGE_GUTTER,
+    marginInlineEnd: MENU_INLINE_EDGE_GUTTER,
     maxInlineSize: stylex.firstThatWorks(
       MENU_MAX_INLINE_SIZE,
       MENU_MAX_INLINE_SIZE_FALLBACK,
@@ -404,7 +393,12 @@ function BottomSheetActionList({
         }
         endContent={
           isSubmenu ? (
-            <Icon icon="chevronRight" size="sm" color="secondary" />
+            <Icon
+              icon="chevronRight"
+              size="sm"
+              color="secondary"
+              xstyle={rtlStyles.mirror}
+            />
           ) : (
             item.endContent
           )
@@ -572,7 +566,13 @@ function DropdownMenuBottomSheet({
                   label={backLabel}
                   variant="ghost"
                   size="sm"
-                  icon={<Icon icon="chevronLeft" size="sm" />}
+                  icon={
+                    <Icon
+                      icon="chevronLeft"
+                      size="sm"
+                      xstyle={rtlStyles.mirror}
+                    />
+                  }
                   isIconOnly
                   onClick={() => setSubmenuPath(path => path.slice(0, -1))}
                 />
