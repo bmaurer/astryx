@@ -120,6 +120,29 @@ describe('DropdownMenu', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
   });
 
+  it('clears pointer focus from a bottom-sheet action without clearing keyboard focus', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <DropdownMenu
+        button={{label: 'Project actions'}}
+        presentation="bottom-sheet"
+        items={[{label: 'Keep open', hasCloseOnSelect: false}]}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', {name: /Project actions/}));
+    const action = screen.getByRole('button', {name: 'Keep open'});
+
+    action.focus();
+    fireEvent.click(action, {detail: 1});
+    expect(action).not.toHaveFocus();
+
+    action.focus();
+    fireEvent.click(action, {detail: 0});
+    expect(action).toHaveFocus();
+  });
+
   it('drills into nested data items in bottom-sheet presentation', async () => {
     const user = userEvent.setup();
 

@@ -407,7 +407,19 @@ function BottomSheetActionList({
           )
         }
         isDisabled={item.isDisabled}
-        onClick={() => (isSubmenu ? onOpenSubmenu(item) : onSelect(item))}
+        onClick={event => {
+          // Keep a tapped action from holding a focus ring while the sheet
+          // animates closed. Keyboard and assistive-technology activation use
+          // detail 0 and retain the expected focus-visible behavior.
+          if (event.detail > 0) {
+            (event.currentTarget as HTMLElement).blur();
+          }
+          if (isSubmenu) {
+            onOpenSubmenu(item);
+          } else {
+            onSelect(item);
+          }
+        }}
         xstyle={[
           bottomSheetStyles.action,
           isDestructive && bottomSheetStyles.destructiveAction,
