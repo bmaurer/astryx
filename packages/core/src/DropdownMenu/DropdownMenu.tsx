@@ -96,6 +96,10 @@ const styles = stylex.create({
     display: 'flex',
     flexDirection: 'column',
     gap: spacingVars['--spacing-0-5'],
+    // Pointer opens focus this container so subsequent arrow keys and Escape
+    // stay owned by the menu. It is an internal focus target, not a control,
+    // so suppress the browser ring; keyboard focus moves to an item instead.
+    outline: 'none',
     maxInlineSize: stylex.firstThatWorks(
       MENU_MAX_INLINE_SIZE,
       MENU_MAX_INLINE_SIZE_FALLBACK,

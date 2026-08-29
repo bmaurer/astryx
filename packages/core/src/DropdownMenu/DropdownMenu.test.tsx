@@ -1542,6 +1542,7 @@ describe('DropdownMenu open focus follows input modality (#4477)', () => {
 
     const menu = screen.getByRole('menu', {hidden: true});
     await waitFor(() => expect(menu).toHaveFocus());
+    expect(menu).toHaveStyle({outline: 'none'});
     expect(
       screen.getByRole('menuitem', {name: 'Edit', hidden: true}),
     ).not.toHaveFocus();
