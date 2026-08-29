@@ -19,9 +19,11 @@ import {DropdownMenuItem} from './DropdownMenuItem';
 import {DropdownMenuDivider} from './DropdownMenuDivider';
 import {Divider} from '../Divider';
 import {rtlStyles} from '../utils';
+import {__resetInteractionModalityForTest} from '../utils/interactionModality';
 
 // Mock showPopover and hidePopover methods since they're not implemented in jsdom
 beforeEach(() => {
+  __resetInteractionModalityForTest();
   HTMLDialogElement.prototype.showModal = vi.fn(function (
     this: HTMLDialogElement,
   ) {
@@ -138,6 +140,30 @@ describe('DropdownMenu', () => {
 
     expect(onEdit).toHaveBeenCalledTimes(1);
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('aligns the bottom-sheet heading with the item content edge and keeps item padding', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <DropdownMenu
+        button={{label: 'Project actions'}}
+        presentation="bottom-sheet"
+        items={[{label: 'Edit project', icon: <span aria-hidden="true" />}]}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', {name: /Project actions/}));
+
+    const heading = screen.getByRole('heading', {name: 'Project actions'});
+    expect(heading).toHaveStyle({marginInlineStart: 'var(--spacing-3)'});
+    expect(heading.closest('.astryx-section')).toHaveStyle({
+      paddingInlineStart: 'var(--spacing-1)',
+      paddingInlineEnd: 'var(--spacing-1)',
+    });
+    expect(
+      screen.getByRole('button', {name: 'Edit project'}).closest('li'),
+    ).toHaveStyle({paddingInline: 'var(--spacing-3)'});
   });
 
   it('drills into nested data items in bottom-sheet presentation', async () => {
@@ -602,7 +628,7 @@ describe('DropdownMenu', () => {
     );
   });
 
-  it('restores focus to the trigger after native light dismiss', async () => {
+  it('restores focus to the trigger after keyboard dismissal', async () => {
     const raf = vi
       .spyOn(window, 'requestAnimationFrame')
       .mockImplementation(callback => {
@@ -621,22 +647,59 @@ describe('DropdownMenu', () => {
 
       const trigger = screen.getByRole('button', {name: /Actions/});
       trigger.focus();
-      await user.click(trigger);
-      // Pointer opens focus the menu container, not the first item (#4477).
+      await user.keyboard('{Enter}');
+      expect(
+        screen.getByRole('menuitem', {name: 'Edit', hidden: true}),
+      ).toHaveFocus();
+
+      const popoverEl = screen
+        .getByRole('menu', {hidden: true})
+        .closest('[popover]');
+      expect(popoverEl).not.toBeNull();
+      trigger.blur();
+      const toggleEvent = new Event('toggle');
+      Object.defineProperty(toggleEvent, 'newState', {value: 'closed'});
+      fireEvent(popoverEl as HTMLElement, toggleEvent);
+
+      expect(trigger).toHaveFocus();
+    } finally {
+      raf.mockRestore();
+    }
+  });
+
+  it('does not leave focus on the trigger after pointer dismissal', async () => {
+    const raf = vi
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation(callback => {
+        callback(0);
+        return 0;
+      });
+
+    try {
+      render(
+        <DropdownMenu
+          button={{label: 'Actions'}}
+          items={[{label: 'Edit'}, {label: 'Delete'}]}
+        />,
+      );
+
+      const trigger = screen.getByRole('button', {name: /Actions/});
+      fireEvent.pointerDown(trigger, {pointerType: 'touch'});
+      fireEvent.click(trigger, {detail: 1});
       expect(screen.getByRole('menu', {hidden: true})).toHaveFocus();
 
       const popoverEl = screen
         .getByRole('menu', {hidden: true})
         .closest('[popover]');
       expect(popoverEl).not.toBeNull();
-      popoverEl?.addEventListener('toggle', () => {
-        trigger.blur();
-      });
+      // Simulate native popover focus restoration occurring before React's
+      // toggle handler; pointer dismissal should remove that focus again.
+      trigger.focus();
       const toggleEvent = new Event('toggle');
       Object.defineProperty(toggleEvent, 'newState', {value: 'closed'});
       fireEvent(popoverEl as HTMLElement, toggleEvent);
 
-      expect(trigger).toHaveFocus();
+      expect(trigger).not.toHaveFocus();
     } finally {
       raf.mockRestore();
     }
@@ -1673,6 +1736,7 @@ describe('DropdownMenu open focus follows input modality (#4477)', () => {
 
     const menu = screen.getByRole('menu', {hidden: true});
     await waitFor(() => expect(menu).toHaveFocus());
+    expect(menu).toHaveStyle({outline: 'none'});
     expect(
       screen.getByRole('menuitem', {name: 'Edit', hidden: true}),
     ).not.toHaveFocus();

@@ -79,6 +79,10 @@ import {
 import {mergeProps, rtlStyles} from '../utils';
 import type {BaseProps} from '../BaseProps';
 import {themeProps} from '../utils/themeProps';
+import {
+  getInteractionModality,
+  trackInteractionModality,
+} from '../utils/interactionModality';
 import {useTranslator} from '../i18n';
 
 const MENU_VIEWPORT_GUTTER = spacingVars['--spacing-4'];
@@ -96,6 +100,10 @@ const styles = stylex.create({
     display: 'flex',
     flexDirection: 'column',
     gap: spacingVars['--spacing-0-5'],
+    // Pointer opens focus this container so subsequent arrow keys and Escape
+    // stay owned by the menu. It is an internal focus target, not a control,
+    // so suppress the browser ring; keyboard focus moves to an item instead.
+    outline: 'none',
     maxInlineSize: stylex.firstThatWorks(
       MENU_MAX_INLINE_SIZE,
       MENU_MAX_INLINE_SIZE_FALLBACK,
@@ -190,8 +198,12 @@ const bottomSheetStyles = stylex.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacingVars['--spacing-1'],
-    paddingInline: spacingVars['--spacing-3'],
     marginBottom: spacingVars['--spacing-2'],
+  },
+  rootHeading: {
+    // Match the content edge of a spacious ListItem. Icon-bearing rows place
+    // their icon here; rows without an icon place their label here.
+    marginInlineStart: spacingVars['--spacing-3'],
   },
   destructiveAction: {
     '--_item-label-color': colorVars['--color-error'],
@@ -407,7 +419,7 @@ function BottomSheetActionList({
         }
         isDisabled={item.isDisabled}
         onClick={() => (isSubmenu ? onOpenSubmenu(item) : onSelect(item))}
-        xstyle={isDestructive ? bottomSheetStyles.destructiveAction : undefined}
+        xstyle={isDestructive && bottomSheetStyles.destructiveAction}
       />
     );
   };
@@ -616,7 +628,13 @@ function DropdownMenuBottomSheet({
                   onClick={() => setSubmenuPath(path => path.slice(0, -1))}
                 />
               )}
-              <Heading ref={viewHeadingRef} level={3} tabIndex={-1}>
+              <Heading
+                ref={viewHeadingRef}
+                level={3}
+                tabIndex={-1}
+                xstyle={
+                  submenuPath.length === 0 && bottomSheetStyles.rootHeading
+                }>
                 {currentTitle}
               </Heading>
             </div>
@@ -671,13 +689,25 @@ function DropdownMenuPopover({
   const isControlled = controlledIsOpen !== undefined;
   const isOpen = isControlled ? controlledIsOpen : internalIsOpen;
 
-  // Close menu + return focus to trigger
+  useEffect(() => {
+    trackInteractionModality();
+  }, []);
+
+  // Keyboard dismissal returns focus to the trigger. Pointer dismissal leaves
+  // focus where the browser put it; Safari can otherwise paint a focus-visible
+  // ring on the trigger after a touch selection. Native popover restoration
+  // can happen before `toggle`, so explicitly blur that pointer-restored case.
   const handleLayerHide = useCallback(() => {
     onOpenChange?.(false);
     if (!isControlled) {
       setInternalIsOpen(false);
     }
-    buttonRef.current?.focus();
+    const trigger = buttonRef.current;
+    if (getInteractionModality() === 'keyboard') {
+      trigger?.focus();
+    } else if (document.activeElement === trigger) {
+      trigger?.blur();
+    }
   }, [isControlled, onOpenChange]);
 
   // Defer item focus until the layer has committed open, so focus restore
