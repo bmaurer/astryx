@@ -86,7 +86,8 @@ export const docs = {
     {
       name: 'minQueryLength',
       type: 'number',
-      description: 'Minimum query length before the search source is queried. Below it no search runs and the menu stays closed.',
+      description:
+        'Minimum query length before the search source is queried. Below it no search runs and the menu stays closed.',
       default: '1',
     },
     {
@@ -205,6 +206,7 @@ export const docs = {
         default: '200px',
       },
     ],
+    derived: [{property: 'minWidth', vars: ['--typeahead-min-width']}],
   },
   usage: {
     description:

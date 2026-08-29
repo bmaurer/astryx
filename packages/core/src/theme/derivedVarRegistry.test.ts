@@ -229,6 +229,7 @@ const DIR_TO_REGISTRY_KEY: Record<string, string> = {
   Section: 'section',
   SegmentedControl: 'segmented-control',
   TextArea: 'text-area',
+  Typeahead: 'typeahead',
 };
 
 /**

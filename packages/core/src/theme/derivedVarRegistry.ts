@@ -89,6 +89,7 @@ export const derivedVarRegistry: Record<string, DerivedVarEntry[]> = {
       replaces: true,
     },
   ],
+  typeahead: [{property: 'minWidth', vars: ['--typeahead-min-width']}],
 };
 
 /**
