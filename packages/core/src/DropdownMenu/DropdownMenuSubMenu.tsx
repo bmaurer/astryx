@@ -172,10 +172,9 @@ const flyoutStyles = stylex.create({
   },
   popoverViewport: {
     boxSizing: 'border-box',
-    maxInlineSize: stylex.firstThatWorks(
-      MENU_MAX_INLINE_SIZE,
-      MENU_MAX_INLINE_SIZE_FALLBACK,
-    ),
+    // Keep the inline viewport cap on the menu surface above. Applying it to
+    // the anchor-positioned popover itself prevents Chromium from selecting
+    // `flip-inline` and instead shifts the flyout back across its parent.
     maxBlockSize: stylex.firstThatWorks(
       MENU_MAX_BLOCK_SIZE,
       MENU_MAX_BLOCK_SIZE_FALLBACK,

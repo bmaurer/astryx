@@ -1165,6 +1165,24 @@ export const SubmenuViewportFit: Story = {
     );
     if (submenuTrigger instanceof HTMLElement) {
       submenuTrigger.click();
+      await new Promise<void>(resolve =>
+        requestAnimationFrame(() => resolve()),
+      );
+
+      const openMenus = Array.from(
+        canvasElement.querySelectorAll<HTMLElement>('[role="menu"]'),
+      ).filter(menu => menu.getClientRects().length > 0);
+      const [parentMenu, submenu] = openMenus;
+      if (parentMenu && submenu) {
+        const parentRect = parentMenu.getBoundingClientRect();
+        const submenuRect = submenu.getBoundingClientRect();
+        const isSeparated =
+          submenuRect.right <= parentRect.left ||
+          submenuRect.left >= parentRect.right;
+        if (!isSeparated) {
+          throw new Error('Submenu must not overlap its parent menu');
+        }
+      }
     }
   },
 };
