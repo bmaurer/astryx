@@ -25,7 +25,12 @@ export const docs = {
     defaults: {
       button: {label: 'Actions'},
       presentation: 'popover',
-      items: [{label: 'Edit'}, {label: 'Duplicate'}, {label: 'Delete'}],
+      items: [
+        {label: 'Edit project', icon: 'wrench'},
+        {label: 'Duplicate project', icon: 'copy'},
+        {label: 'Share project', icon: 'externalLink'},
+        {label: 'Archive project', icon: 'stop'},
+      ],
     },
   },
   theming: {

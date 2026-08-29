@@ -979,6 +979,13 @@ describe('DropdownMenu adaptive-presentation example', () => {
 
     expect(presentation?.type).toBe("'popover' | 'bottom-sheet'");
     expect(presentation?.default).toBe("'popover'");
+
+    const defaults = dropdownMenu?.playground?.defaults as
+      Record<string, unknown> | undefined;
+    const items = defaults?.items as
+      Array<{label?: unknown; icon?: unknown}> | undefined;
+    expect(items).toHaveLength(4);
+    expect(items?.every(item => typeof item.icon === 'string')).toBe(true);
   });
 
   it('registers the responsive presentation example on the related component pages', () => {
