@@ -977,7 +977,7 @@ describe('DropdownMenu adaptive-presentation example', () => {
       prop => prop.name === 'presentation',
     );
 
-    expect(presentation?.type).toBe("'popover' | 'bottom-sheet'");
+    expect(presentation?.type).toBe("'popover' | 'bottom-sheet' | 'adaptive'");
     expect(presentation?.default).toBe("'popover'");
 
     const defaults = dropdownMenu?.playground?.defaults as
@@ -1012,6 +1012,20 @@ describe('DropdownMenu adaptive-presentation example', () => {
         example => example.source === bottomSheetExample!.source,
       ),
     ).toBe(true);
+  });
+
+  it('registers the ContextMenu BottomSheet example', () => {
+    const contextMenuExamples = exampleRegistry['ContextMenu'] ?? [];
+    const bottomSheetExample = contextMenuExamples.find(example =>
+      /Bottom Sheet/i.test(example.name),
+    );
+
+    expect(bottomSheetExample).toBeDefined();
+    expect(bottomSheetExample!.source).toContain('presentation="bottom-sheet"');
+    expect(bottomSheetExample!.source).toContain(
+      'Long-press on touch or right-click',
+    );
+    expect(bottomSheetExample!.source).not.toContain("type: 'divider'");
   });
 });
 
