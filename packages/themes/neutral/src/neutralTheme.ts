@@ -9,8 +9,8 @@
  * orange, no blue drift for purple) and well-separated from its neighbors.
  *
  * The full approved light and dark ramps are exported as `neutralPalettes`.
- * Semantic tokens and deliberate component exceptions select exact named
- * stops from that palette so theme authors and agents do not invent hexes.
+ * Semantic tokens and deliberate component exceptions select exact numbered
+ * tones from that palette so theme authors and agents do not invent hexes.
  *
  * Categorical hues (OKLCH; chroma = max-in-gamut at the saturated stop):
  *   Red H=25    Orange H=65    Yellow H=90    Green H=145
@@ -29,7 +29,7 @@ import {
   defineTheme,
   defineSyntaxTheme,
   defineTonalPalettes,
-  type TonalPaletteStep,
+  type TonalPaletteTone,
 } from '@astryxdesign/core/theme';
 import {neutralIconRegistry} from './icons';
 
@@ -37,8 +37,9 @@ import {neutralIconRegistry} from './icons';
  * Approved tonal palette for the Neutral theme.
  *
  * Components should use semantic theme tokens first. Theme authors and agents
- * may use an exact named stop only when no semantic token expresses the role;
- * do not invent or approximate hex values outside these ramps.
+ * may use an exact numbered tone only when no semantic token expresses the
+ * role. Refer to it by family, mode, and tone, such as “blue light-mode tone
+ * 45”; do not invent or approximate hex values outside these ramps.
  */
 export const neutralPalettes = defineTonalPalettes({
   neutral: {
@@ -574,10 +575,10 @@ export const neutralPalettes = defineTonalPalettes({
   },
 });
 
-/** Return one approved palette stop for a light or dark color scheme. */
+/** Return one approved numbered tone for a light or dark color scheme. */
 function palette(
   family: keyof typeof neutralPalettes,
-  tone: TonalPaletteStep,
+  tone: TonalPaletteTone,
   mode: 'light' | 'dark' = 'light',
 ): string {
   return neutralPalettes[family][mode][tone];
@@ -595,8 +596,9 @@ function withAlpha(
 }
 
 /**
- * Neutral syntax palette — pulled from the OKLCH T30 (light) / T80 (dark)
- * stops of the categorical ramps. Same colors used by --color-icon-* tokens.
+ * Neutral syntax palette, pulled from tone 30 of each light-mode categorical
+ * ramp and tone 80 of each dark-mode ramp. The same colors are used by the
+ * --color-icon-* tokens.
  */
 const neutralSyntax = defineSyntaxTheme({
   name: 'xds-neutral',
@@ -647,8 +649,8 @@ const PROGRESS_TRACK = lightDark(
   palette('neutral', 20, 'dark'),
 );
 // The bright Badge yellow is only 1.01:1 against the light neutral track.
-// Progress therefore uses the palette's T50 yellow in light mode, the closest
-// darker stop that clears 3:1. Dark mode keeps the brighter semantic yellow.
+// Progress therefore uses yellow, light-mode tone 50, the closest darker tone
+// that clears 3:1. Dark mode keeps the brighter semantic yellow.
 const PROGRESS_WARNING_FILL = lightDark(
   palette('yellow', 50),
   palette('yellow', 80, 'dark'),
@@ -690,40 +692,41 @@ export const neutralTheme = defineTheme({
   syntax: neutralSyntax,
 
   // Palette strategy: `palettes` is the approved source of exact colors.
-  // Semantic tokens below reference named family/tone stops. Alpha overlays
-  // are derived from those same stops; the two syntax punctuation values are
+  // Semantic tokens below reference explicit family, mode, and tone values.
+  // Alpha overlays are derived from those same tones; the two syntax
+  // punctuation values are
   // the only contrast-specific opaque exceptions and are documented in place.
   tokens: {
     // =========================================================================
-    // Core — exact named stops from neutralPalettes.neutral.
+    // Core — exact numbered tones from neutralPalettes.neutral.
     // =========================================================================
 
     // =========================================================================
     // Backgrounds — Figma-style flat with a single lifted surface.
     //
-    // Dark mode collapses card / popover / muted to body T10. Cards and
+    // Dark mode collapses card / popover / muted to body tone 10. Cards and
     // popovers lift purely via shadow + inset highlight (see --shadow-*
     // below) — they don't need a distinct tone.
     //
-    // Surface is the exception: it's tonally LIGHTER than body (T15) so
+    // Surface is the exception: it's tonally LIGHTER than body (tone 15) so
     // interactive components that sit on top of body have a clear,
     // differentiated foreground. Real consumers of --color-background-surface
     // are: switches, radios, checkboxes, multi-selectors, dialogs, app
     // shells, sections — all things that need to lift above the canvas.
     //
-    //   surface  T15 #262626  — interactive surfaces lifted above body
-    //   body     T10 #1b1b1b  — main canvas
-    //   card     T10 #1b1b1b  — same as body, lifts via --shadow-low
-    //   popover  T10 #1b1b1b  — same as body, lifts via --shadow-med
-    //   muted    T10 #1b1b1b  — same as body
+    //   surface  tone 15 #262626  — interactive surfaces lifted above body
+    //   body     tone 10 #1b1b1b  — main canvas
+    //   card     tone 10 #1b1b1b  — same as body, lifts via --shadow-low
+    //   popover  tone 10 #1b1b1b  — same as body, lifts via --shadow-med
+    //   muted    tone 10 #1b1b1b  — same as body
     //
     // Light mode keeps the standard ladder (white surfaces float on tinted
     // body; shadows do most of the lifting):
-    //   surface  T100 #ffffff
-    //   body     T95  #f1f1f1
-    //   card     T100 #ffffff
-    //   popover  T100 #ffffff
-    //   muted    T95  #f1f1f1
+    //   surface  tone 100 #ffffff
+    //   body     tone 95  #f1f1f1
+    //   card     tone 100 #ffffff
+    //   popover  tone 100 #ffffff
+    //   muted    tone 95  #f1f1f1
     //
     // All values use the OKLCH Neutral tonal palette (chroma=0).
     // =========================================================================
@@ -775,8 +778,8 @@ export const neutralTheme = defineTheme({
 
     // Text
     '--color-text-primary': [palette('neutral', 10), palette('neutral', 95)],
-    // Light secondary is T35 (#525252), not T50 (#777777): T50 only
-    // reaches 4.19:1 on the T95 body (#f1f1f1), just under WCAG AA 4.5:1.
+    // Light secondary is tone 35 (#525252), not tone 50 (#777777): tone 50 only
+    // reaches 4.19:1 on the tone 95 body (#f1f1f1), just under WCAG AA 4.5:1.
     // 600 clears it (6.9:1 on body, 7.8:1 on card). Dark stays neutral-400.
     '--color-text-secondary': [palette('neutral', 35), palette('neutral', 65)],
     '--color-text-disabled': [palette('neutral', 65), palette('neutral', 35)],
@@ -803,9 +806,9 @@ export const neutralTheme = defineTheme({
 
     // Status / Sentiment — dark mode follows the issue #2150 rubric:
     //
-    //   Light mode: pastel T90 banner bg + dark T25-T40 text/icon. Locked
+    //   Light mode: pastel tone 90 banner bg + dark tones 25-40 text/icon. Locked
     //               light values for cards/banners/inputs/destructive btn.
-    //   Dark mode : tinted-dark T20 bg + light pastel T80-T85 text. INVERTED
+    //   Dark mode : tinted-dark tone 20 bg + light pastel tones 80-85 text. INVERTED
     //               from light. Avoids the §5 "pastel-in-both-modes"
     //               anti-pattern (locked pastels glow against a dark body).
     //
@@ -815,22 +818,23 @@ export const neutralTheme = defineTheme({
     //                       Used by destructive button text, input border/icon
     //                       (in light), banner-status-* text overrides.
     //   --color-X-muted   = "muted bg stop":
-    //                         light = T90 light pastel
-    //                         dark  = hue-tinted alpha overlay (T70 stop @ 24%)
+    //                         light = tone 90 light pastel
+    //                         dark  = hue-tinted alpha overlay (tone 70 stop @ 24%)
     //                       Used by banner bg, status-input message bg,
     //                       destructive button bg. Dark mode uses an alpha
-    //                       overlay rather than a solid T20 tinted bg so
+    //                       overlay rather than a solid tone 20 tinted bg so
     //                       the surface composes onto whatever sits behind
     //                       it (body, card, popover) rather than reading
     //                       as a hard colored panel.
     //
     //   24% alpha = '3D' suffix. Hue values match --color-icon-{X} dark
-    //   slots (palette T70). Composited onto body #1b1b1b, the effective
+    //   slots (palette tone 70). Composited onto body #1b1b1b, the effective
     //   bg luminance hits ~1.65-1.70:1 vs body — visible colored surface
-    //   without the heaviness of a solid T20 panel.
+    //   without the heaviness of a solid tone 20 panel.
     '--color-success': [palette('green', 30), palette('green', 80, 'dark')],
-    // Error uses one stronger foreground step (T25/T85) so destructive button
-    // text retains comfortable AA headroom through its pressed overlay.
+    // Error uses one stronger foreground tone (light tone 25 / dark tone 85)
+    // so destructive button text retains comfortable AA headroom through its
+    // pressed overlay.
     '--color-error': [palette('red', 25), palette('red', 85, 'dark')],
     '--color-warning': [palette('yellow', 30), palette('yellow', 80, 'dark')],
     '--color-success-muted': [
@@ -847,8 +851,8 @@ export const neutralTheme = defineTheme({
     ],
 
     // Border. Emphasized is the perceivable boundary used by inputs,
-    // unchecked selection controls, and the off Switch track. Neutral 500 is
-    // the first shared ramp stop that clears WCAG 1.4.11 (3:1) against both
+    // unchecked selection controls, and the off Switch track. Neutral tone 50
+    // is the first shared ramp tone that clears WCAG 1.4.11 (3:1) against both
     // the body and surface in both color schemes.
     '--color-border': [
       withAlpha(palette('neutral', 0), '14'),
@@ -878,26 +882,27 @@ export const neutralTheme = defineTheme({
     //               the token touches).
     //
     // Per-token tone choice (CIELab L*):
-    //   bg     light=T87-T90 pastel       dark=T70 hue @ 24% alpha overlay
+    //   bg     light tones 87-90 pastel       dark tone 70 hue @ 24% alpha overlay
     //                                       (composites onto body to ~1.65:1
     //                                        vs body — colored surface that
-    //                                        feels lighter than a solid T20
+    //                                        feels lighter than a solid tone 20
     //                                        panel; same hue as --color-icon-X
     //                                        dark slot, just at lower opacity)
-    //   border light=T80 pastel           dark=T60 mid-bright (>=5.8:1 vs body)
-    //   icon   light=T30 dark colored     dark=T70 light pastel
-    //   text   light=T30 dark colored     dark=T80 light pastel (>=7:1 on bg)
-    //          red alone uses T25/T85 for destructive-button state headroom
+    //   border light tone 80 pastel           dark tone 60 mid-bright (>=5.8:1 vs body)
+    //   icon   light tone 30 dark colored     dark tone 70 light pastel
+    //   text   light tone 30 dark colored     dark tone 80 light pastel (>=7:1 on bg)
+    //          red alone uses light tone 25 / dark tone 85 for
+    //          destructive-button state headroom
     //
     // The balanced OKLCH ramps keep one hue per family while tuning pastel
     // chroma for perceived parity: red=.065, orange=.07, yellow=.13,
     // green/purple/pink=.06, teal/cyan=.065, blue=.085. Dark stops apply
-    // chroma×0.85 and a +5 tone lift that tapers from T80 to T95.
+    // chroma×0.85 and a +5 tone lift that tapers from tone 80 to tone 95.
     // =========================================================================
 
     // Each row's dark slots use the same balanced OKLCH ramp rendered by the
-    // neutral-palette sandbox. Border=T60,
-    // icon=T70, text=T80. Background uses the T70 hue at 24% alpha so the
+    // neutral-palette sandbox: dark-mode border tone 60, icon tone 70, and
+    // text tone 80. Background uses dark-mode tone 70 at 24% alpha so the
     // overlay surface composites onto body to ~1.65:1 luminance.
 
     // Red H=25 C=.065
@@ -1012,11 +1017,11 @@ export const neutralTheme = defineTheme({
     '--color-text-pink': [palette('pink', 30), palette('pink', 80, 'dark')],
 
     // Gray (categorical neutral, chroma 0)
-    //   Light: Neutral T90 so it stays distinct from the T95 body.
+    //   Light: Neutral tone 90 so it stays distinct from the tone 95 body.
     //   Dark : var(--color-neutral) — semi-transparent white wash
     //          (#FFFFFF1A, 10%). Matches the same treatment the gray
-    //          badge uses; clearly distinct from the body T10 #1b1b1b
-    //          while staying chroma-0 neutral. Solid T15 #1c1c1c was
+    //          badge uses; clearly distinct from the body tone 10 #1b1b1b
+    //          while staying chroma-0 neutral. Solid tone 15 #1c1c1c was
     //          indistinguishable from --color-background-muted.
     '--color-background-gray': [palette('neutral', 90), 'var(--color-neutral)'],
     '--color-border-gray': [
@@ -1090,59 +1095,61 @@ export const neutralTheme = defineTheme({
 
     // =========================================================================
     // Badge —
-    //   Semantic (info/success/warning/error): filled saturated T50 + contrasting
+    //   Semantic (info/success/warning/error): filled saturated tone 50 + contrasting
     //     text (white, or dark on yellow). The filled-button rule from #2150
-    //     §3 — text contrast locks the bg tone, so this stays at T50 in
+    //     §3 — text contrast locks the bg tone, so this stays at tone 50 in
     //     BOTH modes, unlike pastel surfaces which invert by mode.
     //   Categorical (blue/green/red/orange/etc.): pastel-tinted hue surface +
-    //     colored text — light mode = soft T87-T90 + dark T30 text; dark mode
-    //     = T20 tinted + T80 light pastel text (sources: --color-background-X
+    //     colored text — light mode = soft tones 87-90 + dark tone 30 text; dark mode
+    //     = tone 20 tinted + tone 80 light pastel text (sources: --color-background-X
     //     and --color-text-X tokens).
     //   Neutral: light gray bg + dark text (or inverted in dark mode).
     // =========================================================================
     badge: {
       // Semantic — filled saturated bg + contrasting text.
-      //   Light: vivid T45-T55 from the OKLCH palette + white text
+      //   Light: vivid tones 45-55 from the OKLCH palette + white text
       //          (~4.5-5:1 — Material/Linear/Vercel pop).
-      //   Dark : T60 stop from the dark-mode tonal palette (chroma×0.85,
+      //   Dark : tone 60 stop from the dark-mode tonal palette (chroma×0.85,
       //          +5 tone-lift taper from issue #2150 §4) + DARK text.
-      //          T60+white fails AA-large (~2.7:1); T60+dark hits 6.6-7:1
+      //          tone 60 with white fails AA-large (~2.7:1); tone 60 with dark
+      //          text reaches 6.6-7:1
       //          and tames the §4 vibration. Same dark-text-on-bright-bg
       //          treatment that warning yellow uses in both modes.
       'variant:info': {
-        // Blue T45 light / T60 dark.
+        // Blue: light-mode tone 45 / dark-mode tone 60.
         backgroundColor: FILLED_STATE_COLORS.info,
         color: FILLED_STATE_TEXT.standard,
       },
       'variant:neutral': {
         // Mirrors the gray categorical badge — same neutral chip treatment
-        // (Neutral T90 light / semi-transparent white wash dark) sourced
+        // (Neutral light-mode tone 90 / semi-transparent white wash in dark
+        // mode) sourced
         // from the gray hue tokens, so a single change at the token layer
         // updates both variants.
         backgroundColor: 'var(--color-background-gray)',
         color: 'var(--color-text-gray)',
       },
       'variant:success': {
-        // Green T45 light / T60 dark.
+        // Green: light-mode tone 45 / dark-mode tone 60.
         backgroundColor: FILLED_STATE_COLORS.success,
         color: FILLED_STATE_TEXT.standard,
       },
       'variant:warning': {
-        // Yellow T85 light / T80 dark, both with dark text.
+        // Yellow: light-mode tone 85 / dark-mode tone 80, both with dark text.
         backgroundColor: FILLED_STATE_COLORS.warning,
         color: FILLED_STATE_TEXT.onBright,
       },
       'variant:error': {
-        // Red T50 light / T60 dark. The light stop is the brightest red that
-        // still clears AA with the badge's white label.
+        // Red: light-mode tone 50 / dark-mode tone 60. The light-mode tone is
+        // the brightest red that still clears AA with the badge's white label.
         backgroundColor: FILLED_STATE_COLORS.error,
         color: FILLED_STATE_TEXT.standard,
       },
 
       // Categorical — bg + text reference the per-hue tokens, so behavior
       // tracks the categorical palette automatically:
-      //   Light: pastel T87-T90 bg + dark T30 colored text (low-key chip)
-      //   Dark : tinted T20 bg + light T80 colored text (per #2150 §5,
+      //   Light: pastel tones 87-90 bg + dark tone 30 colored text (low-key chip)
+      //   Dark : tinted tone 20 bg + light tone 80 colored text (per #2150 §5,
       //          inverted from light to avoid the "pastel-in-both-modes"
       //          anti-pattern that makes locked light pastels glow on a
       //          dark body)
@@ -1206,20 +1213,20 @@ export const neutralTheme = defineTheme({
     //
     // The default component maps each variant to a raw semantic token
     // (--color-success / --color-error / --color-warning / --color-icon-
-    // secondary), which in light mode are the dark T30/T40 stops meant to
+    // secondary), which in light mode are dark tones 30 and 40 meant to
     // sit as TEXT on a pastel surface — as a solid dot they read muddy
     // (dark green / maroon / brown). Redirect them to the badge fills.
     //
-    //   success → badge success bg  (green T45 / dark-ramp T60)
-    //   warning → badge warning bg  (yellow T85, same hex both modes)
-    //   error   → badge error bg    (red T58 / dark-ramp T60)
-    //   accent  → badge info bg     (blue T50 / dark-ramp T60) — the
+    //   success → badge success bg  (green light tone 45 / dark tone 60)
+    //   warning → badge warning bg  (yellow tone 85, same hex both modes)
+    //   error   → badge error bg    (red light tone 58 / dark tone 60)
+    //   accent  → badge info bg     (blue light tone 50 / dark tone 60) — the
     //             StatusDot "accent" is the info/attention color, so it
     //             pairs with the info badge rather than --color-accent
     //             (near-black #262626, the darkest offender).
     //
     // `neutral` is intentionally NOT overridden: the neutral badge bg is a
-    // near-invisible light gray (--color-background-gray T90 / 10% white
+    // near-invisible light gray (--color-background-gray tone 90 / 10% white
     // wash), fine as a large pill but unreadable as an 8px dot. It keeps the
     // component default's visible mid-gray (--color-icon-secondary), which is
     // not among the "too dark" cases.
@@ -1239,9 +1246,9 @@ export const neutralTheme = defineTheme({
 
     // =========================================================================
     // Banner — sits on a hue-tinted surface with colored text/icon:
-    //   Light: pastel T90 bg (pulled from --color-{X}-muted / --color-background-blue)
-    //          + dark T30 colored text (--color-text-{hue}).
-    //   Dark : tinted T20 bg (same tokens, dark slot) + light T80 colored text.
+    //   Light: pastel tone 90 bg (pulled from --color-{X}-muted / --color-background-blue)
+    //          + dark tone 30 colored text (--color-text-{hue}).
+    //   Dark : tinted tone 20 bg (same tokens, dark slot) + light tone 80 colored text.
     //          Per #2150 §5 — large hue-tinted surfaces in dark mode invert
     //          to a deep tinted bg + light text rather than locking the
     //          light-mode pastel.
@@ -1303,8 +1310,9 @@ export const neutralTheme = defineTheme({
     // TextInput / FieldStatus — no per-status overrides needed. FieldStatus
     // deliberately uses the same muted background + colored foreground pairs
     // as Banner for success, warning, and error. The global tokens also carry
-    // the correct values for the input border/icon in both modes (light=T40
-    // dark colored, dark=T80 light pastel). Verified the message pairs clear
+    // the correct values for the input border/icon in both modes (light-mode
+    // tone 40 dark colored, dark-mode tone 80 light pastel). Verified the
+    // message pairs clear
     // AA text 4.5:1 and the input affordances clear AA non-text 3:1.
     // =========================================================================
 
@@ -1366,7 +1374,7 @@ export const neutralTheme = defineTheme({
     },
 
     // SelectableCard's ring is a meaningful selected-state indicator. Use the
-    // lightest same-hue palette stop that clears WCAG 1.4.11 against each Card
+    // lightest same-hue palette tone that clears WCAG 1.4.11 against each Card
     // surface, rather than the much stronger text/icon stop. Neutral variants
     // use a balanced gray just above the same threshold.
     'selectable-card': {

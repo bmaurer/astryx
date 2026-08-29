@@ -1,6 +1,6 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
-import {TONAL_PALETTE_STEPS} from '@astryxdesign/core/theme';
+import {TONAL_PALETTE_TONES} from '@astryxdesign/core/theme';
 import {describe, expect, it} from 'vitest';
 import {neutralPalettes, neutralTheme} from './neutralTheme';
 
@@ -21,14 +21,14 @@ describe('neutral theme palette contract', () => {
     ]);
 
     for (const family of Object.values(neutralPalettes)) {
-      for (const step of TONAL_PALETTE_STEPS) {
-        expect(family.light[step]).toMatch(/^#[0-9a-f]{6}$/i);
-        expect(family.dark[step]).toMatch(/^#[0-9a-f]{6}$/i);
+      for (const tone of TONAL_PALETTE_TONES) {
+        expect(family.light[tone]).toMatch(/^#[0-9a-f]{6}$/i);
+        expect(family.dark[tone]).toMatch(/^#[0-9a-f]{6}$/i);
       }
     }
   });
 
-  it('maps representative semantic tokens to named palette stops', () => {
+  it('maps representative semantic tokens to numbered palette tones', () => {
     expect(neutralTheme.tokens['--color-background-body']).toBe(
       `light-dark(${neutralPalettes.neutral.light[95]}, ${neutralPalettes.neutral.dark[5]})`,
     );
