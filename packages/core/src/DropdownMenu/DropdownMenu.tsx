@@ -93,8 +93,12 @@ const MENU_MAX_BLOCK_SIZE_FALLBACK = `min(300px, calc(100vh - ${MENU_VIEWPORT_GU
 const MENU_POSITION_AREA_MAX_INLINE_SIZE = `calc(100% - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)))`;
 const MENU_POSITION_AREA_MAX_INLINE_SIZE_FALLBACK = `calc(100% - ${MENU_VIEWPORT_GUTTER})`;
 const MENU_INLINE_EDGE_GUTTER = `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px))`;
+const MENU_TRIGGER_OPEN_BACKGROUND = `linear-gradient(${colorVars['--color-overlay-pressed']}, ${colorVars['--color-overlay-pressed']})`;
 
 const styles = stylex.create({
+  triggerOpen: {
+    backgroundImage: MENU_TRIGGER_OPEN_BACKGROUND,
+  },
   dropdown: {
     boxSizing: 'border-box',
     display: 'flex',
@@ -204,6 +208,9 @@ const bottomSheetStyles = stylex.create({
     // Match the content edge of a spacious ListItem. Icon-bearing rows place
     // their icon here; rows without an icon place their label here.
     marginInlineStart: spacingVars['--spacing-3'],
+  },
+  viewHeading: {
+    outline: 'none',
   },
   destructiveAction: {
     '--_item-label-color': colorVars['--color-error'],
@@ -418,7 +425,18 @@ function BottomSheetActionList({
           )
         }
         isDisabled={item.isDisabled}
-        onClick={() => (isSubmenu ? onOpenSubmenu(item) : onSelect(item))}
+        onClick={event => {
+          // A touch selection can satisfy :focus-visible in Safari. Clear the
+          // row before the sheet closes so it never appears keyboard-focused.
+          if (getInteractionModality() === 'pointer') {
+            (event.currentTarget as HTMLElement).blur();
+          }
+          if (isSubmenu) {
+            onOpenSubmenu(item);
+          } else {
+            onSelect(item);
+          }
+        }}
         xstyle={isDestructive && bottomSheetStyles.destructiveAction}
       />
     );
@@ -485,6 +503,7 @@ function DropdownMenuBottomSheet({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const actionListRef = useRef<HTMLDivElement>(null);
   const openModalityRef = useRef<'keyboard' | 'pointer'>('pointer');
+  const shouldClearRestoredFocusRef = useRef(false);
   const viewHeadingRef = useRef<HTMLHeadingElement>(null);
   const previousSubmenuDepthRef = useRef(0);
   const [internalIsOpen, setInternalIsOpen] = useState(false);
@@ -498,6 +517,10 @@ function DropdownMenuBottomSheet({
     typeof currentTitle === 'string' ? currentTitle : button.label;
 
   useEffect(() => {
+    trackInteractionModality();
+  }, []);
+
+  useEffect(() => {
     if (isOpen || submenuPath.length === 0) {
       return;
     }
@@ -509,6 +532,8 @@ function DropdownMenuBottomSheet({
     (nextIsOpen: boolean) => {
       if (!nextIsOpen) {
         setSubmenuPath([]);
+        shouldClearRestoredFocusRef.current =
+          getInteractionModality() === 'pointer';
       }
       onOpenChange?.(nextIsOpen);
       if (!isControlled) {
@@ -570,6 +595,7 @@ function DropdownMenuBottomSheet({
       <Button
         {...button}
         ref={buttonRef}
+        xstyle={[isOpen && styles.triggerOpen, button.xstyle]}
         tooltip={isOpen ? undefined : button.tooltip}
         endContent={resolvedEndContent}
         onPointerDown={event => {
@@ -584,6 +610,16 @@ function DropdownMenuBottomSheet({
             event.key === ' '
           ) {
             openModalityRef.current = 'keyboard';
+          }
+        }}
+        onFocus={event => {
+          button.onFocus?.(event);
+          if (
+            shouldClearRestoredFocusRef.current &&
+            getInteractionModality() === 'pointer'
+          ) {
+            shouldClearRestoredFocusRef.current = false;
+            event.currentTarget.blur();
           }
         }}
         onClick={() => {
@@ -632,9 +668,10 @@ function DropdownMenuBottomSheet({
                 ref={viewHeadingRef}
                 level={3}
                 tabIndex={-1}
-                xstyle={
-                  submenuPath.length === 0 && bottomSheetStyles.rootHeading
-                }>
+                xstyle={[
+                  bottomSheetStyles.viewHeading,
+                  submenuPath.length === 0 && bottomSheetStyles.rootHeading,
+                ]}>
                 {currentTitle}
               </Heading>
             </div>
@@ -951,6 +988,7 @@ function DropdownMenuPopover({
             /* eslint-enable react-compiler/react-compiler */
           }
         }}
+        xstyle={[isOpen && styles.triggerOpen, button.xstyle]}
         tooltip={isOpen ? undefined : button.tooltip}
         endContent={resolvedEndContent}
         onClick={handleButtonClick}

@@ -109,6 +109,18 @@ describe('MoreMenu', () => {
     expect(HTMLElement.prototype.showPopover).toHaveBeenCalled();
   });
 
+  it('keeps the trigger visually pressed while the menu is open', async () => {
+    const user = userEvent.setup();
+    render(<MoreMenu items={defaultItems} />);
+
+    const trigger = screen.getByRole('button', {name: 'More options'});
+    expect(trigger.className).not.toContain('DropdownMenu__styles.triggerOpen');
+
+    await user.click(trigger);
+
+    expect(trigger.className).toContain('DropdownMenu__styles.triggerOpen');
+  });
+
   it('forwards BottomSheet presentation to DropdownMenu', async () => {
     const user = userEvent.setup();
     render(<MoreMenu items={defaultItems} presentation="bottom-sheet" />);

@@ -397,6 +397,29 @@ describe('DropdownMenu', () => {
     );
   });
 
+  it('clears touch focus from a bottom-sheet action and restored trigger', async () => {
+    render(
+      <DropdownMenu
+        button={{label: 'Actions'}}
+        presentation="bottom-sheet"
+        items={[{label: 'Edit'}]}
+      />,
+    );
+
+    const trigger = screen.getByRole('button', {name: /Actions/});
+    fireEvent.pointerDown(trigger, {pointerType: 'touch'});
+    fireEvent.click(trigger, {detail: 1});
+
+    const action = screen.getByRole('button', {name: 'Edit'});
+    action.focus();
+    fireEvent.pointerDown(action, {pointerType: 'touch'});
+    fireEvent.click(action, {detail: 1});
+
+    expect(action).not.toHaveFocus();
+    trigger.focus();
+    expect(trigger).not.toHaveFocus();
+  });
+
   it('defaults menu placement below', () => {
     render(
       <DropdownMenu button={{label: 'Actions'}} items={[{label: 'Item 1'}]} />,
