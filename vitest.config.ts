@@ -104,6 +104,13 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'ui',
+          // A jsdom component suite can cost ~1.8s p95 per test where a
+          // comparable file costs ~80ms, so the 5s default leaves almost no
+          // headroom: on a busy machine slow-but-correct runs flake
+          // non-deterministically (every failure was "timed out in 5000ms",
+          // never a wrong value). Same budget as `node`, for the same reason.
+          testTimeout: 30_000,
+          hookTimeout: 30_000,
           include: [
             'packages/core/src/**/*.test.{ts,tsx,mjs}',
             'packages/lab/src/**/*.test.{ts,tsx,mjs}',
@@ -131,8 +138,8 @@ export default defineConfig({
           hookTimeout: 30_000,
           // Build @astryxdesign/core once before workers fork. The build-theme
           // suites need a compiled core; doing it here (not per-suite in
-          // parallel workers) avoids concurrent `rimraf dist && build`
-          // collisions that flake under Vitest 4's reworked pool.
+          // parallel workers) avoids concurrent clean-and-build collisions that
+          // flake under Vitest 4's reworked pool.
           globalSetup: ['./vitest.global-setup.node.mjs'],
           include: [
             'packages/**/src/**/*.test.{ts,tsx,mjs}',

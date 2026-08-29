@@ -10,7 +10,7 @@
  */
 
 import {describe, it, expect, vi, beforeEach} from 'vitest';
-import {render, screen, fireEvent, waitFor} from '@testing-library/react';
+import {render, screen, fireEvent, waitFor, act} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {useState} from 'react';
 import {DropdownMenu} from './DropdownMenu';
@@ -23,9 +23,6 @@ beforeEach(() => {
   HTMLDialogElement.prototype.showModal = vi.fn(function (
     this: HTMLDialogElement,
   ) {
-    this.setAttribute('open', '');
-  });
-  HTMLDialogElement.prototype.show = vi.fn(function (this: HTMLDialogElement) {
     this.setAttribute('open', '');
   });
   HTMLDialogElement.prototype.close = vi.fn(function (this: HTMLDialogElement) {
@@ -107,27 +104,63 @@ describe('DropdownMenu', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('renders the real menu content in a BottomSheet when requested', async () => {
+  it('renders data-driven actions in a bottom sheet when requested', async () => {
     const user = userEvent.setup();
+    const onEdit = vi.fn();
+
     render(
       <DropdownMenu
-        button={{label: 'Actions'}}
+        button={{label: 'Project actions'}}
         presentation="bottom-sheet"
-        items={[{label: 'Edit'}, {label: 'Delete'}]}
+        items={[{label: 'Edit project', onClick: onEdit}]}
       />,
     );
 
-    const trigger = screen.getByRole('button', {name: /Actions/});
+    const trigger = screen.getByRole('button', {name: /Project actions/});
+    expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
+    expect(screen.queryByRole('menu', {hidden: true})).not.toBeInTheDocument();
+
     await user.click(trigger);
 
-    await waitFor(() =>
-      expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalledOnce(),
-    );
-    expect(trigger).toHaveAttribute('aria-expanded', 'true');
     expect(
-      screen.getByRole('menu', {name: 'Actions', hidden: true}),
-    ).toHaveAttribute('data-autofocus');
-    expect(HTMLElement.prototype.showPopover).not.toHaveBeenCalled();
+      screen.getByRole('dialog', {name: 'Project actions'}),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', {name: 'Edit project'}));
+
+    expect(onEdit).toHaveBeenCalledTimes(1);
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('drills into nested data items in bottom-sheet presentation', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <DropdownMenu
+        button={{label: 'Project actions'}}
+        presentation="bottom-sheet"
+        items={[
+          {
+            label: 'Move to project',
+            items: [{label: 'Apollo launch'}],
+          },
+        ]}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', {name: /Project actions/}));
+    await user.click(screen.getByRole('button', {name: 'Move to project'}));
+
+    expect(
+      screen.getByRole('heading', {name: 'Move to project'}),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {name: 'Apollo launch'}),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', {name: 'Back'}));
+    expect(
+      screen.getByRole('heading', {name: 'Project actions'}),
+    ).toBeInTheDocument();
   });
 
   it('uses the BottomSheet for adaptive presentation on compact touch', async () => {
@@ -154,9 +187,7 @@ describe('DropdownMenu', () => {
     );
 
     await user.click(screen.getByRole('button', {name: /Actions/}));
-    await waitFor(() =>
-      expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalledOnce(),
-    );
+    expect(screen.getByRole('dialog', {name: 'Actions'})).toBeInTheDocument();
     expect(HTMLElement.prototype.showPopover).not.toHaveBeenCalled();
   });
 
@@ -173,6 +204,67 @@ describe('DropdownMenu', () => {
     await user.click(screen.getByRole('button', {name: /Actions/}));
     expect(HTMLElement.prototype.showPopover).toHaveBeenCalledOnce();
     expect(HTMLDialogElement.prototype.showModal).not.toHaveBeenCalled();
+  });
+
+  it('preserves uncontrolled open state when adaptive presentation changes', async () => {
+    let matches = false;
+    const listeners = new Set<() => void>();
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockImplementation((query: string) => ({
+        get matches() {
+          return matches;
+        },
+        media: query,
+        onchange: null,
+        addEventListener: (_type: string, listener: () => void) =>
+          listeners.add(listener),
+        removeEventListener: (_type: string, listener: () => void) =>
+          listeners.delete(listener),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    );
+    const user = userEvent.setup();
+    render(
+      <DropdownMenu
+        button={{label: 'Actions'}}
+        presentation="adaptive"
+        items={[{label: 'Edit'}]}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', {name: /Actions/}));
+    expect(HTMLElement.prototype.showPopover).toHaveBeenCalledOnce();
+
+    matches = true;
+    act(() => listeners.forEach(listener => listener()));
+
+    expect(screen.getByRole('dialog', {name: 'Actions'})).toBeInTheDocument();
+    expect(screen.getByRole('button', {name: /Actions/})).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+  });
+
+  it('focuses the first action when a bottom sheet opens from the keyboard', async () => {
+    const user = userEvent.setup();
+    render(
+      <DropdownMenu
+        button={{label: 'Actions'}}
+        presentation="bottom-sheet"
+        items={[{label: 'Edit'}, {label: 'Delete'}]}
+      />,
+    );
+
+    const trigger = screen.getByRole('button', {name: /Actions/});
+    trigger.focus();
+    await user.keyboard('{Enter}');
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', {name: 'Edit'})).toHaveFocus(),
+    );
   });
 
   it('defaults menu placement below', () => {
@@ -505,10 +597,7 @@ describe('DropdownMenu', () => {
 });
 
 describe('DropdownMenu light-dismiss race', () => {
-  it('does not re-open the menu when a click follows a hide within the guard window', () => {
-    // Reproduces the iOS Safari race: pointerdown fires light-dismiss before
-    // the subsequent click on the trigger; without the guard, the click would
-    // immediately re-open the menu in the same tap.
+  function openMenu() {
     render(
       <DropdownMenu
         button={{label: 'Actions'}}
@@ -516,13 +605,50 @@ describe('DropdownMenu light-dismiss race', () => {
         data-testid="astryx-dropdown-menu"
       />,
     );
-
     const trigger = screen.getByTestId('astryx-dropdown-menu');
-    fireEvent.click(trigger); // open
-    fireEvent.click(trigger); // close (stamps guard)
-    fireEvent.click(trigger); // would re-open without guard
+    fireEvent.pointerDown(trigger);
+    fireEvent.click(trigger);
     expect(HTMLElement.prototype.showPopover).toHaveBeenCalledTimes(1);
-    expect(HTMLElement.prototype.hidePopover).toHaveBeenCalledTimes(1);
+    return trigger;
+  }
+
+  /**
+   * The browser dismisses the menu on pointerup and queues the `toggle` event;
+   * on the engines that lose the race it reaches React before the trigger's
+   * own click, which then reads a closed menu.
+   */
+  function lightDismiss() {
+    const popover = document.querySelector('[popover]') as HTMLElement;
+    act(() => {
+      popover.dispatchEvent(
+        Object.assign(new Event('toggle'), {
+          oldState: 'open',
+          newState: 'closed',
+        }),
+      );
+    });
+  }
+
+  it('does not re-open when the trigger click follows its own light dismiss', () => {
+    const trigger = openMenu();
+
+    fireEvent.pointerDown(trigger);
+    lightDismiss();
+    fireEvent.click(trigger);
+
+    expect(HTMLElement.prototype.showPopover).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-opens on a press of its own after a light dismiss', () => {
+    const trigger = openMenu();
+
+    fireEvent.pointerDown(trigger);
+    lightDismiss();
+    fireEvent.click(trigger);
+    fireEvent.pointerDown(trigger);
+    fireEvent.click(trigger);
+
+    expect(HTMLElement.prototype.showPopover).toHaveBeenCalledTimes(2);
   });
 });
 

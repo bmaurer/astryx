@@ -14,10 +14,11 @@
  * false diff costs a human judgement and teaches everyone to ignore it. So
  * the page is pinned: no external network (nothing that renders may depend on
  * a CDN being up), animations and transitions forced to their end state,
- * carets hidden, a fixed viewport and device scale factor, and a wait on
- * `document.fonts.ready` before the shutter. Even so, a baseline is only
- * comparable against a capture from the same OS and browser build, which is
- * why the manifest records the platform and the comparison refuses to cross it.
+ * carets hidden, a fixed viewport and device scale factor, a frozen clock in
+ * a fixed timezone, and a wait on `document.fonts.ready` before the shutter.
+ * Even so, a baseline is only comparable against a capture from the same OS
+ * and browser build, which is why the manifest records the platform and the
+ * comparison refuses to cross it.
  *
  * Speed. Storybook applies the theme through a global, so a theme change is a
  * re-render, not a reload: the plan is walked grouped by story, and the theme
@@ -80,31 +81,103 @@ const SEEDED_RANDOM = `(() => {
   };
 })();`;
 
+// BrowserContext routing does not cover network opened from dedicated/shared
+// workers. A static Storybook needs none of these constructors, so remove the
+// channels before any PR-authored script runs. Service workers are separately
+// disabled in the context options below.
+export const BACKGROUND_NETWORK_GUARD = `(() => {
+  const Blocked = class {
+    constructor() { throw new Error('Network channel disabled during visual capture'); }
+  };
+  for (const name of ['WebSocket', 'Worker', 'SharedWorker']) {
+    Object.defineProperty(globalThis, name, {value: Blocked, configurable: false});
+  }
+})();`;
+
+/** The instant every capture happens at, and the zone it happens in.
+ *
+ * Stories that build their data from `new Date()` photograph a different day
+ * on every run, so the gate reports them changed every single day — and a
+ * gate that always says changed teaches everyone to skim the changed list.
+ *
+ * Wednesday 13 May 2026, 10:15 UTC, chosen so that a date-driven story still
+ * has something to show: mid-month and mid-week, so a "today" marker has
+ * ordinary days around it and does not sit on the edge of a month grid; and
+ * mid-morning, so the day's earlier events are already past while its later
+ * ones are still ahead. A clock that put everything in the past would hide a
+ * regression in how future events are drawn. The zone is pinned with it —
+ * an instant alone is a different wall-clock hour on every machine, and the
+ * hour is the half of this choice that does the work.
+ */
+const FROZEN_NOW = new Date('2026-05-13T10:15:00Z');
+const TIMEZONE_ID = 'UTC';
+
 /**
  * Serve a directory over loopback. The gate never talks to the network, so
  * this is the only origin the browser can reach.
  * @param {string} dir
  * @returns {Promise<{port: number, close: () => Promise<void>}>}
  */
+export function isSameOrigin(url, origin) {
+  try {
+    return new URL(url).origin === origin;
+  } catch {
+    return false;
+  }
+}
+
+/** Install the network boundary before any PR-authored Storybook code runs. */
+export async function blockExternalNetwork(context, origin) {
+  await context.route('**', route =>
+    isSameOrigin(route.request().url(), origin) ? route.continue() : route.abort(),
+  );
+  // A routed WebSocket never connects unless connectToServer() is called. Close
+  // every socket: a static Storybook needs none, including its dev-only HMR.
+  await context.routeWebSocket(/.*/, socket => socket.close({code: 1008, reason: 'blocked'}));
+}
+
+export const CAPTURE_CONTEXT_SECURITY = {serviceWorkers: 'block'};
+
 export function serveDirectory(dir) {
+  const root = fs.realpathSync(dir);
   const server = http.createServer((req, res) => {
-    const requested = path.join(dir, req.url === '/' ? 'index.html' : req.url.split('?')[0]);
-    if (!path.resolve(requested).startsWith(path.resolve(dir))) {
+    let requested;
+    try {
+      const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+      requested = path.resolve(root, `.${pathname === '/' ? '/index.html' : pathname}`);
+    } catch {
+      res.writeHead(400);
+      res.end('Bad request');
+      return;
+    }
+    if (requested !== root && !requested.startsWith(`${root}${path.sep}`)) {
       res.writeHead(403);
       res.end('Forbidden');
       return;
     }
-    fs.readFile(requested, (error, data) => {
-      if (error) {
+    fs.realpath(requested, (realpathError, realPath) => {
+      if (realpathError) {
         res.writeHead(404);
         res.end('Not found');
         return;
       }
-      res.writeHead(200, {
-        'Content-Type': CONTENT_TYPES[path.extname(requested)] ?? 'application/octet-stream',
-        'Cache-Control': 'no-store',
+      if (realPath !== root && !realPath.startsWith(`${root}${path.sep}`)) {
+        res.writeHead(403);
+        res.end('Forbidden');
+        return;
+      }
+      fs.readFile(realPath, (error, data) => {
+        if (error) {
+          res.writeHead(404);
+          res.end('Not found');
+          return;
+        }
+        res.writeHead(200, {
+          'Content-Type': CONTENT_TYPES[path.extname(realPath)] ?? 'application/octet-stream',
+          'Cache-Control': 'no-store',
+        });
+        res.end(data);
       });
-      res.end(data);
     });
   });
   return new Promise(resolve => {
@@ -255,11 +328,16 @@ export async function scout({storyIds, storybookDir, theme, viewport, onProgress
   const server = await serveDirectory(storybookDir);
   const origin = `http://127.0.0.1:${server.port}`;
   const browser = await chromium.launch();
-  const context = await browser.newContext({viewport, deviceScaleFactor: 1});
+  const context = await browser.newContext({
+    viewport,
+    deviceScaleFactor: 1,
+    timezoneId: TIMEZONE_ID,
+    ...CAPTURE_CONTEXT_SECURITY,
+  });
+  await context.clock.setFixedTime(FROZEN_NOW);
+  await context.addInitScript(BACKGROUND_NETWORK_GUARD);
   await context.addInitScript(SEEDED_RANDOM);
-  await context.route('**', route =>
-    route.request().url().startsWith(origin) ? route.continue() : route.abort(),
-  );
+  await blockExternalNetwork(context, origin);
   const page = await context.newPage();
 
   /** @type {Record<string, Record<string, string[]>>} */
@@ -319,13 +397,15 @@ export async function capture({
     deviceScaleFactor: 1,
     reducedMotion: 'reduce',
     colorScheme: 'light',
+    timezoneId: TIMEZONE_ID,
+    ...CAPTURE_CONTEXT_SECURITY,
   });
+  await context.clock.setFixedTime(FROZEN_NOW);
+  await context.addInitScript(BACKGROUND_NETWORK_GUARD);
   await context.addInitScript(SEEDED_RANDOM);
   // Anything off-origin is a determinism hazard, and nothing in a component
   // story legitimately needs it.
-  await context.route('**', route =>
-    route.request().url().startsWith(origin) ? route.continue() : route.abort(),
-  );
+  await blockExternalNetwork(context, origin);
   const page = await context.newPage();
   await page.addStyleTag({content: FREEZE_CSS}).catch(() => {});
 
@@ -401,6 +481,8 @@ export async function capture({
       browser: `chromium-${browserVersion}`,
       viewport,
       settleMs,
+      frozenClock: FROZEN_NOW.toISOString(),
+      timezoneId: TIMEZONE_ID,
       capturedAt: new Date().toISOString(),
       shots,
       observedTargets: Object.fromEntries(

@@ -43,6 +43,11 @@ const meta: Meta<typeof DropdownMenu> = {
     items: {
       description: 'Menu items (items, dividers, or sections)',
     },
+    presentation: {
+      control: 'select',
+      options: ['popover', 'bottom-sheet'],
+      description: 'Surface used to present data-driven menu actions',
+    },
     isMenuOpen: {
       control: 'boolean',
       description: 'Controlled open state',
@@ -61,12 +66,6 @@ const meta: Meta<typeof DropdownMenu> = {
       control: 'select',
       options: ['start', 'center', 'end'],
       description: 'Menu alignment along the placement axis',
-    },
-    presentation: {
-      control: 'select',
-      options: ['popover', 'bottom-sheet', 'adaptive'],
-      description:
-        'Popover, BottomSheet, or adaptive compact-touch presentation',
     },
     'data-testid': {
       control: 'text',
@@ -101,6 +100,26 @@ const PROJECT_ACTIONS = [
   'Share project',
   'Archive project',
 ] as const;
+
+function CompactDrillInActionSheet() {
+  return (
+    <DropdownMenu
+      button={{label: 'Project actions'}}
+      presentation="bottom-sheet"
+      items={[
+        {label: 'Rename project'},
+        {
+          label: 'Move to project',
+          items: PROJECT_DESTINATIONS.slice(0, 4).map(([label, team]) => ({
+            label,
+            description: team,
+          })),
+        },
+        {label: 'Archive project'},
+      ]}
+    />
+  );
+}
 
 const PROJECT_DESTINATIONS = [
   ['Apollo launch', 'Marketing'],
@@ -924,15 +943,15 @@ export const ActionSheetPresentation: Story = {
   name: 'Presentation / action sheet',
   parameters: {
     layout: 'fullscreen',
-    viewport: {defaultViewport: 'mobile1'},
     docs: {
       story: {inline: false, height: '560px'},
       description: {
         story:
-          'The real DropdownMenu component forced to its BottomSheet presentation. The same item model, callbacks, disabled states, and destructive styling are used in both surfaces.',
+          'Forces DropdownMenu’s bottom-sheet presentation for a short, flat set of actions. It uses BottomSheet behavior including dialog focus, a scrim, Escape, and swipe dismissal.',
       },
     },
   },
+  globals: {viewport: {value: 'mobile1', isRotated: false}},
   render: () => (
     <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
       <DropdownMenu
@@ -957,15 +976,15 @@ export const AdaptiveActionPresentation: Story = {
   name: 'Presentation / adaptive action menu',
   parameters: {
     layout: 'fullscreen',
-    viewport: {defaultViewport: 'mobile1'},
     docs: {
       story: {inline: false, height: '560px'},
       description: {
         story:
-          'The real DropdownMenu adaptive policy: BottomSheet at 768px and below when the primary pointer is coarse, anchored popover otherwise. The default remains popover for compatibility.',
+          'Uses DropdownMenu’s adaptive presentation: a BottomSheet on compact coarse-pointer layouts and an anchored popover elsewhere.',
       },
     },
   },
+  globals: {viewport: {value: 'mobile1', isRotated: false}},
   render: () => (
     <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
       <DropdownMenu
@@ -986,11 +1005,36 @@ export const AdaptiveActionPresentation: Story = {
   },
 };
 
+export const CompactDrillInPresentation: Story = {
+  name: 'Presentation / compact drill-in hierarchy',
+  parameters: {
+    layout: 'fullscreen',
+    docs: {
+      story: {inline: false, height: '560px'},
+      description: {
+        story:
+          'Uses DropdownMenu’s bottom-sheet presentation for a hierarchy that cannot fit as adjacent flyouts. Move to project drills into a second list with a Back action while BottomSheet owns the modal contract.',
+      },
+    },
+  },
+  globals: {viewport: {value: 'mobile1', isRotated: false}},
+  render: () => (
+    <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
+      <CompactDrillInActionSheet />
+    </div>
+  ),
+  play: async ({canvasElement}) => {
+    const trigger = canvasElement.querySelector('button');
+    if (trigger instanceof HTMLElement) {
+      trigger.click();
+    }
+  },
+};
+
 export const ViewportFit: Story = {
   name: 'Readiness / viewport fit',
   parameters: {
     layout: 'fullscreen',
-    viewport: {defaultViewport: 'mobile1'},
     docs: {
       description: {
         story:
@@ -998,6 +1042,7 @@ export const ViewportFit: Story = {
       },
     },
   },
+  globals: {viewport: {value: 'mobile1', isRotated: false}},
   render: () => (
     <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
       <div {...stylex.props(readinessStyles.edgeAnchorRow)}>
@@ -1031,7 +1076,6 @@ export const TallContentOverflow: Story = {
   name: 'Readiness / tall content overflow',
   parameters: {
     layout: 'fullscreen',
-    viewport: {defaultViewport: 'mobile1'},
     docs: {
       description: {
         story:
@@ -1039,6 +1083,7 @@ export const TallContentOverflow: Story = {
       },
     },
   },
+  globals: {viewport: {value: 'mobile1', isRotated: false}},
   render: () => (
     <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
       <DropdownMenu button={{label: 'Move to project'}} menuWidth={280}>
@@ -1065,7 +1110,6 @@ export const SubmenuViewportFit: Story = {
   name: 'Readiness / submenu edge fit',
   parameters: {
     layout: 'fullscreen',
-    viewport: {defaultViewport: 'mobile1'},
     docs: {
       description: {
         story:
@@ -1073,6 +1117,7 @@ export const SubmenuViewportFit: Story = {
       },
     },
   },
+  globals: {viewport: {value: 'mobile1', isRotated: false}},
   render: () => (
     <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
       <div {...stylex.props(readinessStyles.edgeAnchorRow)}>

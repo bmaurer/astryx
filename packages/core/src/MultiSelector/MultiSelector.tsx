@@ -28,18 +28,19 @@ import React, {
   type ReactNode,
 } from 'react';
 import * as stylex from '@stylexjs/stylex';
-import {usePopover} from '../Popover/usePopover';
+import {usePopoverInternal} from '../Popover/usePopover';
 import {useTooltip} from '../Tooltip';
 import {Icon, renderIconSlot, type IconType} from '../Icon';
 import type {IconName} from '../Icon';
 import {
   Field,
-  InputClearButton,
   inputStatusBorderStyles,
   inputStatusHoverShadowStyles,
   inputWrapperStyles,
   type FieldStatusVariant,
 } from '../Field';
+import {useKeepLayerOpenProps} from '../Layer/useLayer';
+import {InternalInputClearButton} from '../Field/InputClearButton';
 import {Divider} from '../Divider';
 import {Spinner} from '../Spinner';
 import {PanelSearchInput} from '../Field/PanelSearchInput';
@@ -79,6 +80,7 @@ import type {SizeValue} from '../utils/types';
 import {useSize} from '../SizeContext/SizeContext';
 import {themeProps} from '../utils/themeProps';
 import {focusOutlineStyles} from '../utils/focusOutline.stylex';
+import {interactionOverlayStyles} from '../utils/interactionOverlay.stylex';
 import {stableClassName} from '../naming';
 import {groupStyles} from '../InputGroup/groupStyles';
 import {useInputGroup} from '../InputGroup/InputGroupContext';
@@ -194,13 +196,6 @@ const styles = stylex.create({
     width: 'auto',
     borderWidth: 0,
     backgroundColor: 'transparent',
-    backgroundImage: {
-      default: null,
-      ':hover:where(:not(:disabled,[aria-disabled="true"]))': {
-        '@media (hover: hover)': `linear-gradient(${colorVars['--color-overlay-hover']}, ${colorVars['--color-overlay-hover']})`,
-      },
-      ':active': `linear-gradient(${colorVars['--color-overlay-pressed']}, ${colorVars['--color-overlay-pressed']})`,
-    },
     boxShadow: {
       default: 'none',
       ':hover:not(:focus-within):where(:not(:disabled,[aria-disabled="true"]))':
@@ -605,6 +600,25 @@ export interface MultiSelectorProps<
   searchPlaceholder?: string;
 
   /**
+   * Content shown in the panel when there are no options to show, and
+   * announced in a polite live region when the panel opens. Not shown while
+   * `isLoading` — the options have not arrived yet.
+   * @default 'No options'
+   */
+  emptyText?: ReactNode;
+
+  /**
+   * Content shown in the panel when a search query matches no options, and
+   * announced in a polite live region at the same time.
+   *
+   * The panel message is `role="presentation"`, so the live region is the only
+   * route to assistive tech: a string is announced verbatim, a richer node
+   * falls back to the default text since it cannot be spoken.
+   * @default 'No results found'
+   */
+  emptySearchText?: ReactNode;
+
+  /**
    * How to display selected items in the trigger.
    * - 'count': "3 selected"
    * - 'labels': "Name, Email, +3"
@@ -726,6 +740,8 @@ export function MultiSelector<T extends MultiSelectorOptionType>({
   selectAllLabel: selectAllLabelFromProps,
   hasSearch = false,
   searchPlaceholder: searchPlaceholderFromProps,
+  emptyText: emptyTextFromProps,
+  emptySearchText: emptySearchTextFromProps,
   triggerDisplay = 'count',
   formatValue,
   maxBadges = 3,
@@ -747,6 +763,9 @@ export function MultiSelector<T extends MultiSelectorOptionType>({
     selectAllLabelFromProps ?? t('@astryx.multiSelector.selectAll');
   const searchPlaceholder =
     searchPlaceholderFromProps ?? t('@astryx.multiSelector.searchPlaceholder');
+  const emptyText = emptyTextFromProps ?? t('@astryx.multiSelector.empty');
+  const emptySearchText =
+    emptySearchTextFromProps ?? t('@astryx.multiSelector.emptySearchResults');
   const size = useSize(sizeProp, 'md');
   const effectiveStatusVariant =
     variant === 'ghost' && statusVariant === 'attached'
@@ -821,6 +840,19 @@ export function MultiSelector<T extends MultiSelectorOptionType>({
   // Announce selection-count changes politely (comboboxes-7 announce path).
   // Toggling options / select-all previously produced no audible feedback.
   const announce = useAnnounce();
+
+  // The panel's empty message is role="presentation" and reaches assistive tech
+  // only through this live region, so the region has to speak whatever the
+  // panel shows. A ReactNode override cannot be spoken; fall back to the
+  // catalog copy for that case rather than announcing nothing.
+  const emptyAnnouncement =
+    typeof emptyText === 'string'
+      ? emptyText
+      : t('@astryx.multiSelector.empty');
+  const emptySearchAnnouncement =
+    typeof emptySearchText === 'string'
+      ? emptySearchText
+      : t('@astryx.multiSelector.emptySearchResults');
   const announceSelection = useCallback(
     (nextValue: string[]) => {
       const total = selectableItems.length;
@@ -906,7 +938,7 @@ export function MultiSelector<T extends MultiSelectorOptionType>({
     triggerRef.current?.focus();
   }, [announce]);
 
-  const popover = usePopover({
+  const popover = usePopoverInternal({
     hasLightDismiss: true,
     onHide: handleLayerHide,
     hasCloseButton: false,
@@ -918,6 +950,7 @@ export function MultiSelector<T extends MultiSelectorOptionType>({
     // `usePopover` owns — not on the scrolling list inside it.
     surfaceTarget: 'multi-selector-popup',
   });
+  const keepOpenProps = useKeepLayerOpenProps(popover.id, popover.isOpen);
 
   // Open dropdown on mount when isDefaultOpen is true
   useEffect(() => {
@@ -940,15 +973,53 @@ export function MultiSelector<T extends MultiSelectorOptionType>({
         announce('');
         return;
       }
+      // While isLoading the panel deliberately shows nothing, so announcing a
+      // result would put a claim in the one channel the screen has gone quiet
+      // for.
+      if (isLoading) {
+        announce('');
+        return;
+      }
       const count = filterOptionsByQuery(selectableItems, nextQuery).length;
       announce(
         count === 0
-          ? t('@astryx.multiSelector.emptySearchResults')
+          ? emptySearchAnnouncement
           : t('@astryx.multiSelector.resultCount', {count}),
       );
     },
-    [announce, selectableItems, t],
+    [announce, isLoading, selectableItems, emptySearchAnnouncement, t],
   );
+
+  // The panel's empty message is role="presentation", so this region is the
+  // only route to assistive tech. It has to watch the STATE rather than the
+  // open event: the panel can become empty either on open or when a fetch
+  // lands with nothing in it, and an open-only announcement leaves the second
+  // case silent while the message sits on screen. The ref makes it fire once
+  // per arrival at that state rather than on every re-render.
+  const announcedEmptyRef = useRef<string | null>(null);
+  useEffect(() => {
+    const isPanelEmpty =
+      popover.isOpen &&
+      !isLoading &&
+      searchQuery === '' &&
+      selectableItems.length === 0;
+    if (!isPanelEmpty) {
+      announcedEmptyRef.current = null;
+      return;
+    }
+    if (announcedEmptyRef.current === emptyAnnouncement) {
+      return;
+    }
+    announcedEmptyRef.current = emptyAnnouncement;
+    announce(emptyAnnouncement);
+  }, [
+    popover.isOpen,
+    isLoading,
+    searchQuery,
+    selectableItems.length,
+    emptyAnnouncement,
+    announce,
+  ]);
 
   // Handle toggle
   // Clear all selected values. Shared by the clear button and the keyboard
@@ -1087,6 +1158,7 @@ export function MultiSelector<T extends MultiSelectorOptionType>({
     onKeyDown,
     onItemMouseEnter,
   } = useMultiCombobox({
+    wasJustDismissed: popover.wasJustDismissed,
     selectableItems: sortedItems,
     isDisabled,
     isOpen: popover.isOpen,
@@ -1416,7 +1488,10 @@ export function MultiSelector<T extends MultiSelectorOptionType>({
     // message out of the listbox's accessibility tree (role="listbox" only
     // permits option/group children); the no-results outcome is announced
     // via the result-count live region instead.
-    if (realItemCount === 0) {
+    // While isLoading the options have not arrived yet, so asserting either
+    // message would be a claim the component cannot make; the trigger's
+    // spinner covers it.
+    if (realItemCount === 0 && !isLoading) {
       elements.push(
         <div
           key="empty"
@@ -1425,7 +1500,7 @@ export function MultiSelector<T extends MultiSelectorOptionType>({
             themeProps('multi-selector-empty-state'),
             stylex.props(styles.emptyState),
           )}>
-          No results found
+          {searchQuery ? emptySearchText : emptyText}
         </div>,
       );
       return elements;
@@ -1515,7 +1590,16 @@ export function MultiSelector<T extends MultiSelectorOptionType>({
     flushPending();
 
     return elements;
-  }, [options, renderItem, sortedItems, searchQuery, hasSelectAll]);
+  }, [
+    options,
+    renderItem,
+    sortedItems,
+    searchQuery,
+    hasSelectAll,
+    isLoading,
+    emptyText,
+    emptySearchText,
+  ]);
 
   // The detached message box renders its own leading status icon, so the
   // on-field icon would duplicate it — keep the chevron indicator instead.
@@ -1548,6 +1632,7 @@ export function MultiSelector<T extends MultiSelectorOptionType>({
             styles.triggerContainer,
             sizeStyles[size],
             variant === 'ghost' && styles.triggerGhost,
+            variant === 'ghost' && interactionOverlayStyles.backgroundImage,
             variant === 'ghost' && focusOutlineStyles.focusWithin,
             isDisabled && inputWrapperStyles.disabled,
             variant === 'ghost' && isDisabled && styles.triggerGhostDisabled,
@@ -1617,7 +1702,8 @@ export function MultiSelector<T extends MultiSelectorOptionType>({
           ))}
         {isBusy && <Spinner size="sm" />}
         {hasClear && value.length > 0 && !isDisabled && (
-          <InputClearButton
+          <InternalInputClearButton
+            {...keepOpenProps}
             label={t('@astryx.multiSelector.clearAll', {label})}
             onClick={handleClear}
             iconClassName={stableClassName('multi-selector-clear-icon')}
@@ -1636,6 +1722,7 @@ export function MultiSelector<T extends MultiSelectorOptionType>({
               type="button"
               aria-label={t(STATUS_BUTTON_LABEL_KEY[status.type])}
               aria-describedby={statusTooltip.describedBy}
+              {...keepOpenProps}
               onClick={e => e.stopPropagation()}
               {...stylex.props(
                 focusOutlineStyles.focusVisible,

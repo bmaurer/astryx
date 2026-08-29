@@ -15,12 +15,45 @@
  * than a red run someone re-runs until it goes away.
  *
  * A new shot has no before, so it cannot regress: it is reported as `added`
- * and adopted the first time it is seen. A shot whose story disappeared is
- * `removed` and pruned. Neither blocks.
+ * and adopted the first time it is seen. Ordinary comparisons never infer removals. Only a capture carrying a validated
+ * canonical stable-release plan may report baseline keys it did not capture.
  */
 
+import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+
+const RELEASE_LANE = 'stable-release';
+
+export function validateReleasePlan(plan, currentManifest, failures = []) {
+  const keys = plan?.keys;
+  if (
+    plan?.version !== 1 ||
+    plan?.lane !== RELEASE_LANE ||
+    plan?.authority !== 'report-removals' ||
+    !Array.isArray(keys)
+  ) {
+    throw new Error('Capture has no canonical stable-release plan.');
+  }
+  const sorted = [...keys].sort();
+  if (new Set(sorted).size !== sorted.length || sorted.some((key, index) => key !== keys[index])) {
+    throw new Error('Canonical stable-release keys must be sorted and unique.');
+  }
+  const digest = crypto.createHash('sha256').update(JSON.stringify(keys)).digest('hex');
+  if (digest !== plan.digest) throw new Error('Canonical stable-release plan digest does not match its keys.');
+  const captured = Object.keys(currentManifest.shots ?? {}).sort();
+  if (captured.length !== keys.length || captured.some((key, index) => key !== keys[index])) {
+    throw new Error('Capture does not exactly cover the canonical stable-release plan.');
+  }
+  if (failures.length > 0) throw new Error(`Stable release capture has ${failures.length} failure(s).`);
+  if (captured.some(key => {
+    const shot = currentManifest.shots[key];
+    return shot.stableVisual !== true || shot.stableThemeVisual !== true;
+  })) {
+    throw new Error('Stable release capture contains an ineligible story or theme.');
+  }
+  return plan;
+}
 
 /**
  * @typedef {object} Change
@@ -123,9 +156,25 @@ export async function compareCaptures({
     });
   }
 
-  const removed = [...baselineKeys].filter(key => !currentManifest.shots[key]);
   changes.sort((a, b) => b.diffPixels - a.diffPixels);
-  return {changes, added, removed, unchanged};
+  return {changes, added, removed: [], unchanged};
+}
+
+export async function compareReleaseCaptures(options) {
+  if (options.failures?.length) {
+    return compareCaptures(options);
+  }
+  validateReleasePlan(
+    options.currentManifest.context?.releasePlan,
+    options.currentManifest,
+    options.failures,
+  );
+  const comparison = await compareCaptures(options);
+  const current = new Set(Object.keys(options.currentManifest.shots ?? {}));
+  return {
+    ...comparison,
+    removed: Object.keys(options.baselineManifest.shots ?? {}).filter(key => !current.has(key)),
+  };
 }
 
 /**
@@ -197,7 +246,16 @@ export function buildVerdict({
     ]),
   }));
 
-  const status = failures.length > 0 ? 'failed' : changes.length > 0 ? 'changed' : 'pass';
+  // Added and removed stable shots are decisions too. A new story has no
+  // before image, but allowing it to pass silently creates baseline debt that
+  // the next run cannot resolve; a removed story can delete the only coverage
+  // for a target. Both need the same explicit acceptance as changed pixels.
+  const status =
+    failures.length > 0
+      ? 'failed'
+      : changes.length > 0 || comparison.added.length > 0 || comparison.removed.length > 0
+        ? 'changed'
+        : 'pass';
 
   return {
     version: 1,

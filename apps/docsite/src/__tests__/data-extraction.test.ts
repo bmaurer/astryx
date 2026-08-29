@@ -21,6 +21,7 @@ import {blocks, blockCount, showcaseCount} from '../generated/blockRegistry';
 import {templates, templateCount} from '../generated/templateRegistry';
 import {docTopics, docsCount} from '../generated/docsRegistry';
 import {showcaseRegistry} from '../generated/showcaseRegistry';
+import {eagerShowcases} from '../components/eagerShowcases';
 import {exampleRegistry} from '../generated/exampleRegistry';
 
 const REPO_ROOT = path.resolve(
@@ -967,6 +968,53 @@ describe('Card playground defaults', () => {
   });
 });
 
+describe('DropdownMenu adaptive-presentation example', () => {
+  it('documents the presentation choice for the Properties tab', () => {
+    const dropdownMenu = Object.values(components)
+      .flat()
+      .find(component => component.name === 'DropdownMenu');
+    const presentation = dropdownMenu?.props.find(
+      prop => prop.name === 'presentation',
+    );
+
+    expect(presentation?.type).toBe("'popover' | 'bottom-sheet'");
+    expect(presentation?.default).toBe("'popover'");
+
+    const defaults = dropdownMenu?.playground?.defaults as
+      Record<string, unknown> | undefined;
+    const items = defaults?.items as
+      Array<{label?: unknown; icon?: unknown}> | undefined;
+    expect(items).toHaveLength(4);
+    expect(items?.every(item => typeof item.icon === 'string')).toBe(true);
+  });
+
+  it('registers the responsive presentation example on the related component pages', () => {
+    const dropdownExamples = exampleRegistry['DropdownMenu'] ?? [];
+    const bottomSheetExample = dropdownExamples.find(example =>
+      /Adaptive presentation/i.test(example.name),
+    );
+
+    expect(bottomSheetExample).toBeDefined();
+    expect(bottomSheetExample!.source).toContain('useMediaQuery');
+    expect(bottomSheetExample!.source).toContain("'bottom-sheet' : 'popover'");
+    expect(bottomSheetExample!.source).toContain('<DropdownMenu');
+
+    const bottomSheetExamples = exampleRegistry['BottomSheet'] ?? [];
+    expect(
+      bottomSheetExamples.some(
+        example => example.source === bottomSheetExample!.source,
+      ),
+    ).toBe(true);
+
+    const mediaQueryExamples = exampleRegistry['useMediaQuery'] ?? [];
+    expect(
+      mediaQueryExamples.some(
+        example => example.source === bottomSheetExample!.source,
+      ),
+    ).toBe(true);
+  });
+});
+
 // ── Vertical ToggleButtonGroup example (#2707) ─────────────────────────────
 // ToggleButtonGroup supports orientation="vertical", but no docsite example
 // demonstrated it — the prop was undiscoverable without reading the API
@@ -1023,5 +1071,107 @@ describe('LinkProvider utility page', () => {
     const examples = exampleRegistry['LinkProvider'] ?? [];
     expect(examples.length).toBeGreaterThanOrEqual(1);
     expect(examples[0].source).toContain('<LinkProvider component=');
+  });
+});
+
+// ── Gallery Showcase Registry ──────────────────────────────────────────
+
+/**
+ * The eagerly imported showcases have to stay in step with what the
+ * /components gallery actually renders first — an eager set pointing at
+ * tiles further down the page would ship the chunk cost without removing
+ * any loading state. These tests recompute the gallery's render order from
+ * the same inputs the page uses and pin the eager set to the top of it.
+ */
+describe('galleryEagerShowcases', () => {
+  /**
+   * The gallery's category order lives in the page itself. Reading it back
+   * out of the source keeps this test honest without putting a second copy
+   * of the order anywhere — if the page is reordered, the expectations below
+   * follow it, and the eager list is what has to catch up.
+   */
+  const GALLERY_PAGE = path.join(
+    REPO_ROOT,
+    'apps/docsite/src/app/(docs)/components/page.tsx',
+  );
+  const pageSource = fs.readFileSync(GALLERY_PAGE, 'utf-8');
+  const categories = [
+    ...pageSource
+      .slice(
+        pageSource.indexOf('const CATEGORIES = ['),
+        pageSource.indexOf('] as const;'),
+      )
+      .matchAll(/'([^']+)'/g),
+  ].map(m => m[1]);
+
+  /** Mirrors the tile filtering in the same page. */
+  const isGalleryComponent = (comp: ComponentEntry) =>
+    !comp.isHiddenFromOverview &&
+    !comp.hidden &&
+    !comp.name.startsWith('use') &&
+    Boolean(comp.category) &&
+    comp.group !== 'Utilities';
+
+  /** Gallery render order: categories in display order, then registry order. */
+  const galleryOrder = categories.flatMap(cat =>
+    (components['@astryxdesign/core'] ?? []).filter(
+      c => c.category === cat && isGalleryComponent(c),
+    ),
+  );
+
+  it('reads the gallery category order out of the page', () => {
+    expect(categories.length).toBeGreaterThan(5);
+    expect(categories).toContain('Action');
+    expect(galleryOrder.length).toBeGreaterThan(50);
+  });
+
+  it('renders every category some component declares', () => {
+    const declared = new Set(
+      (components['@astryxdesign/core'] ?? [])
+        .filter(isGalleryComponent)
+        .map(c => c.category),
+    );
+    for (const cat of declared) {
+      expect(
+        categories,
+        `category "${cat}" has no section on the page`,
+      ).toContain(cat);
+    }
+  });
+
+  /**
+   * The point of the eager set is that those tiles are the ones a visitor
+   * sees first. If the gallery is reordered and this list isn't, the page
+   * pays the chunk cost for tiles that are no longer on top and still shows
+   * a skeleton for the ones that are.
+   */
+  it('eagerly imports exactly the tiles at the top of the gallery', () => {
+    const expected = galleryOrder
+      .filter(c => showcaseRegistry[c.name] != null)
+      .slice(0, Object.keys(eagerShowcases).length)
+      .map(c => c.name);
+    expect(Object.keys(eagerShowcases)).toEqual(expected);
+  });
+
+  it('eager entries are components, not lazy loaders', () => {
+    for (const [name, Component] of Object.entries(eagerShowcases)) {
+      expect(Component, name).toBeTypeOf('function');
+      // A lazy loader would resolve to a promise; an eager showcase is the
+      // component itself and must render synchronously on the server.
+      expect((Component as {$$typeof?: symbol}).$$typeof).toBeUndefined();
+    }
+  });
+
+  it('every eager component also has a lazy loader', () => {
+    for (const name of Object.keys(eagerShowcases)) {
+      expect(showcaseRegistry[name], name).toBeDefined();
+    }
+  });
+
+  it('keeps the eager set small enough to stay off the critical path', () => {
+    // 12 covers a 2560x1440 viewport. Well past that and the page chunk is
+    // carrying components nobody sees before they scroll.
+    expect(Object.keys(eagerShowcases).length).toBeGreaterThanOrEqual(6);
+    expect(Object.keys(eagerShowcases).length).toBeLessThanOrEqual(16);
   });
 });

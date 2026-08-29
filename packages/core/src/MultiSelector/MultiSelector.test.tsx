@@ -11,6 +11,7 @@
 
 import {describe, it, expect, vi, beforeEach, afterEach} from 'vitest';
 import {
+  act,
   render,
   screen,
   fireEvent,
@@ -437,6 +438,7 @@ describe('MultiSelector', () => {
 
     await user.keyboard('{Tab}');
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByRole('button', {name: 'Next'})).toHaveFocus();
   });
 
   it('supports keyboard navigation with ArrowDown/ArrowUp', async () => {
@@ -908,6 +910,176 @@ describe('MultiSelector', () => {
     const listbox = screen.getByRole('listbox', h);
     const empty = within(listbox).getByText('No results found');
     expect(empty).toHaveAttribute('role', 'presentation');
+  });
+
+  it('renders emptySearchText in place of the default message', async () => {
+    const user = userEvent.setup();
+    render(
+      <MultiSelector
+        label="Fruit"
+        options={defaultOptions}
+        value={[]}
+        onChange={() => {}}
+        hasSearch
+        emptySearchText="Nothing like that here"
+      />,
+    );
+
+    await user.click(screen.getByRole('button', {name: 'Fruit'}));
+    await user.type(screen.getByRole('combobox', h), 'xyz');
+
+    const listbox = screen.getByRole('listbox', h);
+    expect(
+      within(listbox).getByText('Nothing like that here'),
+    ).toBeInTheDocument();
+    expect(
+      within(listbox).queryByText('No results found'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders emptyText, not emptySearchText, with no options and no query', async () => {
+    const user = userEvent.setup();
+    render(
+      <MultiSelector
+        label="Fruit"
+        options={[]}
+        value={[]}
+        onChange={() => {}}
+        hasSearch
+        emptySearchText="Nothing like that here"
+      />,
+    );
+
+    await user.click(screen.getByRole('button', {name: 'Fruit'}));
+
+    const listbox = screen.getByRole('listbox', h);
+    expect(within(listbox).getByText('No options')).toBeInTheDocument();
+    expect(
+      within(listbox).queryByText('Nothing like that here'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('announces emptySearchText, not the catalog default', async () => {
+    const user = userEvent.setup();
+    render(
+      <MultiSelector
+        label="Fruit"
+        options={defaultOptions}
+        value={[]}
+        onChange={() => {}}
+        hasSearch
+        emptySearchText="Nothing like that here"
+      />,
+    );
+
+    await user.click(screen.getByRole('button', {name: 'Fruit'}));
+    await user.type(screen.getByRole('combobox', h), 'xyz');
+
+    // The panel message is role="presentation", so the live region is the
+    // only thing a screen reader gets — it has to say the same words.
+    await waitFor(() =>
+      expect(politeRegion()?.textContent).toBe('Nothing like that here'),
+    );
+  });
+
+  it('announces the empty state when opened with no options', async () => {
+    const user = userEvent.setup();
+    render(
+      <MultiSelector
+        label="Fruit"
+        options={[]}
+        value={[]}
+        onChange={() => {}}
+        emptyText="Add a fruit first"
+      />,
+    );
+
+    await user.click(screen.getByRole('combobox', {name: 'Fruit'}));
+
+    await waitFor(() =>
+      expect(politeRegion()?.textContent).toBe('Add a fruit first'),
+    );
+  });
+
+  it('shows and announces nothing while isLoading', async () => {
+    const user = userEvent.setup();
+    render(
+      <MultiSelector
+        label="Fruit"
+        options={[]}
+        value={[]}
+        onChange={() => {}}
+        isLoading
+      />,
+    );
+
+    await user.click(screen.getByRole('combobox', {name: 'Fruit'}));
+
+    // useAnnounce writes on the next animation frame, so an immediate read
+    // would pass whether or not anything was announced.
+    await act(
+      async () =>
+        void (await new Promise(resolve => requestAnimationFrame(resolve))),
+    );
+
+    // The options have not arrived, so "No options" would be a claim the
+    // component cannot make; the trigger's spinner carries the state.
+    const listbox = screen.getByRole('listbox', h);
+    expect(within(listbox).queryByText('No options')).not.toBeInTheDocument();
+    expect(politeRegion()?.textContent ?? '').toBe('');
+  });
+
+  it('announces nothing while isLoading, matching the silent panel', async () => {
+    const user = userEvent.setup();
+    render(
+      <MultiSelector
+        label="Fruit"
+        options={defaultOptions}
+        value={[]}
+        onChange={() => {}}
+        hasSearch
+        isLoading
+        emptySearchText="Nothing like that here"
+      />,
+    );
+
+    await user.click(screen.getByRole('button', {name: 'Fruit'}));
+    await user.type(screen.getByRole('combobox', h), 'xyz');
+
+    // useAnnounce writes on the next animation frame, so an immediate read
+    // would pass whether or not anything was announced.
+    await act(
+      async () =>
+        void (await new Promise(resolve => requestAnimationFrame(resolve))),
+    );
+
+    // The panel is deliberately blank while loading; the live region is the
+    // only channel left, so a result there would be a claim the screen
+    // refuses to make.
+    const listbox = screen.getByRole('listbox', h);
+    expect(
+      within(listbox).queryByText('Nothing like that here'),
+    ).not.toBeInTheDocument();
+    expect(politeRegion()?.textContent ?? '').toBe('');
+  });
+
+  it('renders emptyText when there are no options and no search input', async () => {
+    const user = userEvent.setup();
+    render(
+      <MultiSelector
+        label="Fruit"
+        options={[]}
+        value={[]}
+        onChange={() => {}}
+        emptyText="Add a fruit first"
+      />,
+    );
+
+    // Without hasSearch the trigger itself is the combobox.
+    await user.click(screen.getByRole('combobox', {name: 'Fruit'}));
+
+    const listbox = screen.getByRole('listbox', h);
+    expect(within(listbox).getByText('Add a fruit first')).toBeInTheDocument();
   });
 
   describe('result announcements', () => {
@@ -2487,5 +2659,39 @@ describe('MultiSelector popup theme target', () => {
     const layer = document.querySelector('[popover]') as HTMLElement;
     expect(popup).not.toBe(layer);
     expect(layer.contains(popup)).toBe(true);
+  });
+
+  it('stays closed when the trigger click follows its own light dismiss (#5004)', async () => {
+    const user = userEvent.setup();
+    render(
+      <MultiSelector
+        label="Fruit"
+        options={['Apple', 'Banana', 'Cherry']}
+        value={[]}
+        onChange={() => {}}
+      />,
+    );
+    const trigger = screen.getByRole('combobox');
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+    // The browser dismissed the popup on pointerup and queued the toggle. When
+    // that event lands before the click — WebKit, or any engine under load —
+    // the click used to read a closed popup and reopen it.
+    fireEvent.pointerDown(trigger);
+    const popover = document.querySelector('[popover]') as HTMLElement;
+    act(() => {
+      popover.dispatchEvent(
+        Object.assign(new Event('toggle'), {
+          oldState: 'open',
+          newState: 'closed',
+        }),
+      );
+    });
+    // Synchronously: the click falls inside the one gesture the guard covers,
+    // as it does in a browser a few milliseconds behind the dismissal.
+    fireEvent.click(trigger);
+
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
   });
 });
