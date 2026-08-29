@@ -150,17 +150,21 @@ describe('DropdownMenu', () => {
     await user.click(screen.getByRole('button', {name: /Project actions/}));
     await user.click(screen.getByRole('button', {name: 'Move to project'}));
 
-    expect(
-      screen.getByRole('heading', {name: 'Move to project'}),
-    ).toBeInTheDocument();
+    const submenuHeading = screen.getByRole('heading', {
+      name: 'Move to project',
+    });
+    expect(submenuHeading).toBeInTheDocument();
+    await waitFor(() => expect(submenuHeading).toHaveFocus());
     expect(
       screen.getByRole('button', {name: 'Apollo launch'}),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', {name: 'Back'}));
-    expect(
-      screen.getByRole('heading', {name: 'Project actions'}),
-    ).toBeInTheDocument();
+    const rootHeading = screen.getByRole('heading', {
+      name: 'Project actions',
+    });
+    expect(rootHeading).toBeInTheDocument();
+    await waitFor(() => expect(rootHeading).toHaveFocus());
   });
 
   it('uses the BottomSheet for adaptive presentation on compact touch', async () => {
@@ -308,6 +312,26 @@ describe('DropdownMenu', () => {
       .closest('[popover]');
     expect(popover?.getAttribute('style')).toContain(
       'position-area: self-block-end span-self-inline-start',
+    );
+  });
+
+  it('uses block-axis viewport gutters for side placement', () => {
+    render(
+      <DropdownMenu
+        button={{label: 'Actions'}}
+        placement="end"
+        alignment="start"
+        items={[{label: 'Item 1'}]}
+      />,
+    );
+    const popover = screen
+      .getByRole('menu', {hidden: true})
+      .closest('[popover]');
+    expect(popover?.className).toContain(
+      'DropdownMenu__styles.popoverViewportBlockStart',
+    );
+    expect(popover?.className).not.toContain(
+      'DropdownMenu__styles.popoverViewportStart',
     );
   });
 

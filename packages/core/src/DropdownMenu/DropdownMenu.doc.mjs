@@ -109,7 +109,7 @@ export const docs = {
       name: 'menuWidth',
       type: 'number | string',
       description:
-        'Minimum width for the popover presentation. The menu may grow for its content, but it is capped to the available viewport space. Defaults to matching the trigger width up to that cap.',
+        'Minimum width for the popover presentation. Length values may grow for content; intrinsic and CSS-wide keywords select the preferred inline size. Every form is capped to the available viewport space. Defaults to matching the trigger width up to that cap.',
     },
     {
       name: 'placement',

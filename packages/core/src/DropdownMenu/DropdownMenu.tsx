@@ -142,6 +142,12 @@ const styles = stylex.create({
       ':is([dir="rtl"] *)': `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px))`,
     },
   },
+  popoverViewportBlockStart: {
+    marginBlockEnd: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-bottom, 0px))`,
+  },
+  popoverViewportBlockEnd: {
+    marginBlockStart: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-top, 0px))`,
+  },
   popoverViewportCentered: {
     marginInlineStart: {
       default: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px))`,
@@ -151,6 +157,14 @@ const styles = stylex.create({
       default: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px))`,
       ':is([dir="rtl"] *)': `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px))`,
     },
+    maxInlineSize: stylex.firstThatWorks(
+      MENU_MAX_INLINE_SIZE,
+      MENU_MAX_INLINE_SIZE_FALLBACK,
+    ),
+  },
+  popoverViewportBlockCentered: {
+    marginBlockStart: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-top, 0px))`,
+    marginBlockEnd: `max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-bottom, 0px))`,
     maxInlineSize: stylex.firstThatWorks(
       MENU_MAX_INLINE_SIZE,
       MENU_MAX_INLINE_SIZE_FALLBACK,
@@ -470,6 +484,8 @@ function DropdownMenuBottomSheet({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const actionListRef = useRef<HTMLDivElement>(null);
   const openModalityRef = useRef<'keyboard' | 'pointer'>('pointer');
+  const viewHeadingRef = useRef<HTMLHeadingElement>(null);
+  const previousSubmenuDepthRef = useRef(0);
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [submenuPath, setSubmenuPath] = useState<DropdownMenuItemData[]>([]);
   const isControlled = controlledIsOpen !== undefined;
@@ -524,6 +540,21 @@ function DropdownMenuBottomSheet({
     });
     return () => cancelAnimationFrame(frame);
   }, [currentItems, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      previousSubmenuDepthRef.current = 0;
+      return;
+    }
+    if (submenuPath.length === previousSubmenuDepthRef.current) {
+      return;
+    }
+    previousSubmenuDepthRef.current = submenuPath.length;
+    const frame = requestAnimationFrame(() => {
+      viewHeadingRef.current?.focus({preventScroll: true});
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [isOpen, submenuPath.length]);
 
   return (
     <>
@@ -581,7 +612,9 @@ function DropdownMenuBottomSheet({
                   onClick={() => setSubmenuPath(path => path.slice(0, -1))}
                 />
               )}
-              <Heading level={3}>{currentTitle}</Heading>
+              <Heading ref={viewHeadingRef} level={3} tabIndex={-1}>
+                {currentTitle}
+              </Heading>
             </div>
             <BottomSheetActionList
               items={currentItems}
@@ -856,6 +889,7 @@ function DropdownMenuPopover({
     : alignment === 'center'
       ? styles.popoverCentered
       : styles.popoverAligned;
+  const isSidePlacement = placement === 'start' || placement === 'end';
   // Context for compound items
   const contextValue = useMemo<DropdownMenuContextValue>(
     () => ({closeMenu, menuSize}),
@@ -930,12 +964,18 @@ function DropdownMenuPopover({
           xstyle: [
             styles.popoverViewport,
             alignment === 'center'
-              ? styles.popoverViewportCentered
+              ? isSidePlacement
+                ? styles.popoverViewportBlockCentered
+                : styles.popoverViewportCentered
               : [
                   styles.popoverViewportAligned,
-                  alignment === 'start'
-                    ? styles.popoverViewportStart
-                    : styles.popoverViewportEnd,
+                  isSidePlacement
+                    ? alignment === 'start'
+                      ? styles.popoverViewportBlockStart
+                      : styles.popoverViewportBlockEnd
+                    : alignment === 'start'
+                      ? styles.popoverViewportStart
+                      : styles.popoverViewportEnd,
                 ],
             popoverXstyle,
             layerAnimations[placement],

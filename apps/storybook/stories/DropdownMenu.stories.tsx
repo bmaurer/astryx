@@ -55,7 +55,7 @@ const meta: Meta<typeof DropdownMenu> = {
     menuWidth: {
       control: 'text',
       description:
-        'Minimum menu width (number for px or CSS string), capped to the available viewport space',
+        'Minimum menu width for lengths, or preferred width for intrinsic keywords; capped to the available viewport space',
     },
     placement: {
       control: 'select',
