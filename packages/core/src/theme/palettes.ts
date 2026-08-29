@@ -1,19 +1,20 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
-/** Canonical tone stops used by Astryx tonal palettes. */
-export const TONAL_PALETTE_STEPS = [
+/** Canonical HCT tone values used as numeric Astryx palette keys. */
+export const TONAL_PALETTE_TONES = [
   0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95,
   100,
 ] as const;
 
-export type TonalPaletteStep = (typeof TONAL_PALETTE_STEPS)[number];
+export type TonalPaletteTone = (typeof TONAL_PALETTE_TONES)[number];
 
 /**
- * One complete, opaque tonal ramp. Optional hue/chroma metadata is available
- * to palette editors and audit tools but is not emitted as CSS.
+ * One complete, opaque tonal ramp. Keys are HCT tone values: 0 is black and
+ * 100 is white in both light- and dark-mode ramps. Optional hue/chroma metadata
+ * is available to palette editors and audit tools but is not emitted as CSS.
  */
 export type TonalPaletteRamp = Readonly<
-  Record<TonalPaletteStep, string> & {
+  Record<TonalPaletteTone, string> & {
     hue?: number;
     chroma?: number;
   }
@@ -36,17 +37,34 @@ export interface ThemePaletteFamily {
 export type ThemePalettes = Readonly<Record<string, ThemePaletteFamily>>;
 
 const OPAQUE_HEX = /^#[0-9a-f]{6}$/i;
+const TONAL_PALETTE_KEYS = new Set<string>([
+  ...TONAL_PALETTE_TONES.map(String),
+  'hue',
+  'chroma',
+]);
 
 function validateRamp(
   name: string,
   mode: 'light' | 'dark',
   ramp: TonalPaletteRamp,
 ) {
-  for (const step of TONAL_PALETTE_STEPS) {
-    const value = ramp[step];
+  if (!ramp || typeof ramp !== 'object' || Array.isArray(ramp)) {
+    throw new Error(`Palette "${name}" ${mode} must be a tonal ramp.`);
+  }
+
+  for (const key of Object.keys(ramp)) {
+    if (!TONAL_PALETTE_KEYS.has(key)) {
+      throw new Error(
+        `Palette "${name}" ${mode} contains unknown tone or metadata key "${key}".`,
+      );
+    }
+  }
+
+  for (const tone of TONAL_PALETTE_TONES) {
+    const value = ramp[tone];
     if (typeof value !== 'string' || !OPAQUE_HEX.test(value)) {
       throw new Error(
-        `Palette "${name}" ${mode} tone ${step} must be an opaque six-digit hex color.`,
+        `Palette "${name}" ${mode} tone ${tone} must be an opaque six-digit hex color.`,
       );
     }
   }
@@ -71,13 +89,35 @@ function validateRamp(
 export function defineTonalPalettes<const T extends ThemePalettes>(
   palettes: T,
 ): T {
+  if (!palettes || typeof palettes !== 'object' || Array.isArray(palettes)) {
+    throw new Error('Theme palettes must be a named palette map.');
+  }
+
   for (const [name, family] of Object.entries(palettes)) {
     if (!family || typeof family !== 'object' || !family.light) {
       throw new Error(`Palette "${name}" must define a light tonal ramp.`);
     }
     validateRamp(name, 'light', family.light);
-    if (family.dark) {
+    if ('dark' in family && family.dark == null) {
+      throw new Error(
+        `Palette "${name}" dark must be a tonal ramp when provided.`,
+      );
+    }
+    if (family.dark !== undefined) {
       validateRamp(name, 'dark', family.dark);
+    }
+    if (family.semantic !== undefined && typeof family.semantic !== 'string') {
+      throw new Error(
+        `Palette "${name}" semantic must be a string, got ${String(family.semantic)}.`,
+      );
+    }
+    if (
+      family.description !== undefined &&
+      typeof family.description !== 'string'
+    ) {
+      throw new Error(
+        `Palette "${name}" description must be a string, got ${String(family.description)}.`,
+      );
     }
   }
   return palettes;

@@ -280,9 +280,14 @@ describe('neutral theme component-pair contrast', () => {
     },
   );
 
-  it('maps live neutral ProgressBar fill and marks to the primary Button pair', () => {
+  it('maps live neutral ProgressBar graphics to the primary Button pair', () => {
     expect(
       neutralTheme.components['progress-bar-fill']['variant:neutral'][
+        '--color-text-disabled'
+      ],
+    ).toBe('var(--color-accent)');
+    expect(
+      neutralTheme.components['progress-bar-stop-indicator']['variant:neutral'][
         '--color-text-disabled'
       ],
     ).toBe('var(--color-accent)');

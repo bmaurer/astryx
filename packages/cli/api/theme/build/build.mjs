@@ -57,6 +57,7 @@ import {collectUnloadedFonts, formatFontLoadingHelp} from './font-warning.mjs';
 // A built, resolvable `@astryxdesign/core` is a hard requirement. These are
 // populated from a dynamic import (a runtime boundary), so `any` is intentional.
 /** @type {any} */ let _defineTheme = null;
+/** @type {any} */ let _defineTonalPalettes = null;
 /** @type {any} */ let _generateThemeRulesSplit = null;
 /** @type {any} */ let _generateOnMediaCSS = null;
 /** @type {any} */ let _dataTokenDefaults = null;
@@ -64,6 +65,7 @@ import {collectUnloadedFonts, formatFontLoadingHelp} from './font-warning.mjs';
 try {
   const coreTheme = await import('@astryxdesign/core/theme');
   _defineTheme = coreTheme.defineTheme;
+  _defineTonalPalettes = coreTheme.defineTonalPalettes;
   _generateThemeRulesSplit = coreTheme.generateThemeRulesSplit;
   _generateOnMediaCSS = coreTheme.generateOnMediaCSS;
   _dataTokenDefaults = coreTheme.dataTokenDefaults;
@@ -1148,6 +1150,18 @@ export async function themeBuild(
       resolvedTheme = _defineTheme({...themeDef});
     } else {
       resolvedTheme = themeDef;
+    }
+    if ('palettes' in themeDef && themeDef.palettes !== undefined) {
+      if (!_defineTonalPalettes) {
+        throw new AstryxError(
+          'This theme defines `palettes`, but the installed @astryxdesign/core/theme ' +
+            'does not export defineTonalPalettes. Upgrade @astryxdesign/core or ' +
+            'remove the palette metadata before building.',
+          undefined,
+          ERROR_CODES.ERR_CORE_NOT_FOUND,
+        );
+      }
+      _defineTonalPalettes(themeDef.palettes);
     }
     const scopeSelector = themeScopeStart(themeDef.name);
     const scopeTo = THEME_SCOPE_TO;
