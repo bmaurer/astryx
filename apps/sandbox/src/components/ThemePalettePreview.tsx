@@ -989,7 +989,8 @@ function StatusIndicatorSection({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gridTemplateColumns:
+            'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
           gap: 12,
           alignItems: 'start',
         }}>
@@ -2268,7 +2269,7 @@ function getChatComposerContrast(theme: DefinedTheme, mode: Mode) {
       parent,
     );
     const primary = resolveToken(theme, '--color-text-primary', mode);
-    const placeholder = resolveToken(theme, '--color-text-secondary', mode);
+    const placeholder = resolveToken(theme, '--color-text-disabled', mode);
     const warning = resolveToken(theme, '--color-warning', mode);
     const error = resolveToken(theme, '--color-error', mode);
     const warningBackground = compositeColor(
@@ -2596,9 +2597,20 @@ function getProgressContrast(
       '--color-background-surface',
       '--color-background-card',
     ].map(token => resolveToken(theme, token, mode));
-    const progressBlock = theme.components?.['progress-bar'] ?? {};
-    const progressFillBlock = theme.components?.['progress-bar-fill'] ?? {};
-    const progressMarkBlock = theme.components?.['progress-bar-mark'] ?? {};
+    const progressBlock =
+      theme.components?.['progress-bar'] ?? theme.components?.progressbar ?? {};
+    const progressTrackBlock =
+      theme.components?.['progress-bar-track'] ??
+      theme.components?.['progressbar-track'] ??
+      {};
+    const progressFillBlock =
+      theme.components?.['progress-bar-fill'] ??
+      theme.components?.['progressbar-fill'] ??
+      {};
+    const progressMarkBlock =
+      theme.components?.['progress-bar-mark'] ??
+      theme.components?.['progressbar-mark'] ??
+      {};
     const primary = resolveToken(theme, '--color-text-primary', mode);
     const secondary = resolveToken(theme, '--color-text-secondary', mode);
     const labels = Math.min(
@@ -2626,13 +2638,20 @@ function getProgressContrast(
       labels,
       rows: PROGRESS_VARIANTS.map(variant => {
         const variantBlock = progressBlock[`variant:${variant}`] ?? {};
+        const trackVariantBlock =
+          progressTrackBlock[`variant:${variant}`] ?? {};
         const fillVariantBlock = progressFillBlock[`variant:${variant}`] ?? {};
         const markFillVariantBlock =
           progressMarkBlock[`variant:${variant}+placement:fill`] ??
           progressMarkBlock[`variant:${variant}`] ??
           {};
         const local = Object.fromEntries(
-          Object.entries({...progressBlock.base, ...variantBlock}).filter(
+          Object.entries({
+            ...progressBlock.base,
+            ...variantBlock,
+            ...progressTrackBlock.base,
+            ...trackVariantBlock,
+          }).filter(
             (entry): entry is [string, string] =>
               entry[0].startsWith('--') && typeof entry[1] === 'string',
           ),
@@ -2653,7 +2672,11 @@ function getProgressContrast(
           overrides?.track ??
           resolveThemeColor(
             theme,
-            'var(--color-background-muted)',
+            String(
+              trackVariantBlock.backgroundColor ??
+                progressTrackBlock.base?.backgroundColor ??
+                'var(--color-background-muted)',
+            ),
             mode,
             local,
           );
@@ -2950,6 +2973,46 @@ function getButtonContrast(theme: DefinedTheme, mode: Mode) {
           );
         }),
       );
+    const stateWorst = (
+      state: ':hover' | ':active',
+      fallbackOverlay: string,
+    ) => {
+      const stateOverride = (override[state] ?? {}) as Record<string, unknown>;
+      const stateLocal = Object.fromEntries(
+        Object.entries({...override, ...stateOverride}).filter(
+          (entry): entry is [string, string] =>
+            entry[0].startsWith('--') && typeof entry[1] === 'string',
+        ),
+      );
+      const stateForeground = resolveThemeColor(
+        theme,
+        String(stateOverride.color ?? foreground),
+        mode,
+        stateLocal,
+      );
+      const stateBackgroundValue = stateOverride.backgroundColor;
+
+      return Math.min(
+        ...surfaces.map(parent => {
+          const base = resolvedBackground(parent);
+          const stateBackground =
+            stateBackgroundValue == null
+              ? compositeColor(fallbackOverlay, base)
+              : String(stateBackgroundValue) === 'transparent'
+                ? base
+                : compositeColor(
+                    resolveThemeColor(
+                      theme,
+                      String(stateBackgroundValue),
+                      mode,
+                      stateLocal,
+                    ),
+                    base,
+                  );
+          return contrastRatio(stateForeground, stateBackground);
+        }),
+      );
+    };
     const spinner = Math.min(
       ...surfaces.map(parent => {
         const base = resolvedBackground(parent);
@@ -2993,8 +3056,8 @@ function getButtonContrast(theme: DefinedTheme, mode: Mode) {
     return {
       name: variant[0].toUpperCase() + variant.slice(1),
       rest: worst(),
-      hover: worst(hover),
-      pressed: worst(pressed),
+      hover: stateWorst(':hover', hover),
+      pressed: stateWorst(':active', pressed),
       spinner,
       badge,
     };
@@ -3358,8 +3421,16 @@ function ProgressBarSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
     {value: 25, label: 'Quarter'},
     {value: 80, label: 'Goal'},
   ];
-  const progressBlock = theme.components?.['progress-bar'] ?? {};
-  const progressFillBlock = theme.components?.['progress-bar-fill'] ?? {};
+  const progressBlock =
+    theme.components?.['progress-bar'] ?? theme.components?.progressbar ?? {};
+  const progressTrackBlock =
+    theme.components?.['progress-bar-track'] ??
+    theme.components?.['progressbar-track'] ??
+    {};
+  const progressFillBlock =
+    theme.components?.['progress-bar-fill'] ??
+    theme.components?.['progressbar-fill'] ??
+    {};
   const subtleTrack = resolveToken(theme, '--color-background-muted', mode);
   const parentSurface = resolveToken(theme, '--color-background-surface', mode);
   const progressFillDefaults = {
@@ -3370,10 +3441,13 @@ function ProgressBarSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
     neutral: 'var(--color-text-disabled)',
   } as const;
   const progressOptionRows = PROGRESS_VARIANTS.map((variant, index) => {
+    const trackVariantBlock = progressTrackBlock[`variant:${variant}`] ?? {};
     const local = Object.fromEntries(
       Object.entries({
         ...progressBlock.base,
         ...progressBlock[`variant:${variant}`],
+        ...progressTrackBlock.base,
+        ...trackVariantBlock,
       }).filter(
         (entry): entry is [string, string] =>
           entry[0].startsWith('--') && typeof entry[1] === 'string',
@@ -3399,7 +3473,11 @@ function ProgressBarSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
       ),
       currentTrack: resolveThemeColor(
         theme,
-        'var(--color-background-muted)',
+        String(
+          trackVariantBlock.backgroundColor ??
+            progressTrackBlock.base?.backgroundColor ??
+            'var(--color-background-muted)',
+        ),
         mode,
         local,
       ),
@@ -4867,7 +4945,8 @@ function InputSection({theme, mode}: {theme: DefinedTheme; mode: Mode}) {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gridTemplateColumns:
+            'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
           gap: 16,
         }}>
         <ChatComposer
@@ -5272,6 +5351,18 @@ export function ThemePalettePreview({
     () => buildOverrideCSSVars(overrides, serializeCtx),
     [overrides, serializeCtx],
   );
+  const effectiveTheme = useMemo<DefinedTheme>(() => {
+    if (overrideCount === 0) {
+      return theme;
+    }
+    return {
+      ...theme,
+      tokens: {
+        ...theme.tokens,
+        ...(overrideVars as Record<string, string>),
+      },
+    };
+  }, [overrideCount, overrideVars, theme]);
 
   // Tonal markers respect pending overrides — every reassignment shows
   // up as a new marker on the chosen ramp+tone the moment the user
@@ -5286,7 +5377,7 @@ export function ThemePalettePreview({
     if (singleMode) {
       return (
         <ModeColumn
-          theme={theme}
+          theme={effectiveTheme}
           mode={singleMode}
           coreSwatches={coreSwatches}
           extraSections={extraSections}
@@ -5300,7 +5391,7 @@ export function ThemePalettePreview({
     return (
       <>
         <ModeColumn
-          theme={theme}
+          theme={effectiveTheme}
           mode="light"
           coreSwatches={coreSwatches}
           extraSections={extraSections}
@@ -5309,7 +5400,7 @@ export function ThemePalettePreview({
           overrideVars={overrideVars}
         />
         <ModeColumn
-          theme={theme}
+          theme={effectiveTheme}
           mode="dark"
           coreSwatches={coreSwatches}
           extraSections={extraSections}
@@ -5342,7 +5433,7 @@ export function ThemePalettePreview({
           CSS vars live here so they cascade into every preview component
           (page background, tonal block, mode columns) but NOT into the
           audit drawer rendered in its own theme below. */}
-      <Theme theme={theme} mode={chromeMode}>
+      <Theme theme={effectiveTheme} mode={chromeMode}>
         <LayerProvider>
           <div
             style={{
@@ -5382,7 +5473,7 @@ export function ThemePalettePreview({
                   : `Built ${theme.name} theme · no pending overrides`}
               </div>
               {tonalModes.map(m => (
-                <Theme key={m} theme={theme} mode={m}>
+                <Theme key={m} theme={effectiveTheme} mode={m}>
                   <LayerProvider>
                     {/* Spread overrideVars *inside* the inner Theme so
                       pending overrides win over the theme's own
