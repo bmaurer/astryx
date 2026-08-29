@@ -97,13 +97,13 @@ const readinessStyles = stylex.create({
 });
 
 const PROJECT_ACTIONS = [
-  {label: 'Edit project', icon: PencilIcon},
-  {label: 'Duplicate project', icon: DocumentDuplicateIcon},
-  {label: 'Share project', icon: ShareIcon},
-  {label: 'Archive project', icon: ArchiveBoxIcon},
+  'Edit project',
+  'Duplicate project',
+  'Share project',
+  'Archive project',
 ] as const;
 
-type ProjectAction = (typeof PROJECT_ACTIONS)[number]['label'];
+type ProjectAction = (typeof PROJECT_ACTIONS)[number];
 const COMPACT_TOUCH_QUERY =
   '(max-width: 639px) and (pointer: coarse) and (hover: none)';
 
@@ -124,10 +124,9 @@ function ProjectActionPresentation({
     <DropdownMenu
       button={{label: 'Project actions'}}
       presentation={presentation}
-      items={PROJECT_ACTIONS.map(({label, icon}) => ({
-        label,
-        icon,
-        onClick: () => selectAction(label),
+      items={PROJECT_ACTIONS.map(action => ({
+        label: action,
+        onClick: () => selectAction(action),
       }))}
     />
   );
