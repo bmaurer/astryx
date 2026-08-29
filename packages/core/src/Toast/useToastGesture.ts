@@ -225,6 +225,10 @@ export function useToastGesture({
       gestureRef.current = null;
       root.style.removeProperty('transition-duration');
       if (isDismissed) {
+        // The exit animation owns the final translation. Clear the live-drag
+        // transform/fade/scale first so a standalone Toast does not remain
+        // partially translated or faded after its dismiss callback fires.
+        clearTransientStyles(root);
         root.style.setProperty(
           '--_toast-swipe-exit-y',
           state.direction === 1
@@ -311,12 +315,23 @@ export function useToastGesture({
           );
     };
     const handleTouchStart = (event: TouchEvent) => {
-      const touch = event.touches.length === 1 ? event.changedTouches[0] : null;
-      if (touch) {
+      if (event.touches?.length !== 1) {
+        // A second contact means the browser may be handling pinch zoom or
+        // two-finger scrolling. Abandon any accepted one-finger swipe before
+        // touchmove can suppress that native gesture.
+        resetGesture(true);
+        return;
+      }
+      const touch = event.changedTouches[0];
+      if (touch != null) {
         beginGesture(point(touch), event.target);
       }
     };
     const handleTouchMove = (event: TouchEvent) => {
+      if (event.touches?.length !== 1) {
+        resetGesture(true);
+        return;
+      }
       const touch = changedTouch(event);
       if (touch) {
         moveGesture(point(touch), () => {
