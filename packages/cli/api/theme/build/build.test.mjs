@@ -109,6 +109,104 @@ describe('themeBuild() — receipt', () => {
     expect(built).toContain('"50": "#123456"');
   });
 
+  it('validates approved palette metadata from plain-object themes', async () => {
+    const themeFile = path.join(tmpDir, 'invalid-palette-theme.mjs');
+    fs.writeFileSync(
+      themeFile,
+      `export default ${JSON.stringify({
+        name: 'invalid-palette-theme',
+        tokens: {'--color-accent': '#123456'},
+        palettes: {
+          blue: {
+            light: {0: '#000000', 5: 'not-a-color'},
+          },
+        },
+      })};\n`,
+    );
+
+    await expect(
+      themeBuild('invalid-palette-theme.mjs', {}, {cwd: tmpDir}),
+    ).rejects.toThrow(
+      'Palette "blue" light tone 5 must be an opaque six-digit hex color.',
+    );
+  });
+
+  it('rejects invalid palette family metadata from plain-object themes', async () => {
+    const cases = [
+      {
+        file: 'invalid-palette-container-null.mjs',
+        palettes: null,
+        message: 'Theme palettes must be a named palette map.',
+      },
+      {
+        file: 'invalid-palette-container-array.mjs',
+        palettes: [],
+        message: 'Theme palettes must be a named palette map.',
+      },
+      {
+        file: 'invalid-palette-tone.mjs',
+        family: {
+          light: {
+            ...Object.fromEntries(
+              Array.from({length: 21}, (_, index) => [index * 5, '#123456']),
+            ),
+            42: '#123456',
+          },
+        },
+        message:
+          'Palette "blue" light contains unknown tone or metadata key "42".',
+      },
+      {
+        file: 'invalid-palette-semantic.mjs',
+        family: {
+          light: Object.fromEntries(
+            Array.from({length: 21}, (_, index) => [index * 5, '#123456']),
+          ),
+          semantic: 42,
+        },
+        message: 'Palette "blue" semantic must be a string, got 42.',
+      },
+      {
+        file: 'invalid-palette-description.mjs',
+        family: {
+          light: Object.fromEntries(
+            Array.from({length: 21}, (_, index) => [index * 5, '#123456']),
+          ),
+          description: false,
+        },
+        message: 'Palette "blue" description must be a string, got false.',
+      },
+      {
+        file: 'invalid-palette-dark.mjs',
+        family: {
+          light: Object.fromEntries(
+            Array.from({length: 21}, (_, index) => [index * 5, '#123456']),
+          ),
+          dark: null,
+        },
+        message: 'Palette "blue" dark must be a tonal ramp when provided.',
+      },
+    ];
+
+    for (const testCase of cases) {
+      const {file, family, palettes, message} = testCase;
+      fs.writeFileSync(
+        path.join(tmpDir, file),
+        `export default ${JSON.stringify({
+          name: file.replace('.mjs', ''),
+          tokens: {'--color-accent': '#123456'},
+          palettes: Object.hasOwn(testCase, 'palettes')
+            ? palettes
+            : {blue: family},
+        })};\n`,
+      );
+
+      await expect(themeBuild(file, {}, {cwd: tmpDir})).rejects.toThrow(
+        message,
+      );
+    }
+  });
+
   it('is silent by default (noopLogger) — no console output for a scripted caller', async () => {
     const themeFile = path.join(tmpDir, 'quiet.mjs');
     fs.writeFileSync(

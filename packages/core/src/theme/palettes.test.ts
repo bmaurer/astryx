@@ -4,18 +4,25 @@ import {describe, expect, it} from 'vitest';
 import {
   defineTonalPalettes,
   getTonalPaletteRamp,
-  TONAL_PALETTE_STEPS,
+  TONAL_PALETTE_TONES,
   type ThemePalettes,
   type TonalPaletteRamp,
 } from './palettes';
 
 function ramp(color = '#123456'): TonalPaletteRamp {
   return Object.fromEntries(
-    TONAL_PALETTE_STEPS.map(step => [step, color]),
+    TONAL_PALETTE_TONES.map(tone => [tone, color]),
   ) as unknown as TonalPaletteRamp;
 }
 
 describe('defineTonalPalettes', () => {
+  it('uses numeric HCT tone keys from black through white', () => {
+    expect(TONAL_PALETTE_TONES).toEqual([
+      0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90,
+      95, 100,
+    ]);
+  });
+
   it('preserves a complete approved palette with exact key inference', () => {
     const palettes = defineTonalPalettes({
       blue: {semantic: 'info', light: ramp('#0068cc'), dark: ramp('#529fff')},
@@ -49,5 +56,44 @@ describe('defineTonalPalettes', () => {
     expect(() => defineTonalPalettes({blue: {light: invalid}})).toThrow(
       'must be an opaque six-digit hex color',
     );
+  });
+
+  it('rejects unknown ramp keys', () => {
+    const invalid = {...ramp(), 42: '#123456'} as TonalPaletteRamp;
+
+    expect(() => defineTonalPalettes({blue: {light: invalid}})).toThrow(
+      'Palette "blue" light contains unknown tone or metadata key "42".',
+    );
+  });
+
+  it('rejects malformed palette containers', () => {
+    expect(() => defineTonalPalettes(null as unknown as ThemePalettes)).toThrow(
+      'Theme palettes must be a named palette map.',
+    );
+    expect(() => defineTonalPalettes([] as unknown as ThemePalettes)).toThrow(
+      'Theme palettes must be a named palette map.',
+    );
+  });
+
+  it('rejects invalid family metadata', () => {
+    expect(() =>
+      defineTonalPalettes({
+        blue: {light: ramp(), semantic: 42},
+      } as unknown as ThemePalettes),
+    ).toThrow('Palette "blue" semantic must be a string, got 42.');
+
+    expect(() =>
+      defineTonalPalettes({
+        blue: {light: ramp(), description: false},
+      } as unknown as ThemePalettes),
+    ).toThrow('Palette "blue" description must be a string, got false.');
+  });
+
+  it('rejects a present but null dark ramp', () => {
+    expect(() =>
+      defineTonalPalettes({
+        blue: {light: ramp(), dark: null},
+      } as unknown as ThemePalettes),
+    ).toThrow('Palette "blue" dark must be a tonal ramp when provided.');
   });
 });

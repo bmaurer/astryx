@@ -40,12 +40,15 @@ If you're using `@astryxdesign/build` for StyleX source compilation, import from
 
 The source package exports `neutralPalettes`, and every built `neutralTheme`
 includes the same data at `neutralTheme.palettes`. Each family contains exact
-light- and dark-mode stops from T0 through T100 in increments of five.
+light- and dark-mode tones from 0 through 100 in increments of five. The number
+is the HCT tone coordinate: tone 0 is black and tone 100 is white in both modes,
+so dark ramps are not numbered in reverse.
 
 Use semantic theme tokens for components. When a new semantic token or audit
-tool needs a raw color, select an exact named family and tone from this palette
-rather than inventing or approximating a hex value. Alpha overlays should be
-derived from a named stop and documented at the token that uses them.
+tool needs a raw color, select an exact family, mode, and numbered tone from
+this palette rather than inventing or approximating a hex value. For example,
+`blue.light[45]` means blue, the light-mode ramp, tone 45. Alpha overlays should
+be derived from a numbered tone and documented at the token that uses them.
 
 ```tsx
 import {neutralPalettes} from '@astryxdesign/theme-neutral';
