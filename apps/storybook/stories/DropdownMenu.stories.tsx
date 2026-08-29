@@ -57,7 +57,7 @@ const meta: Meta<typeof DropdownMenu> = {
     menuWidth: {
       control: 'text',
       description:
-        'Minimum menu width (number for px or CSS string), capped to the available viewport space',
+        'Minimum menu width for lengths, or preferred width for intrinsic keywords; capped to the available viewport space',
     },
     placement: {
       control: 'select',
@@ -974,7 +974,6 @@ export const ActionSheetPresentation: Story = {
   name: 'Presentation / action sheet',
   parameters: {
     layout: 'fullscreen',
-    viewport: {defaultViewport: 'mobile1'},
     docs: {
       story: {inline: false, height: '560px'},
       description: {
@@ -983,6 +982,7 @@ export const ActionSheetPresentation: Story = {
       },
     },
   },
+  globals: {viewport: {value: 'mobile1', isRotated: false}},
   render: () => (
     <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
       <ProjectActionPresentation forcePresentation="bottom-sheet" />
@@ -1000,7 +1000,6 @@ export const AdaptiveActionPresentation: Story = {
   name: 'Presentation / adaptive action menu',
   parameters: {
     layout: 'fullscreen',
-    viewport: {defaultViewport: 'mobile1'},
     docs: {
       story: {inline: false, height: '560px'},
       description: {
@@ -1009,6 +1008,7 @@ export const AdaptiveActionPresentation: Story = {
       },
     },
   },
+  globals: {viewport: {value: 'mobile1', isRotated: false}},
   render: () => (
     <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
       <ProjectActionPresentation />
@@ -1026,7 +1026,6 @@ export const CompactDrillInPresentation: Story = {
   name: 'Presentation / compact drill-in hierarchy',
   parameters: {
     layout: 'fullscreen',
-    viewport: {defaultViewport: 'mobile1'},
     docs: {
       story: {inline: false, height: '560px'},
       description: {
@@ -1035,6 +1034,7 @@ export const CompactDrillInPresentation: Story = {
       },
     },
   },
+  globals: {viewport: {value: 'mobile1', isRotated: false}},
   render: () => (
     <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
       <CompactDrillInActionSheet />
@@ -1052,7 +1052,6 @@ export const ViewportFit: Story = {
   name: 'Readiness / viewport fit',
   parameters: {
     layout: 'fullscreen',
-    viewport: {defaultViewport: 'mobile1'},
     docs: {
       description: {
         story:
@@ -1060,6 +1059,7 @@ export const ViewportFit: Story = {
       },
     },
   },
+  globals: {viewport: {value: 'mobile1', isRotated: false}},
   render: () => (
     <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
       <div {...stylex.props(readinessStyles.edgeAnchorRow)}>
@@ -1093,7 +1093,6 @@ export const TallContentOverflow: Story = {
   name: 'Readiness / tall content overflow',
   parameters: {
     layout: 'fullscreen',
-    viewport: {defaultViewport: 'mobile1'},
     docs: {
       description: {
         story:
@@ -1101,6 +1100,7 @@ export const TallContentOverflow: Story = {
       },
     },
   },
+  globals: {viewport: {value: 'mobile1', isRotated: false}},
   render: () => (
     <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
       <DropdownMenu button={{label: 'Move to project'}} menuWidth={280}>
@@ -1127,7 +1127,6 @@ export const SubmenuViewportFit: Story = {
   name: 'Readiness / submenu edge fit',
   parameters: {
     layout: 'fullscreen',
-    viewport: {defaultViewport: 'mobile1'},
     docs: {
       description: {
         story:
@@ -1135,6 +1134,7 @@ export const SubmenuViewportFit: Story = {
       },
     },
   },
+  globals: {viewport: {value: 'mobile1', isRotated: false}},
   render: () => (
     <div {...stylex.props(readinessStyles.viewportStoryCanvas)}>
       <div {...stylex.props(readinessStyles.edgeAnchorRow)}>
