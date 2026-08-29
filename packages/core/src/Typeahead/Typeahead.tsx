@@ -175,6 +175,13 @@ const styles = stylex.create({
     // Standard padding minus border width to prevent height jump
     // when a token (28px) is added inside the input
     paddingBlock: `calc(${spacingVars['--spacing-1']} - 1px)`,
+    // Declared here, on the element carrying the theme target, and read by
+    // `inputCollapsedWidth` below — the floor applies only while a token
+    // shows, but the var it reads is always present, so a theme has an
+    // element to set it on whatever the field's state. (Declaring rather
+    // than relying on a `var()` fallback is also what keeps the var visible
+    // to theme-var-reachability, which walks the built stories.)
+    '--typeahead-min-width': '200px',
     cursor: {
       default: 'text',
       ':is(:disabled,[aria-disabled="true"])': 'default',
@@ -218,10 +225,11 @@ const styles = stylex.create({
   //
   // So the field states the width it already had rather than inheriting it
   // from the input: 181px is what a UA gives an `<input>` at this font, and
-  // the remaining 19px is this field's own padding and border. Only while the
-  // token shows, so an unselected field is untouched. `min-width` rather than
-  // `width`, so a block-level or stretched field still fills as it does now
-  // and this only floors it.
+  // the remaining 19px is this field's own padding and border. The value is
+  // declared up in `wrapper` so a theme always has an element to set it on;
+  // only the floor itself is conditional, so an unselected field is
+  // untouched. `min-width` rather than `width`, so a block-level or stretched
+  // field still fills as it does now and this only floors it.
   //
   // A percentage cannot appear here: `min(200px, 100%)` would read as the
   // repo's usual "yield when there is no room" shape, but a percentage
@@ -229,7 +237,6 @@ const styles = stylex.create({
   // shrink-to-fit — it computes to 0 and the floor silently does nothing
   // (measured: the field stayed collapsed at 44px).
   inputCollapsedWidth: {
-    '--typeahead-min-width': '200px',
     minWidth: 'var(--typeahead-min-width)',
   },
 });

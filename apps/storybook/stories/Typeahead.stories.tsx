@@ -92,6 +92,36 @@ export const WithBootstrap: Story = {
   name: 'With Bootstrap Results',
 };
 
+/**
+ * A selected value is shown as a token, and the field keeps the width it had
+ * before the selection.
+ *
+ * Rendered in a flex parent, which sizes the field to its content — the case
+ * that used to collapse the field onto the token (#5560), and the one every
+ * other story misses by rendering in a fixed-width container. Retune the
+ * floor with `--typeahead-min-width` on the `typeahead` theme target.
+ */
+export const WithSelectedValue: Story = {
+  render: args => {
+    const [value, setValue] = useState<SearchableItem | null>(fruits[4]);
+    return (
+      <div style={{display: 'flex'}}>
+        <Typeahead
+          {...args}
+          searchSource={fruitSource}
+          value={value}
+          onChange={setValue}
+        />
+      </div>
+    );
+  },
+  args: {
+    label: 'Fruit',
+    placeholder: 'Search fruits...',
+  },
+  name: 'With Selected Value',
+};
+
 export const Required: Story = {
   ...Default,
   args: {
