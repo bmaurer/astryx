@@ -968,6 +968,28 @@ describe('Card playground defaults', () => {
   });
 });
 
+describe('DropdownMenu bottom-sheet example', () => {
+  it('registers the action-sheet alternative on both component pages', () => {
+    const dropdownExamples = exampleRegistry['DropdownMenu'] ?? [];
+    const bottomSheetExample = dropdownExamples.find(example =>
+      /Bottom sheet alternative/i.test(example.name),
+    );
+
+    expect(bottomSheetExample).toBeDefined();
+    expect(bottomSheetExample!.source).toContain(
+      '@astryxdesign/core/BottomSheet',
+    );
+    expect(bottomSheetExample!.source).toContain('<BottomSheet');
+
+    const bottomSheetExamples = exampleRegistry['BottomSheet'] ?? [];
+    expect(
+      bottomSheetExamples.some(
+        example => example.source === bottomSheetExample!.source,
+      ),
+    ).toBe(true);
+  });
+});
+
 // ── Vertical ToggleButtonGroup example (#2707) ─────────────────────────────
 // ToggleButtonGroup supports orientation="vertical", but no docsite example
 // demonstrated it — the prop was undiscoverable without reading the API
