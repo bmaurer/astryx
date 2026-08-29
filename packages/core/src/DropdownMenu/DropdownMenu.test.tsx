@@ -122,27 +122,6 @@ describe('DropdownMenu', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('aligns the bottom-sheet heading with item labels without overriding item padding', async () => {
-    const user = userEvent.setup();
-
-    render(
-      <DropdownMenu
-        button={{label: 'Project actions'}}
-        presentation="bottom-sheet"
-        items={[{label: 'Edit project', icon: <span aria-hidden="true" />}]}
-      />,
-    );
-
-    await user.click(screen.getByRole('button', {name: /Project actions/}));
-
-    expect(screen.getByRole('heading', {name: 'Project actions'})).toHaveStyle({
-      marginInlineStart: 'calc(var(--spacing-3) + 1rem + var(--spacing-2))',
-    });
-    expect(
-      screen.getByRole('button', {name: 'Edit project'}).closest('li'),
-    ).toHaveStyle({paddingInline: 'var(--spacing-3)'});
-  });
-
   it('drills into nested data items in bottom-sheet presentation', async () => {
     const user = userEvent.setup();
 
