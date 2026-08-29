@@ -196,11 +196,15 @@ const bottomSheetStyles = stylex.create({
     gap: spacingVars['--spacing-1'],
     marginBottom: spacingVars['--spacing-2'],
   },
-  action: {
-    // Preserve ListItem's spacious padding (and therefore its interaction
-    // surface), then pull the row outward so its icon still aligns with the
-    // unpadded heading above it.
-    marginInlineStart: `calc(-1 * ${spacingVars['--spacing-3']})`,
+  rootHeading: {
+    // Match the leading padding of a spacious ListItem without changing the
+    // row's own spacing or interaction surface.
+    marginInlineStart: spacingVars['--spacing-3'],
+  },
+  rootHeadingWithItemIcons: {
+    // A small item icon is 1rem; include the Item gap so the heading aligns
+    // with the label column rather than the leading icon column.
+    marginInlineStart: `calc(${spacingVars['--spacing-3']} + 1rem + ${spacingVars['--spacing-2']})`,
   },
   destructiveAction: {
     '--_item-label-color': colorVars['--color-error'],
@@ -416,10 +420,7 @@ function BottomSheetActionList({
         }
         isDisabled={item.isDisabled}
         onClick={() => (isSubmenu ? onOpenSubmenu(item) : onSelect(item))}
-        xstyle={[
-          bottomSheetStyles.action,
-          isDestructive && bottomSheetStyles.destructiveAction,
-        ]}
+        xstyle={isDestructive && bottomSheetStyles.destructiveAction}
       />
     );
   };
@@ -493,6 +494,15 @@ function DropdownMenuBottomSheet({
   const currentTitle = currentSubmenu?.label ?? button.label;
   const sheetLabel =
     typeof currentTitle === 'string' ? currentTitle : button.label;
+  const currentItemsHaveIcons = currentItems.some(option => {
+    if ('type' in option) {
+      return (
+        option.type === 'section' &&
+        option.items.some(sectionItem => sectionItem.icon != null)
+      );
+    }
+    return option.icon != null;
+  });
 
   const setOpen = useCallback(
     (nextIsOpen: boolean) => {
@@ -588,7 +598,17 @@ function DropdownMenuBottomSheet({
                   onClick={() => setSubmenuPath(path => path.slice(0, -1))}
                 />
               )}
-              <Heading ref={viewHeadingRef} level={3} tabIndex={-1}>
+              <Heading
+                ref={viewHeadingRef}
+                level={3}
+                tabIndex={-1}
+                xstyle={
+                  submenuPath.length === 0 && [
+                    bottomSheetStyles.rootHeading,
+                    currentItemsHaveIcons &&
+                      bottomSheetStyles.rootHeadingWithItemIcons,
+                  ]
+                }>
                 {currentTitle}
               </Heading>
             </div>
