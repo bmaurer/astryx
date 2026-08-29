@@ -4,9 +4,10 @@
 
 /**
  * @file DropdownMenu.tsx
- * @input Uses React, StyleX, usePopover, Button, Icon, useListFocus, and the
- *   shared viewport-safe menu-width resolver
- * @output Exports DropdownMenu with anchored responsive sizing and menu behavior
+ * @input Uses React, StyleX, usePopover, BottomSheet, Button, List,
+ *   useListFocus, and the shared viewport-safe menu-width resolver
+ * @output Exports DropdownMenu with caller-selected popover or bottom-sheet
+ *   presentation
  * @position Core implementation; consumed by index.ts
  *
  * Supports two modes with a single keyboard/focus path:
@@ -38,9 +39,14 @@ import React, {
   type ReactNode,
 } from 'react';
 import * as stylex from '@stylexjs/stylex';
+import {BottomSheet} from '../BottomSheet';
 import {usePopoverInternal} from '../Popover/usePopover';
 import {Button, type ButtonProps} from '../Button';
-import {Icon} from '../Icon';
+import {Divider} from '../Divider';
+import {Heading} from '../Heading';
+import {Icon, renderIconSlot} from '../Icon';
+import {List, ListItem} from '../List';
+import {Section} from '../Section';
 
 import {renderDropdownItems} from './renderDropdownItems';
 import type {DropdownMenuItemProps} from './DropdownMenuItem';
@@ -61,6 +67,7 @@ import {layerAnimations} from '../Layer/layerAnimations.stylex';
 import type {LayerAlignment, LayerPlacement} from '../Layer/useLayer';
 import {
   spacingVars,
+  colorVars,
   radiusVars,
   durationVars,
   easeVars,
@@ -167,6 +174,38 @@ const styles = stylex.create({
   }),
 });
 
+const bottomSheetStyles = stylex.create({
+  content: {
+    width: '100%',
+  },
+  header: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: spacingVars['--spacing-1'],
+    marginBottom: spacingVars['--spacing-2'],
+  },
+  action: {
+    paddingInlineStart: 0,
+  },
+  destructiveAction: {
+    '--_item-label-color': colorVars['--color-error'],
+    '--_item-description-color': colorVars['--color-error'],
+    color: colorVars['--color-error'],
+  },
+  structuralItem: {
+    listStyleType: 'none',
+  },
+  divider: {
+    marginBlock: spacingVars['--spacing-1'],
+  },
+  section: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacingVars['--spacing-1'],
+  },
+});
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -232,26 +271,32 @@ export type DropdownMenuOption =
 
 export type DropdownMenuButtonProps = Omit<ButtonProps, 'onClick'>;
 
+/** The surface used to present the menu's actions. */
+export type DropdownMenuPresentation = 'popover' | 'bottom-sheet';
+
 interface DropdownMenuBaseProps extends BaseProps {
   button?: DropdownMenuButtonProps;
   isMenuOpen?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
   /**
-   * Minimum menu width. The menu may grow for its content but is capped to the
-   * available viewport space. Defaults to the trigger width.
+   * Minimum popover width. The menu may grow for its content but is capped to
+   * the available viewport space. Ignored by bottom-sheet presentation.
+   * Defaults to the trigger width.
    */
   menuWidth?: number | string;
   onClick?: () => void;
   hasChevron?: boolean;
   /**
-   * Position placement relative to the trigger.
+   * Popover position relative to the trigger. Ignored by bottom-sheet
+   * presentation.
    * Uses the same placement values as other Astryx layer-based components.
    * @default 'below'
    */
   placement?: LayerPlacement;
 
   /**
-   * Alignment along the placement axis.
+   * Popover alignment along the placement axis. Ignored by bottom-sheet
+   * presentation.
    * Uses the same alignment values as other Astryx layer-based components.
    * @default 'start'
    */
@@ -261,11 +306,20 @@ interface DropdownMenuBaseProps extends BaseProps {
 }
 
 interface DropdownMenuDataProps extends DropdownMenuBaseProps {
+  /**
+   * Surface used to present the actions. Pass a value selected by product
+   * policy (for example, a compact-touch media query) when the presentation
+   * should adapt. Bottom-sheet presentation is intended for short action sets.
+   * @default 'popover'
+   */
+  presentation?: DropdownMenuPresentation;
   items: DropdownMenuOption[];
   children?: undefined;
 }
 
 interface DropdownMenuCompoundProps extends DropdownMenuBaseProps {
+  /** Compound menus currently use the anchored popover presentation. */
+  presentation?: 'popover';
   items?: undefined;
   children: ReactNode;
 }
@@ -281,15 +335,20 @@ export type DropdownMenuProps =
  * A dropdown menu component that displays a list of actionable items.
  *
  * Supports two modes:
- * - **Data-driven**: pass `items` for static menus with optional custom rendering
- * - **Compound-component**: pass JSX children for dynamic, stateful, or lazy-loaded menus
+ * - **Data-driven**: pass `items` and choose either the default anchored
+ *   popover or the modal bottom-sheet presentation.
+ * - **Compound-component**: pass JSX children for dynamic, stateful, or
+ *   lazy-loaded anchored popover menus.
  *
- * Both modes share the same DOM-based keyboard navigation via useListFocus.
+ * Products own the policy that selects a presentation. For example, they may
+ * pass `presentation="bottom-sheet"` only for compact, coarse-pointer,
+ * hover-free environments. DropdownMenu does not impose that breakpoint.
  *
  * @example
  * ```
  * <DropdownMenu
  *   button={{ label: 'Actions' }}
+ *   presentation={useBottomSheet ? 'bottom-sheet' : 'popover'}
  *   items={[
  *     { label: 'Edit', onClick: () => handleEdit() },
  *     { label: 'Delete', onClick: () => handleDelete() },
@@ -302,7 +361,213 @@ export type DropdownMenuProps =
 // locale.
 const DEFAULT_BUTTON_I18N_KEY = '@astryx.dropdownMenu.label' as const;
 
-export function DropdownMenu({
+function getBottomSheetItemKey(
+  item: DropdownMenuItemData,
+  index: number,
+): string {
+  return `item-${item.id ?? index}`;
+}
+
+function BottomSheetActionList({
+  items,
+  onSelect,
+  onOpenSubmenu,
+}: {
+  items: DropdownMenuOption[];
+  onSelect: (item: DropdownMenuItemData) => void;
+  onOpenSubmenu: (item: DropdownMenuItemData) => void;
+}) {
+  const renderItem = (item: DropdownMenuItemData, index: number) => {
+    const isSubmenu = item.items != null && item.items.length > 0;
+    const isDestructive = item.variant === 'destructive';
+
+    return (
+      <ListItem
+        key={getBottomSheetItemKey(item, index)}
+        label={item.label}
+        description={item.description}
+        startContent={
+          item.icon
+            ? renderIconSlot(item.icon, {
+                size: 'sm',
+                color: isDestructive ? 'error' : 'secondary',
+              })
+            : undefined
+        }
+        endContent={
+          isSubmenu ? (
+            <Icon icon="chevronRight" size="sm" color="secondary" />
+          ) : (
+            item.endContent
+          )
+        }
+        isDisabled={item.isDisabled}
+        onClick={() => (isSubmenu ? onOpenSubmenu(item) : onSelect(item))}
+        xstyle={[
+          bottomSheetStyles.action,
+          isDestructive && bottomSheetStyles.destructiveAction,
+        ]}
+      />
+    );
+  };
+
+  return (
+    <List density="spacious">
+      {items.map((option, index) => {
+        if ('type' in option && option.type === 'divider') {
+          return (
+            // Divider data has no stable identity because it holds no state;
+            // its position is the identity within this static presentation.
+            <li
+              // eslint-disable-next-line @eslint-react/no-array-index-key
+              key={`divider-${index}`}
+              role="presentation"
+              {...stylex.props(bottomSheetStyles.structuralItem)}>
+              <Divider xstyle={bottomSheetStyles.divider} />
+            </li>
+          );
+        }
+
+        if ('type' in option && option.type === 'section') {
+          return (
+            <li
+              key={`section-${option.id ?? index}`}
+              role="presentation"
+              {...stylex.props(bottomSheetStyles.structuralItem)}>
+              <div
+                role="group"
+                aria-label={option.title}
+                {...stylex.props(bottomSheetStyles.section)}>
+                {option.title && <Heading level={4}>{option.title}</Heading>}
+                <List density="spacious">{option.items.map(renderItem)}</List>
+              </div>
+            </li>
+          );
+        }
+
+        return renderItem(option, index);
+      })}
+    </List>
+  );
+}
+
+function DropdownMenuBottomSheet({
+  button: buttonFromProps,
+  isMenuOpen: controlledIsOpen,
+  onOpenChange,
+  onClick,
+  hasChevron = true,
+  items,
+  presentation: _presentation,
+  menuWidth: _menuWidth,
+  placement: _placement,
+  alignment: _alignment,
+  className,
+  style,
+  xstyle,
+  'data-testid': testId,
+  ...rest
+}: DropdownMenuDataProps & {presentation: 'bottom-sheet'}) {
+  const t = useTranslator();
+  const button = buttonFromProps ?? {label: t(DEFAULT_BUTTON_I18N_KEY)};
+  const backLabel = t('@astryx.dropdownMenu.back');
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const [submenuPath, setSubmenuPath] = useState<DropdownMenuItemData[]>([]);
+  const isControlled = controlledIsOpen !== undefined;
+  const isOpen = isControlled ? controlledIsOpen : internalIsOpen;
+  const currentSubmenu = submenuPath.at(-1);
+  const currentItems = currentSubmenu?.items ?? items;
+  const currentTitle = currentSubmenu?.label ?? button.label;
+  const sheetLabel =
+    typeof currentTitle === 'string' ? currentTitle : button.label;
+
+  const setOpen = useCallback(
+    (nextIsOpen: boolean) => {
+      if (!nextIsOpen) {
+        setSubmenuPath([]);
+      }
+      onOpenChange?.(nextIsOpen);
+      if (!isControlled) {
+        setInternalIsOpen(nextIsOpen);
+      }
+    },
+    [isControlled, onOpenChange],
+  );
+
+  const handleSelect = useCallback(
+    (item: DropdownMenuItemData) => {
+      if (item.isDisabled) {
+        return;
+      }
+      item.onClick?.();
+      if (item.hasCloseOnSelect !== false) {
+        setOpen(false);
+      }
+    },
+    [setOpen],
+  );
+
+  const isIconOnly = button.isIconOnly === true;
+  const resolvedEndContent =
+    button.endContent ??
+    (hasChevron && !isIconOnly ? (
+      <Icon icon="chevronDown" size="sm" color="inherit" />
+    ) : undefined);
+
+  return (
+    <>
+      <Button
+        {...button}
+        tooltip={isOpen ? undefined : button.tooltip}
+        endContent={resolvedEndContent}
+        onClick={() => {
+          onClick?.();
+          setOpen(!isOpen);
+        }}
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+        data-testid={testId}
+      />
+
+      <BottomSheet
+        isOpen={isOpen}
+        onOpenChange={setOpen}
+        label={sheetLabel}
+        height="hug">
+        <Section padding={4}>
+          <div
+            {...rest}
+            {...mergeProps(
+              themeProps('dropdown-menu', {presentation: 'bottom-sheet'}),
+              stylex.props(bottomSheetStyles.content, xstyle),
+              className,
+              style,
+            )}>
+            <div {...stylex.props(bottomSheetStyles.header)}>
+              {submenuPath.length > 0 && (
+                <Button
+                  label={backLabel}
+                  variant="ghost"
+                  size="sm"
+                  icon={<Icon icon="chevronLeft" size="sm" />}
+                  onClick={() => setSubmenuPath(path => path.slice(0, -1))}
+                />
+              )}
+              <Heading level={3}>{currentTitle}</Heading>
+            </div>
+            <BottomSheetActionList
+              items={currentItems}
+              onSelect={handleSelect}
+              onOpenSubmenu={item => setSubmenuPath(path => [...path, item])}
+            />
+          </div>
+        </Section>
+      </BottomSheet>
+    </>
+  );
+}
+
+function DropdownMenuPopover({
   button: buttonFromProps,
   isMenuOpen: controlledIsOpen,
   onOpenChange,
@@ -311,6 +576,7 @@ export function DropdownMenu({
   hasChevron = true,
   placement = 'below',
   alignment = 'start',
+  presentation: _presentation,
   className,
   style,
   xstyle,
@@ -650,6 +916,18 @@ export function DropdownMenu({
       )}
     </>
   );
+}
+
+export function DropdownMenu(props: DropdownMenuProps) {
+  if (
+    props.presentation === 'bottom-sheet' &&
+    'items' in props &&
+    props.items !== undefined
+  ) {
+    return <DropdownMenuBottomSheet {...props} presentation="bottom-sheet" />;
+  }
+
+  return <DropdownMenuPopover {...props} />;
 }
 
 DropdownMenu.displayName = 'DropdownMenu';

@@ -968,22 +968,40 @@ describe('Card playground defaults', () => {
   });
 });
 
-describe('DropdownMenu bottom-sheet example', () => {
-  it('registers the action-sheet alternative on both component pages', () => {
+describe('DropdownMenu adaptive-presentation example', () => {
+  it('documents the presentation choice for the Properties tab', () => {
+    const dropdownMenu = Object.values(components)
+      .flat()
+      .find(component => component.name === 'DropdownMenu');
+    const presentation = dropdownMenu?.props.find(
+      prop => prop.name === 'presentation',
+    );
+
+    expect(presentation?.type).toBe("'popover' | 'bottom-sheet'");
+    expect(presentation?.default).toBe("'popover'");
+  });
+
+  it('registers the responsive presentation example on the related component pages', () => {
     const dropdownExamples = exampleRegistry['DropdownMenu'] ?? [];
     const bottomSheetExample = dropdownExamples.find(example =>
-      /Bottom sheet alternative/i.test(example.name),
+      /Adaptive presentation/i.test(example.name),
     );
 
     expect(bottomSheetExample).toBeDefined();
-    expect(bottomSheetExample!.source).toContain(
-      '@astryxdesign/core/BottomSheet',
-    );
-    expect(bottomSheetExample!.source).toContain('<BottomSheet');
+    expect(bottomSheetExample!.source).toContain('useMediaQuery');
+    expect(bottomSheetExample!.source).toContain("'bottom-sheet' : 'popover'");
+    expect(bottomSheetExample!.source).toContain('<DropdownMenu');
 
     const bottomSheetExamples = exampleRegistry['BottomSheet'] ?? [];
     expect(
       bottomSheetExamples.some(
+        example => example.source === bottomSheetExample!.source,
+      ),
+    ).toBe(true);
+
+    const mediaQueryExamples = exampleRegistry['useMediaQuery'] ?? [];
+    expect(
+      mediaQueryExamples.some(
         example => example.source === bottomSheetExample!.source,
       ),
     ).toBe(true);

@@ -4,22 +4,12 @@
 export const doc = {
   type: 'block',
   exampleFor: 'DropdownMenu',
-  alsoExampleFor: ['BottomSheet'],
-  name: 'DropdownMenu — Bottom sheet alternative',
-  displayName: 'DropdownMenu — Bottom sheet alternative',
+  alsoExampleFor: ['BottomSheet', 'useMediaQuery'],
+  name: 'DropdownMenu — Adaptive presentation',
+  displayName: 'DropdownMenu — Adaptive presentation',
   description:
-    'A bottom sheet alternative for presenting a short list of actions on compact touch screens.',
+    'Chooses a bottom sheet for compact touch surfaces and an anchored popover otherwise. The media query is product policy, while DropdownMenu owns both presentations.',
   isReady: true,
   aspectRatio: 3 / 4,
-  componentsUsed: [
-    'BottomSheet',
-    'Button',
-    'Heading',
-    'Icon',
-    'List',
-    'ListItem',
-    'Section',
-    'Stack',
-    'Text',
-  ],
+  componentsUsed: ['DropdownMenu', 'Stack', 'Text', 'useMediaQuery'],
 };

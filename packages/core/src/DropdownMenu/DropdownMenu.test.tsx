@@ -20,6 +20,14 @@ import {Divider} from '../Divider';
 
 // Mock showPopover and hidePopover methods since they're not implemented in jsdom
 beforeEach(() => {
+  HTMLDialogElement.prototype.showModal = vi.fn(function (
+    this: HTMLDialogElement,
+  ) {
+    this.setAttribute('open', '');
+  });
+  HTMLDialogElement.prototype.close = vi.fn(function (this: HTMLDialogElement) {
+    this.removeAttribute('open');
+  });
   HTMLElement.prototype.showPopover = vi.fn(function (this: HTMLElement) {
     this.setAttribute('popover-open', '');
     const event = new Event('toggle', {bubbles: false});
@@ -81,6 +89,65 @@ describe('DropdownMenu', () => {
     expect(
       document.querySelector('[aria-modal="true"]'),
     ).not.toBeInTheDocument();
+  });
+
+  it('renders data-driven actions in a bottom sheet when requested', async () => {
+    const user = userEvent.setup();
+    const onEdit = vi.fn();
+
+    render(
+      <DropdownMenu
+        button={{label: 'Project actions'}}
+        presentation="bottom-sheet"
+        items={[{label: 'Edit project', onClick: onEdit}]}
+      />,
+    );
+
+    const trigger = screen.getByRole('button', {name: /Project actions/});
+    expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
+    expect(screen.queryByRole('menu', {hidden: true})).not.toBeInTheDocument();
+
+    await user.click(trigger);
+
+    expect(
+      screen.getByRole('dialog', {name: 'Project actions'}),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', {name: 'Edit project'}));
+
+    expect(onEdit).toHaveBeenCalledTimes(1);
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('drills into nested data items in bottom-sheet presentation', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <DropdownMenu
+        button={{label: 'Project actions'}}
+        presentation="bottom-sheet"
+        items={[
+          {
+            label: 'Move to project',
+            items: [{label: 'Apollo launch'}],
+          },
+        ]}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', {name: /Project actions/}));
+    await user.click(screen.getByRole('button', {name: 'Move to project'}));
+
+    expect(
+      screen.getByRole('heading', {name: 'Move to project'}),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {name: 'Apollo launch'}),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', {name: 'Back'}));
+    expect(
+      screen.getByRole('heading', {name: 'Project actions'}),
+    ).toBeInTheDocument();
   });
 
   it('defaults menu placement below', () => {

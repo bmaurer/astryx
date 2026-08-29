@@ -20,6 +20,7 @@
 export {
   DropdownMenu,
   type DropdownMenuProps,
+  type DropdownMenuPresentation,
   type DropdownMenuButtonProps,
   type DropdownMenuItemData,
   type DropdownMenuDividerData,
