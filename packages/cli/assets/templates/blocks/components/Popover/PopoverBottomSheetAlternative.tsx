@@ -41,7 +41,7 @@ export default function PopoverBottomSheetAlternative() {
         onOpenChange={setIsOpen}
         label="Project actions"
         height="hug">
-        <Section padding={4}>
+        <Section paddingBlock={4} paddingInline={1}>
           <VStack gap={3}>
             <VStack gap={1} xstyle={styles.header}>
               <Heading level={3}>Project actions</Heading>
