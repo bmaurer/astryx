@@ -40,9 +40,10 @@ If you're using `@astryxdesign/build` for StyleX source compilation, import from
 
 The source package exports `neutralPalettes`, and every built `neutralTheme`
 includes the same data at `neutralTheme.palettes`. Each family contains exact
-light- and dark-mode tones from 0 through 100 in increments of five. The number
-is the HCT tone coordinate: tone 0 is black and tone 100 is white in both modes,
-so dark ramps are not numbered in reverse.
+light- and dark-mode palette entries labeled from 0 through 100 in increments
+of five. By convention, lower labels identify darker stops and higher labels
+lighter stops in both modes. The labels identify approved entries rather than
+guaranteeing that each hex value measures at that exact HCT coordinate.
 
 Use semantic theme tokens for components. When a new semantic token or audit
 tool needs a raw color, select an exact family, mode, and numbered tone from
