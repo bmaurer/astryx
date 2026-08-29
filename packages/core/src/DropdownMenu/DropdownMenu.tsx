@@ -197,14 +197,9 @@ const bottomSheetStyles = stylex.create({
     marginBottom: spacingVars['--spacing-2'],
   },
   rootHeading: {
-    // Match the leading padding of a spacious ListItem without changing the
-    // row's own spacing or interaction surface.
+    // Match the content edge of a spacious ListItem. Icon-bearing rows place
+    // their icon here; rows without an icon place their label here.
     marginInlineStart: spacingVars['--spacing-3'],
-  },
-  rootHeadingWithItemIcons: {
-    // Include the small icon and Item gap so the heading aligns with the item
-    // labels rather than their leading icons.
-    marginInlineStart: `calc(${spacingVars['--spacing-3']} + 1rem + ${spacingVars['--spacing-2']})`,
   },
   destructiveAction: {
     '--_item-label-color': colorVars['--color-error'],
@@ -494,15 +489,6 @@ function DropdownMenuBottomSheet({
   const currentTitle = currentSubmenu?.label ?? button.label;
   const sheetLabel =
     typeof currentTitle === 'string' ? currentTitle : button.label;
-  const currentItemsHaveIcons = currentItems.some(option => {
-    if ('type' in option) {
-      return (
-        option.type === 'section' &&
-        option.items.some(sectionItem => sectionItem.icon != null)
-      );
-    }
-    return option.icon != null;
-  });
 
   const setOpen = useCallback(
     (nextIsOpen: boolean) => {
@@ -572,7 +558,7 @@ function DropdownMenuBottomSheet({
         onOpenChange={setOpen}
         label={sheetLabel}
         height="hug">
-        <Section padding={4}>
+        <Section paddingBlock={4} paddingInline={1}>
           <div
             {...rest}
             {...mergeProps(
@@ -603,11 +589,7 @@ function DropdownMenuBottomSheet({
                 level={3}
                 tabIndex={-1}
                 xstyle={
-                  submenuPath.length === 0 && [
-                    bottomSheetStyles.rootHeading,
-                    currentItemsHaveIcons &&
-                      bottomSheetStyles.rootHeadingWithItemIcons,
-                  ]
+                  submenuPath.length === 0 && bottomSheetStyles.rootHeading
                 }>
                 {currentTitle}
               </Heading>

@@ -122,7 +122,7 @@ describe('DropdownMenu', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('aligns the bottom-sheet heading with icon-bearing item labels without overriding item padding', async () => {
+  it('aligns the bottom-sheet heading with the item content edge and keeps item padding', async () => {
     const user = userEvent.setup();
 
     render(
@@ -135,8 +135,11 @@ describe('DropdownMenu', () => {
 
     await user.click(screen.getByRole('button', {name: /Project actions/}));
 
-    expect(screen.getByRole('heading', {name: 'Project actions'})).toHaveStyle({
-      marginInlineStart: 'calc(var(--spacing-3) + 1rem + var(--spacing-2))',
+    const heading = screen.getByRole('heading', {name: 'Project actions'});
+    expect(heading).toHaveStyle({marginInlineStart: 'var(--spacing-3)'});
+    expect(heading.closest('.astryx-section')).toHaveStyle({
+      paddingInlineStart: 'var(--spacing-1)',
+      paddingInlineEnd: 'var(--spacing-1)',
     });
     expect(
       screen.getByRole('button', {name: 'Edit project'}).closest('li'),
