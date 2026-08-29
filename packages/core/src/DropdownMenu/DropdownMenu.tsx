@@ -271,7 +271,6 @@ export type DropdownMenuOption =
 
 export type DropdownMenuButtonProps = Omit<ButtonProps, 'onClick'>;
 
-/** The surface used to present the menu's actions. */
 export type DropdownMenuPresentation = 'popover' | 'bottom-sheet';
 
 interface DropdownMenuBaseProps extends BaseProps {
@@ -318,7 +317,6 @@ interface DropdownMenuDataProps extends DropdownMenuBaseProps {
 }
 
 interface DropdownMenuCompoundProps extends DropdownMenuBaseProps {
-  /** Compound menus currently use the anchored popover presentation. */
   presentation?: 'popover';
   items?: undefined;
   children: ReactNode;
@@ -339,10 +337,6 @@ export type DropdownMenuProps =
  *   popover or the modal bottom-sheet presentation.
  * - **Compound-component**: pass JSX children for dynamic, stateful, or
  *   lazy-loaded anchored popover menus.
- *
- * Products own the policy that selects a presentation. For example, they may
- * pass `presentation="bottom-sheet"` only for compact, coarse-pointer,
- * hover-free environments. DropdownMenu does not impose that breakpoint.
  *
  * @example
  * ```
@@ -416,8 +410,6 @@ function BottomSheetActionList({
       {items.map((option, index) => {
         if ('type' in option && option.type === 'divider') {
           return (
-            // Divider data has no stable identity because it holds no state;
-            // its position is the identity within this static presentation.
             <li
               // eslint-disable-next-line @eslint-react/no-array-index-key
               key={`divider-${index}`}
