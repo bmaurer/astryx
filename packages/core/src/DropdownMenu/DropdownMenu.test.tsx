@@ -167,6 +167,52 @@ describe('DropdownMenu', () => {
     await waitFor(() => expect(rootHeading).toHaveFocus());
   });
 
+  it('returns to the root after a controlled bottom sheet closes externally', async () => {
+    const user = userEvent.setup();
+
+    function ControlledDropdownMenu() {
+      const [isOpen, setIsOpen] = useState(false);
+
+      return (
+        <>
+          <button type="button" onClick={() => setIsOpen(false)}>
+            Close externally
+          </button>
+          <DropdownMenu
+            button={{label: 'Project actions'}}
+            presentation="bottom-sheet"
+            isMenuOpen={isOpen}
+            onOpenChange={setIsOpen}
+            items={[
+              {
+                label: 'Move to project',
+                items: [{label: 'Apollo launch'}],
+              },
+            ]}
+          />
+        </>
+      );
+    }
+
+    render(<ControlledDropdownMenu />);
+
+    await user.click(screen.getByRole('button', {name: /Project actions/}));
+    await user.click(screen.getByRole('button', {name: 'Move to project'}));
+    expect(
+      screen.getByRole('heading', {name: 'Move to project'}),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', {name: 'Close externally'}));
+    await user.click(screen.getByRole('button', {name: /Project actions/}));
+
+    expect(
+      screen.getByRole('heading', {name: 'Project actions'}),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {name: 'Apollo launch'}),
+    ).not.toBeInTheDocument();
+  });
+
   it('uses the BottomSheet for adaptive presentation on compact touch', async () => {
     vi.stubGlobal(
       'matchMedia',

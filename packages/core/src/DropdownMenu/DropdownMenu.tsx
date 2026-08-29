@@ -496,6 +496,14 @@ function DropdownMenuBottomSheet({
   const sheetLabel =
     typeof currentTitle === 'string' ? currentTitle : button.label;
 
+  useEffect(() => {
+    if (isOpen || submenuPath.length === 0) {
+      return;
+    }
+    // eslint-disable-next-line @eslint-react/set-state-in-effect -- external controlled closes must reset sheet-local navigation before the next open
+    setSubmenuPath([]);
+  }, [isOpen, submenuPath.length]);
+
   const setOpen = useCallback(
     (nextIsOpen: boolean) => {
       if (!nextIsOpen) {
