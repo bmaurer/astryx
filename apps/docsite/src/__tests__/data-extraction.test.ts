@@ -1075,6 +1075,8 @@ describe('galleryEagerShowcases', () => {
   it('reads the gallery category order out of the page', () => {
     expect(categories.length).toBeGreaterThan(5);
     expect(categories).toContain('Action');
+    expect(categories).toContain('Form Controls');
+    expect(categories).not.toContain('Data Input');
     expect(galleryOrder.length).toBeGreaterThan(50);
   });
 
