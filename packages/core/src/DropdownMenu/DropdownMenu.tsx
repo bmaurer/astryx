@@ -637,7 +637,7 @@ function DropdownMenuBottomSheet({
         finalFocusRef={buttonRef}
         label={sheetLabel}
         height="hug">
-        <Section paddingBlock={4} paddingInline={1}>
+        <Section paddingBlockStart={4} paddingBlockEnd={0} paddingInline={1}>
           <div
             ref={actionListRef}
             {...rest}
