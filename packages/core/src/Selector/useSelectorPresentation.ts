@@ -91,6 +91,11 @@ export function useSelectorPresentation({
   } = popover;
 
   const show = useCallback(() => {
+    // A new disclosure ends any focus-restoration cleanup from the previous
+    // close. Until then, keep clearing pointer-restored focus: closing a native
+    // dialog can restore focus once, followed by BottomSheet's explicit final
+    // focus restoration in the same close cycle.
+    shouldClearRestoredFocusRef.current = false;
     activePresentationRef.current = resolvedPresentation;
     if (resolvedPresentation === 'bottom-sheet') {
       isSheetOpenRef.current = true;
@@ -116,7 +121,6 @@ export function useSelectorPresentation({
       shouldClearRestoredFocusRef.current &&
       getInteractionModality() === 'pointer'
     ) {
-      shouldClearRestoredFocusRef.current = false;
       event.currentTarget.blur();
     }
   }, []);

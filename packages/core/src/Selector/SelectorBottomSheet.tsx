@@ -53,9 +53,9 @@ export function SelectorBottomSheet({
         onOpenChange={onOpenChange}
         finalFocusRef={finalFocusRef}
         label={label}
-        height="capped"
+        height="hug"
         purpose="info">
-        <Section paddingBlock={4} paddingInline={1}>
+        <Section paddingBlockStart={4} paddingBlockEnd={0} paddingInline={1}>
           <div {...stylex.props(styles.content)}>
             <Heading level={3} xstyle={styles.heading}>
               {label}

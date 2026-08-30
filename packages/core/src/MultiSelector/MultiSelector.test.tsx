@@ -193,6 +193,10 @@ describe('MultiSelector', () => {
     fireEvent.pointerDown(dialog, {pointerType: 'touch'});
     fireEvent.click(dialog, {detail: 1});
 
+    // A native dialog close may restore focus before BottomSheet applies its
+    // explicit finalFocusRef. Both restorations must stay ring-free on touch.
+    trigger.focus();
+    expect(trigger).not.toHaveFocus();
     trigger.focus();
     expect(trigger).not.toHaveFocus();
   });

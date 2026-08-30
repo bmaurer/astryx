@@ -10,6 +10,7 @@
  */
 
 import {describe, it, expect, vi, beforeEach, afterEach} from 'vitest';
+import {readFileSync} from 'node:fs';
 import {
   act,
   render,
@@ -292,8 +293,23 @@ describe('Selector', () => {
     fireEvent.pointerDown(option, {pointerType: 'touch'});
     fireEvent.click(option, {detail: 1});
 
+    // A native dialog close may restore focus before BottomSheet applies its
+    // explicit finalFocusRef. Both restorations must stay ring-free on touch.
     trigger.focus();
     expect(trigger).not.toHaveFocus();
+    trigger.focus();
+    expect(trigger).not.toHaveFocus();
+  });
+
+  it('uses content-hugging height without extra bottom content padding', () => {
+    const source = readFileSync(
+      'packages/core/src/Selector/SelectorBottomSheet.tsx',
+      'utf8',
+    );
+
+    expect(source).toContain('height="hug"');
+    expect(source).toContain('paddingBlockStart={4}');
+    expect(source).toContain('paddingBlockEnd={0}');
   });
 
   it('moves keyboard focus into a bottom-sheet listbox', async () => {
