@@ -11,7 +11,6 @@
 
 import {
   useCallback,
-  useEffect,
   useRef,
   useState,
   type FocusEvent,
@@ -27,10 +26,7 @@ import {
   type AdaptivePresentation,
   type ResolvedAdaptivePresentation,
 } from '../hooks/useAdaptivePresentation';
-import {
-  getInteractionModality,
-  trackInteractionModality,
-} from '../utils/interactionModality';
+import {useFocusReturnVisibility} from '../hooks/useFocusReturnVisibility';
 
 interface UseSelectorPresentationOptions {
   presentation: AdaptivePresentation;
@@ -44,6 +40,7 @@ interface SelectorPresentationController {
   hide: () => void;
   isOpen: boolean;
   isSheetOpen: boolean;
+  isTriggerFocusRingSuppressed: boolean;
   onSheetOpenChange: (isOpen: boolean) => void;
   onTriggerFocus: (event: FocusEvent<HTMLElement>) => void;
   popover: UsePopoverReturn & {wasJustDismissed: () => boolean};
@@ -63,23 +60,19 @@ export function useSelectorPresentation({
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const isSheetOpenRef = useRef(false);
   const onHideRef = useRef(onHide);
-  const shouldClearRestoredFocusRef = useRef(false);
+  const {
+    isFocusRingSuppressed,
+    onFocusReturnTargetFocus,
+    prepareFocusReturn,
+    resetFocusReturn,
+  } = useFocusReturnVisibility();
   onHideRef.current = onHide;
 
-  useEffect(() => {
-    trackInteractionModality();
-  }, []);
-
-  const prepareFocusRestoration = useCallback(() => {
-    shouldClearRestoredFocusRef.current =
-      getInteractionModality() === 'pointer';
-  }, []);
-
   const handlePopoverHide = useCallback(() => {
-    prepareFocusRestoration();
+    prepareFocusReturn();
     onHideRef.current();
     triggerRef.current?.focus();
-  }, [prepareFocusRestoration, triggerRef]);
+  }, [prepareFocusReturn, triggerRef]);
   const popover = usePopoverInternal({
     ...popoverOptions,
     onHide: handlePopoverHide,
@@ -91,11 +84,7 @@ export function useSelectorPresentation({
   } = popover;
 
   const show = useCallback(() => {
-    // A new disclosure ends any focus-restoration cleanup from the previous
-    // close. Until then, keep clearing pointer-restored focus: closing a native
-    // dialog can restore focus once, followed by BottomSheet's explicit final
-    // focus restoration in the same close cycle.
-    shouldClearRestoredFocusRef.current = false;
+    resetFocusReturn();
     activePresentationRef.current = resolvedPresentation;
     if (resolvedPresentation === 'bottom-sheet') {
       isSheetOpenRef.current = true;
@@ -103,27 +92,23 @@ export function useSelectorPresentation({
     } else {
       showPopover();
     }
-  }, [resolvedPresentation, showPopover]);
+  }, [resetFocusReturn, resolvedPresentation, showPopover]);
 
   const hide = useCallback(() => {
     if (isSheetOpenRef.current) {
-      prepareFocusRestoration();
+      prepareFocusReturn();
       isSheetOpenRef.current = false;
       setIsSheetOpen(false);
       onHideRef.current();
     } else {
       hidePopover();
     }
-  }, [hidePopover, prepareFocusRestoration]);
+  }, [hidePopover, prepareFocusReturn]);
 
-  const handleTriggerFocus = useCallback((event: FocusEvent<HTMLElement>) => {
-    if (
-      shouldClearRestoredFocusRef.current &&
-      getInteractionModality() === 'pointer'
-    ) {
-      event.currentTarget.blur();
-    }
-  }, []);
+  const handleTriggerFocus = useCallback(
+    (_event: FocusEvent<HTMLElement>) => onFocusReturnTargetFocus(),
+    [onFocusReturnTargetFocus],
+  );
 
   const handleSheetOpenChange = useCallback(
     (nextIsOpen: boolean) => {
@@ -152,6 +137,7 @@ export function useSelectorPresentation({
     hide,
     isOpen,
     isSheetOpen,
+    isTriggerFocusRingSuppressed: isFocusRingSuppressed,
     onSheetOpenChange: handleSheetOpenChange,
     onTriggerFocus: handleTriggerFocus,
     popover,

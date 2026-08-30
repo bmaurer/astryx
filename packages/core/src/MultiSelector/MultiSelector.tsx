@@ -87,6 +87,7 @@ import {useTranslator} from '../i18n';
 import type {AdaptivePresentation} from '../hooks/useAdaptivePresentation';
 import {SelectorBottomSheet} from '../Selector/SelectorBottomSheet';
 import {useSelectorPresentation} from '../Selector/useSelectorPresentation';
+import {selectorPresentationStyles} from '../Selector/selectorPresentation.stylex';
 
 // Sentinel value for the select-all item in keyboard navigation
 const SELECT_ALL_VALUE = '__xds_select_all__';
@@ -1713,6 +1714,8 @@ export function MultiSelector<T extends MultiSelectorOptionType>({
             variant === 'ghost' && styles.triggerGhost,
             variant === 'ghost' && interactionOverlayStyles.backgroundImage,
             variant === 'ghost' && focusOutlineStyles.focusWithin,
+            surface.isTriggerFocusRingSuppressed &&
+              selectorPresentationStyles.pointerRestoredFocus,
             isDisabled && inputWrapperStyles.disabled,
             variant === 'ghost' && isDisabled && styles.triggerGhostDisabled,
             optimisticValue.length === 0 && styles.triggerPlaceholder,

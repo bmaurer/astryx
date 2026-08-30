@@ -20,6 +20,7 @@ import {
   within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as stylex from '@stylexjs/stylex';
 import {useState} from 'react';
 import type {ReactNode} from 'react';
 import {Selector} from './Selector';
@@ -36,6 +37,7 @@ import {defineTheme} from '../theme/defineTheme';
 import {Theme} from '../theme/Theme';
 import {generateThemeCSS} from '../theme/generateThemeRules';
 import {spacingVars} from '../theme/tokens.stylex';
+import {selectorPresentationStyles} from './selectorPresentation.stylex';
 
 function generateThemeTestCSS(theme: Parameters<typeof generateThemeCSS>[0]) {
   const {prose, component} = generateThemeCSS(theme);
@@ -276,7 +278,7 @@ describe('Selector', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('does not retain restored trigger focus after a touch selection', async () => {
+  it('restores touch focus without painting a trigger focus ring', async () => {
     render(
       <Selector
         label="Fruit"
@@ -293,12 +295,11 @@ describe('Selector', () => {
     fireEvent.pointerDown(option, {pointerType: 'touch'});
     fireEvent.click(option, {detail: 1});
 
-    // A native dialog close may restore focus before BottomSheet applies its
-    // explicit finalFocusRef. Both restorations must stay ring-free on touch.
     trigger.focus();
-    expect(trigger).not.toHaveFocus();
-    trigger.focus();
-    expect(trigger).not.toHaveFocus();
+    expect(trigger).toHaveFocus();
+    expect(trigger.parentElement).toHaveClass(
+      stylex.props(selectorPresentationStyles.pointerRestoredFocus).className!,
+    );
   });
 
   it('uses content-hugging height without extra bottom content padding', () => {

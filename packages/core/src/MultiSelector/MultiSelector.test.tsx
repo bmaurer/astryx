@@ -19,6 +19,7 @@ import {
   within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as stylex from '@stylexjs/stylex';
 import {MultiSelector} from './MultiSelector';
 import {Icon} from '../Icon';
 import {InternationalizationProvider} from '../i18n';
@@ -26,6 +27,7 @@ import {__resetLiveRegionsForTest} from '../hooks/useAnnounce';
 import {__resetInteractionModalityForTest} from '../utils/interactionModality';
 import {defineTheme} from '../theme/defineTheme';
 import {generateThemeCSS} from '../theme/generateThemeRules';
+import {selectorPresentationStyles} from '../Selector/selectorPresentation.stylex';
 
 function generateThemeTestCSS(theme: Parameters<typeof generateThemeCSS>[0]) {
   const {prose, component} = generateThemeCSS(theme);
@@ -175,7 +177,7 @@ describe('MultiSelector', () => {
     await waitFor(() => expect(screen.getByRole('listbox')).toHaveFocus());
   });
 
-  it('does not retain restored trigger focus after touch dismissal', async () => {
+  it('restores touch focus without painting a trigger focus ring', async () => {
     render(
       <MultiSelector
         label="Fruit"
@@ -193,12 +195,11 @@ describe('MultiSelector', () => {
     fireEvent.pointerDown(dialog, {pointerType: 'touch'});
     fireEvent.click(dialog, {detail: 1});
 
-    // A native dialog close may restore focus before BottomSheet applies its
-    // explicit finalFocusRef. Both restorations must stay ring-free on touch.
     trigger.focus();
-    expect(trigger).not.toHaveFocus();
-    trigger.focus();
-    expect(trigger).not.toHaveFocus();
+    expect(trigger).toHaveFocus();
+    expect(trigger.parentElement).toHaveClass(
+      stylex.props(selectorPresentationStyles.pointerRestoredFocus).className!,
+    );
   });
 
   it('renders with label', () => {

@@ -88,6 +88,7 @@ import {useTranslator} from '../i18n';
 import type {AdaptivePresentation} from '../hooks/useAdaptivePresentation';
 import {SelectorBottomSheet} from './SelectorBottomSheet';
 import {useSelectorPresentation} from './useSelectorPresentation';
+import {selectorPresentationStyles} from './selectorPresentation.stylex';
 
 const styles = stylex.create({
   // Trigger container — the enhanced click target wrapping the combobox button and clear button as siblings
@@ -1681,6 +1682,8 @@ export function Selector<T extends SelectorOptionType>(
             variant === 'ghost' && styles.triggerGhost,
             variant === 'ghost' && interactionOverlayStyles.backgroundImage,
             variant === 'ghost' && focusOutlineStyles.focusWithin,
+            surface.isTriggerFocusRingSuppressed &&
+              selectorPresentationStyles.pointerRestoredFocus,
             isDisabled && inputWrapperStyles.disabled,
             variant === 'ghost' && isDisabled && styles.triggerGhostDisabled,
             !selectedItem && styles.triggerPlaceholder,
