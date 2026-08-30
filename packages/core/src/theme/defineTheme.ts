@@ -414,6 +414,14 @@ export interface DefinedTheme {
    * @internal
    */
   __onLight?: ResolvedOnMedia;
+  /**
+   * The theme this one `extends`, resolved. defineTheme flattens the base's
+   * tokens/components into this theme, which erases the relationship; tools
+   * that emit the shared declarations once per family (`astryx theme build
+   * --family`) need it recorded.
+   * @internal
+   */
+  __extends?: DefinedTheme;
 }
 
 // =============================================================================
@@ -695,6 +703,7 @@ export function defineTheme(input: DefineThemeInput): DefinedTheme {
         : undefined,
     __onDark,
     __onLight,
+    __extends: base,
   };
 
   registerTheme(theme);
