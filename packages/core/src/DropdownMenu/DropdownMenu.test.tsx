@@ -322,14 +322,15 @@ describe('DropdownMenu', () => {
     expect(HTMLElement.prototype.showPopover).not.toHaveBeenCalled();
   });
 
-  it('keeps only the top content padding in the BottomSheet presentation', () => {
+  it('uses the shared menu BottomSheet frame', () => {
     const source = readFileSync(
       'packages/core/src/DropdownMenu/DropdownMenu.tsx',
       'utf8',
     );
 
-    expect(source).toContain('paddingBlockStart={4}');
-    expect(source).toContain('paddingBlockEnd={0}');
+    expect(source).toContain('<MenuBottomSheet');
+    expect(source).not.toContain("import {BottomSheet} from '../BottomSheet'");
+    expect(source).not.toContain("import {Section} from '../Section'");
   });
 
   it('keeps adaptive presentation anchored without compact touch', async () => {

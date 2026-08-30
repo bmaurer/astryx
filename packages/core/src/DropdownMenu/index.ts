@@ -27,7 +27,7 @@ export {
   type DropdownMenuSection,
   type DropdownMenuOption,
 } from './DropdownMenu';
-export type {MenuPresentation} from './menuPresentation';
+export type {AdaptivePresentation as MenuPresentation} from '../hooks/useAdaptivePresentation';
 
 export {DropdownMenuItem, type DropdownMenuItemProps} from './DropdownMenuItem';
 
