@@ -35,9 +35,11 @@ import React, {
   useCallback,
   useEffect,
   useId,
+  lazy,
   useMemo,
   useRef,
   useState,
+  Suspense,
 } from 'react';
 import type {ReactNode} from 'react';
 import * as stylex from '@stylexjs/stylex';
@@ -77,11 +79,16 @@ import type {
 } from '../DropdownMenu/DropdownMenu';
 
 import {useMergedRefs} from '../hooks/useMergedRefs';
-import {MenuBottomSheet} from '../DropdownMenu/MenuBottomSheet';
 import {
-  useResolvedMenuPresentation,
-  type MenuPresentation,
-} from '../DropdownMenu/menuPresentation';
+  useAdaptivePresentation,
+  type AdaptivePresentation,
+} from '../hooks/useAdaptivePresentation';
+
+const LazyMenuBottomSheet = lazy(async () =>
+  import('../DropdownMenu/MenuBottomSheet').then(module => ({
+    default: module.MenuBottomSheet,
+  })),
+);
 const styles = stylex.create({
   // Trigger wrapper: suppress the iOS long-press callout/selection so the
   // long-press opens our context menu instead of the native text/callout UI.
@@ -194,7 +201,7 @@ interface ContextMenuBaseProps extends BaseProps {
    *   the cursor-positioned popover elsewhere.
    * @default 'popover'
    */
-  presentation?: MenuPresentation;
+  presentation?: AdaptivePresentation;
   'data-testid'?: string;
 }
 
@@ -257,7 +264,7 @@ export function ContextMenu({
 }: ContextMenuProps) {
   const t = useTranslator();
   const label = labelFromProps ?? t('@astryx.contextMenu.label');
-  const resolvedPresentation = useResolvedMenuPresentation(presentation);
+  const resolvedPresentation = useAdaptivePresentation(presentation);
   const usesBottomSheet = resolvedPresentation === 'bottom-sheet';
   // Separate content props (union discriminant) from DOM pass-through attrs.
   // The union means exactly one of items/menuContent exists in rest; destructure
@@ -567,12 +574,14 @@ export function ContextMenu({
       </div>
 
       {usesBottomSheet ? (
-        <MenuBottomSheet
-          isOpen={isOpen}
-          onOpenChange={updateOpenState}
-          label={label}>
-          {renderedMenu}
-        </MenuBottomSheet>
+        <Suspense fallback={null}>
+          <LazyMenuBottomSheet
+            isOpen={isOpen}
+            onOpenChange={updateOpenState}
+            label={label}>
+            {renderedMenu}
+          </LazyMenuBottomSheet>
+        </Suspense>
       ) : (
         layer.render(renderedMenu, {
           placement: 'below',

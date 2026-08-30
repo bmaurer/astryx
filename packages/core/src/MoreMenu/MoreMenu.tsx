@@ -22,7 +22,10 @@ import type {ReactNode} from 'react';
 import {useIcon} from '../Icon';
 import {DropdownMenu} from '../DropdownMenu/DropdownMenu';
 import {useSize} from '../SizeContext/SizeContext';
-import type {DropdownMenuOption, MenuPresentation} from '../DropdownMenu';
+import type {
+  DropdownMenuOption,
+  DropdownMenuPresentation,
+} from '../DropdownMenu';
 import type {LayerAlignment, LayerPlacement} from '../Layer';
 import type {ButtonVariant, ButtonSize} from '../Button';
 import type {BaseProps} from '../BaseProps';
@@ -92,7 +95,7 @@ export interface MoreMenuProps extends Pick<
    * coarse-pointer viewports and an anchored popover elsewhere.
    * @default 'popover'
    */
-  presentation?: MenuPresentation;
+  presentation?: DropdownMenuPresentation;
 
   /**
    * Controlled open state for the menu.

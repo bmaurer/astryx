@@ -1028,6 +1028,17 @@ describe('DropdownMenu adaptive-presentation example', () => {
     expect(bottomSheetExample!.source).not.toContain("type: 'divider'");
   });
 
+  it('uses adaptive presentation in the primary ContextMenu example', () => {
+    const contextMenuExamples = exampleRegistry['ContextMenu'] ?? [];
+    const basicExample = contextMenuExamples.find(example =>
+      /Basic/i.test(example.name),
+    );
+
+    expect(basicExample).toBeDefined();
+    expect(basicExample!.source).toContain('presentation="adaptive"');
+    expect(basicExample!.source).toContain('Long-press or right-click');
+  });
+
   it('registers the MoreMenu BottomSheet example', () => {
     const moreMenuExamples = exampleRegistry['MoreMenu'] ?? [];
     const bottomSheetExample = moreMenuExamples.find(example =>

@@ -10,6 +10,7 @@
  */
 
 import {describe, it, expect, vi, beforeEach} from 'vitest';
+import {readFileSync} from 'node:fs';
 import {render, screen, fireEvent, waitFor, act} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {useState} from 'react';
@@ -319,6 +320,17 @@ describe('DropdownMenu', () => {
     await user.click(screen.getByRole('button', {name: /Actions/}));
     expect(screen.getByRole('dialog', {name: 'Actions'})).toBeInTheDocument();
     expect(HTMLElement.prototype.showPopover).not.toHaveBeenCalled();
+  });
+
+  it('uses the shared menu BottomSheet frame', () => {
+    const source = readFileSync(
+      'packages/core/src/DropdownMenu/DropdownMenu.tsx',
+      'utf8',
+    );
+
+    expect(source).toContain('<MenuBottomSheet');
+    expect(source).not.toContain("import {BottomSheet} from '../BottomSheet'");
+    expect(source).not.toContain("import {Section} from '../Section'");
   });
 
   it('keeps adaptive presentation anchored without compact touch', async () => {

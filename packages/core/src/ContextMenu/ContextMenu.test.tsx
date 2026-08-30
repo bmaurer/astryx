@@ -174,6 +174,16 @@ describe('ContextMenu', () => {
     expect(HTMLElement.prototype.showPopover).not.toHaveBeenCalled();
   });
 
+  it('keeps only the top content padding in a menu BottomSheet', () => {
+    const source = readFileSync(
+      'packages/core/src/DropdownMenu/MenuBottomSheet.tsx',
+      'utf8',
+    );
+
+    expect(source).toContain('paddingBlockStart={4}');
+    expect(source).toContain('paddingBlockEnd={0}');
+  });
+
   it('uses the BottomSheet for adaptive presentation on compact touch', async () => {
     vi.stubGlobal(
       'matchMedia',

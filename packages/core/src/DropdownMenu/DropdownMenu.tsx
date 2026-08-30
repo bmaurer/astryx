@@ -4,7 +4,7 @@
 
 /**
  * @file DropdownMenu.tsx
- * @input Uses React, StyleX, usePopover, BottomSheet, Button, List,
+ * @input Uses React, StyleX, usePopover, MenuBottomSheet, Button, List,
  *   useListFocus, and the shared viewport-safe menu-width resolver
  * @output Exports DropdownMenu with caller-selected popover or bottom-sheet
  *   presentation
@@ -39,14 +39,12 @@ import React, {
   type ReactNode,
 } from 'react';
 import * as stylex from '@stylexjs/stylex';
-import {BottomSheet} from '../BottomSheet';
 import {usePopoverInternal} from '../Popover/usePopover';
 import {Button, type ButtonProps} from '../Button';
 import {Divider} from '../Divider';
 import {Heading} from '../Heading';
 import {Icon, renderIconSlot} from '../Icon';
 import {List, ListItem} from '../List';
-import {Section} from '../Section';
 
 import {renderDropdownItems} from './renderDropdownItems';
 import type {DropdownMenuItemProps} from './DropdownMenuItem';
@@ -64,9 +62,10 @@ import {useTypeahead} from '../hooks/useTypeahead';
 import {useMenuOverflow} from './useMenuOverflow';
 import {resolveMenuWidth} from './menuWidth';
 import {
-  useResolvedMenuPresentation,
-  type MenuPresentation,
-} from './menuPresentation';
+  useAdaptivePresentation,
+  type AdaptivePresentation,
+} from '../hooks/useAdaptivePresentation';
+import {MenuBottomSheet} from './MenuBottomSheet';
 import {layerAnimations} from '../Layer/layerAnimations.stylex';
 import type {LayerAlignment, LayerPlacement} from '../Layer/useLayer';
 import {
@@ -295,7 +294,7 @@ export type DropdownMenuOption =
 
 export type DropdownMenuButtonProps = Omit<ButtonProps, 'onClick'>;
 
-export type DropdownMenuPresentation = MenuPresentation;
+export type DropdownMenuPresentation = AdaptivePresentation;
 
 interface DropdownMenuBaseProps extends BaseProps {
   button?: DropdownMenuButtonProps;
@@ -631,58 +630,55 @@ function DropdownMenuBottomSheet({
         data-testid={testId}
       />
 
-      <BottomSheet
+      <MenuBottomSheet
         isOpen={isOpen}
         onOpenChange={setOpen}
         finalFocusRef={buttonRef}
-        label={sheetLabel}
-        height="hug">
-        <Section paddingBlock={4} paddingInline={1}>
-          <div
-            ref={actionListRef}
-            {...rest}
-            {...mergeProps(
-              themeProps('dropdown-menu', {presentation: 'bottom-sheet'}),
-              stylex.props(bottomSheetStyles.content, xstyle),
-              className,
-              style,
-            )}>
-            <div {...stylex.props(bottomSheetStyles.header)}>
-              {submenuPath.length > 0 && (
-                <Button
-                  label={backLabel}
-                  variant="ghost"
-                  size="sm"
-                  icon={
-                    <Icon
-                      icon="chevronLeft"
-                      size="sm"
-                      xstyle={rtlStyles.mirror}
-                    />
-                  }
-                  isIconOnly
-                  onClick={() => setSubmenuPath(path => path.slice(0, -1))}
-                />
-              )}
-              <Heading
-                ref={viewHeadingRef}
-                level={3}
-                tabIndex={-1}
-                xstyle={[
-                  bottomSheetStyles.viewHeading,
-                  submenuPath.length === 0 && bottomSheetStyles.rootHeading,
-                ]}>
-                {currentTitle}
-              </Heading>
-            </div>
-            <BottomSheetActionList
-              items={currentItems}
-              onSelect={handleSelect}
-              onOpenSubmenu={item => setSubmenuPath(path => [...path, item])}
-            />
+        label={sheetLabel}>
+        <div
+          ref={actionListRef}
+          {...rest}
+          {...mergeProps(
+            themeProps('dropdown-menu', {presentation: 'bottom-sheet'}),
+            stylex.props(bottomSheetStyles.content, xstyle),
+            className,
+            style,
+          )}>
+          <div {...stylex.props(bottomSheetStyles.header)}>
+            {submenuPath.length > 0 && (
+              <Button
+                label={backLabel}
+                variant="ghost"
+                size="sm"
+                icon={
+                  <Icon
+                    icon="chevronLeft"
+                    size="sm"
+                    xstyle={rtlStyles.mirror}
+                  />
+                }
+                isIconOnly
+                onClick={() => setSubmenuPath(path => path.slice(0, -1))}
+              />
+            )}
+            <Heading
+              ref={viewHeadingRef}
+              level={3}
+              tabIndex={-1}
+              xstyle={[
+                bottomSheetStyles.viewHeading,
+                submenuPath.length === 0 && bottomSheetStyles.rootHeading,
+              ]}>
+              {currentTitle}
+            </Heading>
           </div>
-        </Section>
-      </BottomSheet>
+          <BottomSheetActionList
+            items={currentItems}
+            onSelect={handleSelect}
+            onOpenSubmenu={item => setSubmenuPath(path => [...path, item])}
+          />
+        </div>
+      </MenuBottomSheet>
     </>
   );
 }
@@ -1062,9 +1058,7 @@ export function DropdownMenu(props: DropdownMenuProps) {
   const {onOpenChange} = props;
   const requestedPresentation =
     'items' in props ? (props.presentation ?? 'popover') : 'popover';
-  const resolvedPresentation = useResolvedMenuPresentation(
-    requestedPresentation,
-  );
+  const resolvedPresentation = useAdaptivePresentation(requestedPresentation);
   const isControlled = props.isMenuOpen !== undefined;
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const isOpen = isControlled ? props.isMenuOpen : internalIsOpen;
