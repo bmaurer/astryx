@@ -21,6 +21,7 @@ import {DropdownMenuDivider} from './DropdownMenuDivider';
 import {Divider} from '../Divider';
 import {rtlStyles} from '../utils';
 import {__resetInteractionModalityForTest} from '../utils/interactionModality';
+import {focusOutlineStyles} from '../utils/focusOutline.stylex';
 
 // Mock showPopover and hidePopover methods since they're not implemented in jsdom
 beforeEach(() => {
@@ -409,7 +410,7 @@ describe('DropdownMenu', () => {
     );
   });
 
-  it('clears touch focus from a bottom-sheet action and restored trigger', async () => {
+  it('restores touch focus without painting a trigger focus ring', async () => {
     render(
       <DropdownMenu
         button={{label: 'Actions'}}
@@ -429,7 +430,12 @@ describe('DropdownMenu', () => {
 
     expect(action).not.toHaveFocus();
     trigger.focus();
-    expect(trigger).not.toHaveFocus();
+    expect(trigger).toHaveFocus();
+    await waitFor(() =>
+      expect(trigger).toHaveClass(
+        stylex.props(focusOutlineStyles.suppressed).className!,
+      ),
+    );
   });
 
   it('defaults menu placement below', () => {

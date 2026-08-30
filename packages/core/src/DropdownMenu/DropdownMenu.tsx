@@ -59,6 +59,7 @@ import {
 } from './DropdownMenuContext';
 import {useListFocus} from '../hooks/useListFocus';
 import {useTypeahead} from '../hooks/useTypeahead';
+import {useFocusReturnVisibility} from '../hooks/useFocusReturnVisibility';
 import {useMenuOverflow} from './useMenuOverflow';
 import {resolveMenuWidth} from './menuWidth';
 import {
@@ -83,6 +84,7 @@ import {
   trackInteractionModality,
 } from '../utils/interactionModality';
 import {useTranslator} from '../i18n';
+import {focusOutlineStyles} from '../utils/focusOutline.stylex';
 
 const MENU_VIEWPORT_GUTTER = spacingVars['--spacing-4'];
 const MENU_MAX_INLINE_SIZE = `calc(100vi - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-left, 0px)) - max(${MENU_VIEWPORT_GUTTER}, env(safe-area-inset-right, 0px)))`;
@@ -502,7 +504,12 @@ function DropdownMenuBottomSheet({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const actionListRef = useRef<HTMLDivElement>(null);
   const openModalityRef = useRef<'keyboard' | 'pointer'>('pointer');
-  const shouldClearRestoredFocusRef = useRef(false);
+  const {
+    isFocusRingSuppressed,
+    onFocusReturnTargetFocus,
+    prepareFocusReturn,
+    resetFocusReturn,
+  } = useFocusReturnVisibility();
   const viewHeadingRef = useRef<HTMLHeadingElement>(null);
   const previousSubmenuDepthRef = useRef(0);
   const [internalIsOpen, setInternalIsOpen] = useState(false);
@@ -516,10 +523,6 @@ function DropdownMenuBottomSheet({
     typeof currentTitle === 'string' ? currentTitle : button.label;
 
   useEffect(() => {
-    trackInteractionModality();
-  }, []);
-
-  useEffect(() => {
     if (isOpen || submenuPath.length === 0) {
       return;
     }
@@ -531,15 +534,16 @@ function DropdownMenuBottomSheet({
     (nextIsOpen: boolean) => {
       if (!nextIsOpen) {
         setSubmenuPath([]);
-        shouldClearRestoredFocusRef.current =
-          getInteractionModality() === 'pointer';
+        prepareFocusReturn();
+      } else {
+        resetFocusReturn();
       }
       onOpenChange?.(nextIsOpen);
       if (!isControlled) {
         setInternalIsOpen(nextIsOpen);
       }
     },
-    [isControlled, onOpenChange],
+    [isControlled, onOpenChange, prepareFocusReturn, resetFocusReturn],
   );
 
   const handleSelect = useCallback(
@@ -594,7 +598,11 @@ function DropdownMenuBottomSheet({
       <Button
         {...button}
         ref={buttonRef}
-        xstyle={[isOpen && styles.triggerOpen, button.xstyle]}
+        xstyle={[
+          isOpen && styles.triggerOpen,
+          button.xstyle,
+          isFocusRingSuppressed && focusOutlineStyles.suppressed,
+        ]}
         tooltip={isOpen ? undefined : button.tooltip}
         endContent={resolvedEndContent}
         onPointerDown={event => {
@@ -613,13 +621,7 @@ function DropdownMenuBottomSheet({
         }}
         onFocus={event => {
           button.onFocus?.(event);
-          if (
-            shouldClearRestoredFocusRef.current &&
-            getInteractionModality() === 'pointer'
-          ) {
-            shouldClearRestoredFocusRef.current = false;
-            event.currentTarget.blur();
-          }
+          onFocusReturnTargetFocus();
         }}
         onClick={() => {
           onClick?.();
