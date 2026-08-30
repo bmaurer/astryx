@@ -389,8 +389,7 @@ function StandaloneBottomSheet({
           {children}
         </BottomSheetPanel>
       </div>
-      {/* A modal sheet's ::backdrop already answers Safari's edge sampler. */}
-      {hasScrim ? null : <BottomSheetEdgeTint />}
+      <BottomSheetEdgeTint />
     </dialog>
   );
 }
