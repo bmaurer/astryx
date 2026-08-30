@@ -85,7 +85,7 @@ import {groupStyles} from '../InputGroup/groupStyles';
 import {useInputGroup} from '../InputGroup/InputGroupContext';
 import {VisuallyHidden} from '../VisuallyHidden';
 import {useTranslator} from '../i18n';
-import type {MenuPresentation} from '../DropdownMenu/menuPresentation';
+import type {AdaptivePresentation} from '../hooks/useAdaptivePresentation';
 import {SelectorBottomSheet} from './SelectorBottomSheet';
 import {useSelectorPresentation} from './useSelectorPresentation';
 
@@ -453,7 +453,7 @@ export type SelectorSize = 'sm' | 'md' | 'lg';
 
 export type SelectorVariant = 'input' | 'ghost';
 
-export type SelectorPresentation = MenuPresentation;
+export type SelectorPresentation = AdaptivePresentation;
 
 export type SelectorStatusType = 'warning' | 'error' | 'success';
 

@@ -23,24 +23,24 @@ import {
   type UsePopoverReturn,
 } from '../Popover/usePopover';
 import {
-  useResolvedMenuPresentation,
-  type MenuPresentation,
-  type ResolvedMenuPresentation,
-} from '../DropdownMenu/menuPresentation';
+  useAdaptivePresentation,
+  type AdaptivePresentation,
+  type ResolvedAdaptivePresentation,
+} from '../hooks/useAdaptivePresentation';
 import {
   getInteractionModality,
   trackInteractionModality,
 } from '../utils/interactionModality';
 
 interface UseSelectorPresentationOptions {
-  presentation: MenuPresentation;
+  presentation: AdaptivePresentation;
   onHide: () => void;
   popoverOptions: Omit<UsePopoverOptions, 'onHide'>;
   triggerRef: RefObject<HTMLElement | null>;
 }
 
 interface SelectorPresentationController {
-  activePresentation: ResolvedMenuPresentation;
+  activePresentation: ResolvedAdaptivePresentation;
   hide: () => void;
   isOpen: boolean;
   isSheetOpen: boolean;
@@ -57,9 +57,9 @@ export function useSelectorPresentation({
   popoverOptions,
   triggerRef,
 }: UseSelectorPresentationOptions): SelectorPresentationController {
-  const resolvedPresentation = useResolvedMenuPresentation(presentation);
+  const resolvedPresentation = useAdaptivePresentation(presentation);
   const activePresentationRef =
-    useRef<ResolvedMenuPresentation>(resolvedPresentation);
+    useRef<ResolvedAdaptivePresentation>(resolvedPresentation);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const isSheetOpenRef = useRef(false);
   const onHideRef = useRef(onHide);

@@ -84,7 +84,7 @@ import {groupStyles} from '../InputGroup/groupStyles';
 import {useInputGroup} from '../InputGroup/InputGroupContext';
 import {VisuallyHidden} from '../VisuallyHidden';
 import {useTranslator} from '../i18n';
-import type {MenuPresentation} from '../DropdownMenu/menuPresentation';
+import type {AdaptivePresentation} from '../hooks/useAdaptivePresentation';
 import {SelectorBottomSheet} from '../Selector/SelectorBottomSheet';
 import {useSelectorPresentation} from '../Selector/useSelectorPresentation';
 
@@ -419,7 +419,7 @@ export type MultiSelectorSize = 'sm' | 'md' | 'lg';
 
 export type MultiSelectorVariant = 'input' | 'ghost';
 
-export type MultiSelectorPresentation = MenuPresentation;
+export type MultiSelectorPresentation = AdaptivePresentation;
 
 export type MultiSelectorStatusType = 'warning' | 'error' | 'success';
 
