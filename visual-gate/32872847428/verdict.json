@@ -1,0 +1,2054 @@
+{
+  "version": 1,
+  "status": "changed",
+  "generatedAt": "2026-08-25T16:45:15.383Z",
+  "context": {
+    "sha": "780938e40a3ba529d60ab2053e930df26931d199",
+    "ref": "refs/heads/main",
+    "runId": "32872847428",
+    "tiers": [
+      "surface",
+      "theme-matrix"
+    ],
+    "baselineExists": true,
+    "scoped": false,
+    "components": []
+  },
+  "platform": "linux-arm64",
+  "baseline": {
+    "capturedAt": "2026-08-24T15:13:47.802Z",
+    "sha": "8a055dfb3fe3b64210308acac242f27b89c41969",
+    "platform": "linux-arm64"
+  },
+  "counts": {
+    "total": 520,
+    "unchanged": 383,
+    "changed": 109,
+    "added": 28,
+    "removed": 22,
+    "failed": 0
+  },
+  "changes": [
+    {
+      "key": "core-textarea--status-variations__butter-light",
+      "diffPixels": 78635,
+      "diffRatio": 0.09999,
+      "sizeChanged": false,
+      "storyId": "core-textarea--status-variations",
+      "title": "Core/TextArea",
+      "name": "Status Variations",
+      "component": "TextArea",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:textarea"
+      ]
+    },
+    {
+      "key": "core-textarea--status-variations__butter-dark",
+      "diffPixels": 77798,
+      "diffRatio": 0.098925,
+      "sizeChanged": false,
+      "storyId": "core-textarea--status-variations",
+      "title": "Core/TextArea",
+      "name": "Status Variations",
+      "component": "TextArea",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:textarea"
+      ]
+    },
+    {
+      "key": "core-banner--all-statuses__y2k-dark",
+      "diffPixels": 58730,
+      "diffRatio": 0.074679,
+      "sizeChanged": false,
+      "storyId": "core-banner--all-statuses",
+      "title": "Core/Banner",
+      "name": "All Status Variants",
+      "component": "Banner",
+      "theme": "y2k",
+      "mode": "dark",
+      "reasons": [
+        "theme:y2k:banner"
+      ]
+    },
+    {
+      "key": "core-banner--all-statuses__y2k-light",
+      "diffPixels": 58627,
+      "diffRatio": 0.074548,
+      "sizeChanged": false,
+      "storyId": "core-banner--all-statuses",
+      "title": "Core/Banner",
+      "name": "All Status Variants",
+      "component": "Banner",
+      "theme": "y2k",
+      "mode": "light",
+      "reasons": [
+        "theme:y2k:banner"
+      ]
+    },
+    {
+      "key": "core-banner--all-statuses__gothic-dark",
+      "diffPixels": 46719,
+      "diffRatio": 0.059406,
+      "sizeChanged": false,
+      "storyId": "core-banner--all-statuses",
+      "title": "Core/Banner",
+      "name": "All Status Variants",
+      "component": "Banner",
+      "theme": "gothic",
+      "mode": "dark",
+      "reasons": [
+        "theme:gothic:banner"
+      ]
+    },
+    {
+      "key": "core-banner--all-statuses__gothic-light",
+      "diffPixels": 46719,
+      "diffRatio": 0.059406,
+      "sizeChanged": false,
+      "storyId": "core-banner--all-statuses",
+      "title": "Core/Banner",
+      "name": "All Status Variants",
+      "component": "Banner",
+      "theme": "gothic",
+      "mode": "light",
+      "reasons": [
+        "theme:gothic:banner"
+      ]
+    },
+    {
+      "key": "lab-schedule--monthly__neutral-dark",
+      "diffPixels": 43586,
+      "diffRatio": 0.045089,
+      "sizeChanged": false,
+      "storyId": "lab-schedule--monthly",
+      "title": "Lab/Schedule",
+      "name": "Monthly",
+      "component": "Schedule",
+      "theme": "neutral",
+      "mode": "dark",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "core-field--status-variants__butter-light",
+      "diffPixels": 41465,
+      "diffRatio": 0.052725,
+      "sizeChanged": false,
+      "storyId": "core-field--status-variants",
+      "title": "Core/Field",
+      "name": "Status Variants",
+      "component": "Field",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:field-status"
+      ]
+    },
+    {
+      "key": "core-field--status-variants__butter-dark",
+      "diffPixels": 41365,
+      "diffRatio": 0.052598,
+      "sizeChanged": false,
+      "storyId": "core-field--status-variants",
+      "title": "Core/Field",
+      "name": "Status Variants",
+      "component": "Field",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:field-status"
+      ]
+    },
+    {
+      "key": "core-field--status-variants__stone-dark",
+      "diffPixels": 38680,
+      "diffRatio": 0.049184,
+      "sizeChanged": false,
+      "storyId": "core-field--status-variants",
+      "title": "Core/Field",
+      "name": "Status Variants",
+      "component": "Field",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:field-status"
+      ]
+    },
+    {
+      "key": "core-textarea--status-variations__stone-dark",
+      "diffPixels": 38392,
+      "diffRatio": 0.048818,
+      "sizeChanged": false,
+      "storyId": "core-textarea--status-variations",
+      "title": "Core/TextArea",
+      "name": "Status Variations",
+      "component": "TextArea",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:textarea"
+      ]
+    },
+    {
+      "key": "core-dateinput--with-success-status__butter-dark",
+      "diffPixels": 34317,
+      "diffRatio": 0.043636,
+      "sizeChanged": false,
+      "storyId": "core-dateinput--with-success-status",
+      "title": "Core/DateInput",
+      "name": "With Success Status",
+      "component": "DateInput",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:date-input"
+      ]
+    },
+    {
+      "key": "core-dateinput--with-success-status__butter-light",
+      "diffPixels": 34289,
+      "diffRatio": 0.043601,
+      "sizeChanged": false,
+      "storyId": "core-dateinput--with-success-status",
+      "title": "Core/DateInput",
+      "name": "With Success Status",
+      "component": "DateInput",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:date-input"
+      ]
+    },
+    {
+      "key": "core-dateinput--with-error-status__butter-dark",
+      "diffPixels": 34145,
+      "diffRatio": 0.043418,
+      "sizeChanged": false,
+      "storyId": "core-dateinput--with-error-status",
+      "title": "Core/DateInput",
+      "name": "With Error Status",
+      "component": "DateInput",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:date-input"
+      ]
+    },
+    {
+      "key": "core-dateinput--with-error-status__butter-light",
+      "diffPixels": 34136,
+      "diffRatio": 0.043406,
+      "sizeChanged": false,
+      "storyId": "core-dateinput--with-error-status",
+      "title": "Core/DateInput",
+      "name": "With Error Status",
+      "component": "DateInput",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:date-input"
+      ]
+    },
+    {
+      "key": "core-timeinput--with-success-status__butter-light",
+      "diffPixels": 33957,
+      "diffRatio": 0.043179,
+      "sizeChanged": false,
+      "storyId": "core-timeinput--with-success-status",
+      "title": "Core/TimeInput",
+      "name": "With Success Status",
+      "component": "TimeInput",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:time-input"
+      ]
+    },
+    {
+      "key": "core-timeinput--with-success-status__butter-dark",
+      "diffPixels": 33924,
+      "diffRatio": 0.043137,
+      "sizeChanged": false,
+      "storyId": "core-timeinput--with-success-status",
+      "title": "Core/TimeInput",
+      "name": "With Success Status",
+      "component": "TimeInput",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:time-input"
+      ]
+    },
+    {
+      "key": "core-timeinput--with-error-status__butter-dark",
+      "diffPixels": 33860,
+      "diffRatio": 0.043055,
+      "sizeChanged": false,
+      "storyId": "core-timeinput--with-error-status",
+      "title": "Core/TimeInput",
+      "name": "With Error Status",
+      "component": "TimeInput",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:time-input"
+      ]
+    },
+    {
+      "key": "core-timeinput--with-error-status__butter-light",
+      "diffPixels": 33816,
+      "diffRatio": 0.042999,
+      "sizeChanged": false,
+      "storyId": "core-timeinput--with-error-status",
+      "title": "Core/TimeInput",
+      "name": "With Error Status",
+      "component": "TimeInput",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:time-input"
+      ]
+    },
+    {
+      "key": "core-dateinput--with-warning-status__butter-dark",
+      "diffPixels": 33807,
+      "diffRatio": 0.042988,
+      "sizeChanged": false,
+      "storyId": "core-dateinput--with-warning-status",
+      "title": "Core/DateInput",
+      "name": "With Warning Status",
+      "component": "DateInput",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:date-input"
+      ]
+    },
+    {
+      "key": "core-dateinput--with-warning-status__butter-light",
+      "diffPixels": 33799,
+      "diffRatio": 0.042978,
+      "sizeChanged": false,
+      "storyId": "core-dateinput--with-warning-status",
+      "title": "Core/DateInput",
+      "name": "With Warning Status",
+      "component": "DateInput",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:date-input"
+      ]
+    },
+    {
+      "key": "core-timeinput--with-warning-status__butter-light",
+      "diffPixels": 33511,
+      "diffRatio": 0.042611,
+      "sizeChanged": false,
+      "storyId": "core-timeinput--with-warning-status",
+      "title": "Core/TimeInput",
+      "name": "With Warning Status",
+      "component": "TimeInput",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:time-input"
+      ]
+    },
+    {
+      "key": "core-timeinput--with-warning-status__butter-dark",
+      "diffPixels": 33496,
+      "diffRatio": 0.042592,
+      "sizeChanged": false,
+      "storyId": "core-timeinput--with-warning-status",
+      "title": "Core/TimeInput",
+      "name": "With Warning Status",
+      "component": "TimeInput",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:time-input"
+      ]
+    },
+    {
+      "key": "core-dateinput--with-success-status__stone-dark",
+      "diffPixels": 32382,
+      "diffRatio": 0.041176,
+      "sizeChanged": false,
+      "storyId": "core-dateinput--with-success-status",
+      "title": "Core/DateInput",
+      "name": "With Success Status",
+      "component": "DateInput",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:date-input"
+      ]
+    },
+    {
+      "key": "core-timeinput--with-success-status__stone-dark",
+      "diffPixels": 32295,
+      "diffRatio": 0.041065,
+      "sizeChanged": false,
+      "storyId": "core-timeinput--with-success-status",
+      "title": "Core/TimeInput",
+      "name": "With Success Status",
+      "component": "TimeInput",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:time-input"
+      ]
+    },
+    {
+      "key": "core-dateinput--with-error-status__stone-dark",
+      "diffPixels": 32219,
+      "diffRatio": 0.040969,
+      "sizeChanged": false,
+      "storyId": "core-dateinput--with-error-status",
+      "title": "Core/DateInput",
+      "name": "With Error Status",
+      "component": "DateInput",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:date-input"
+      ]
+    },
+    {
+      "key": "core-dateinput--with-warning-status__stone-dark",
+      "diffPixels": 32125,
+      "diffRatio": 0.040849,
+      "sizeChanged": false,
+      "storyId": "core-dateinput--with-warning-status",
+      "title": "Core/DateInput",
+      "name": "With Warning Status",
+      "component": "DateInput",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:date-input"
+      ]
+    },
+    {
+      "key": "core-button--all-variants__y2k-dark",
+      "diffPixels": 32094,
+      "diffRatio": 0.04081,
+      "sizeChanged": false,
+      "storyId": "core-button--all-variants",
+      "title": "Core/Button",
+      "name": "All Variants",
+      "component": "Button",
+      "theme": "y2k",
+      "mode": "dark",
+      "reasons": [
+        "theme:y2k:button"
+      ]
+    },
+    {
+      "key": "core-timeinput--with-error-status__stone-dark",
+      "diffPixels": 32026,
+      "diffRatio": 0.040723,
+      "sizeChanged": false,
+      "storyId": "core-timeinput--with-error-status",
+      "title": "Core/TimeInput",
+      "name": "With Error Status",
+      "component": "TimeInput",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:time-input"
+      ]
+    },
+    {
+      "key": "core-timeinput--with-warning-status__stone-dark",
+      "diffPixels": 32003,
+      "diffRatio": 0.040694,
+      "sizeChanged": false,
+      "storyId": "core-timeinput--with-warning-status",
+      "title": "Core/TimeInput",
+      "name": "With Warning Status",
+      "component": "TimeInput",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:time-input"
+      ]
+    },
+    {
+      "key": "core-textinput--status-variations__butter-light",
+      "diffPixels": 31784,
+      "diffRatio": 0.040415,
+      "sizeChanged": false,
+      "storyId": "core-textinput--status-variations",
+      "title": "Core/TextInput",
+      "name": "Status Variations",
+      "component": "TextInput",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:text-input"
+      ]
+    },
+    {
+      "key": "core-textinput--status-variations__butter-dark",
+      "diffPixels": 31739,
+      "diffRatio": 0.040358,
+      "sizeChanged": false,
+      "storyId": "core-textinput--status-variations",
+      "title": "Core/TextInput",
+      "name": "Status Variations",
+      "component": "TextInput",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:text-input"
+      ]
+    },
+    {
+      "key": "core-numberinput--status-variations__butter-light",
+      "diffPixels": 30732,
+      "diffRatio": 0.039078,
+      "sizeChanged": false,
+      "storyId": "core-numberinput--status-variations",
+      "title": "Core/NumberInput",
+      "name": "Status Variations",
+      "component": "NumberInput",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:number-input"
+      ]
+    },
+    {
+      "key": "core-numberinput--status-variations__butter-dark",
+      "diffPixels": 30664,
+      "diffRatio": 0.038991,
+      "sizeChanged": false,
+      "storyId": "core-numberinput--status-variations",
+      "title": "Core/NumberInput",
+      "name": "Status Variations",
+      "component": "NumberInput",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:number-input"
+      ]
+    },
+    {
+      "key": "core-numberinput--status-variations__stone-dark",
+      "diffPixels": 28956,
+      "diffRatio": 0.036819,
+      "sizeChanged": false,
+      "storyId": "core-numberinput--status-variations",
+      "title": "Core/NumberInput",
+      "name": "Status Variations",
+      "component": "NumberInput",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:number-input"
+      ]
+    },
+    {
+      "key": "core-textinput--status-variations__stone-dark",
+      "diffPixels": 28470,
+      "diffRatio": 0.036201,
+      "sizeChanged": false,
+      "storyId": "core-textinput--status-variations",
+      "title": "Core/TextInput",
+      "name": "Status Variations",
+      "component": "TextInput",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:text-input"
+      ]
+    },
+    {
+      "key": "core-button--all-variants__butter-light",
+      "diffPixels": 26122,
+      "diffRatio": 0.033216,
+      "sizeChanged": false,
+      "storyId": "core-button--all-variants",
+      "title": "Core/Button",
+      "name": "All Variants",
+      "component": "Button",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:button"
+      ]
+    },
+    {
+      "key": "core-button--all-variants__y2k-light",
+      "diffPixels": 25959,
+      "diffRatio": 0.033009,
+      "sizeChanged": false,
+      "storyId": "core-button--all-variants",
+      "title": "Core/Button",
+      "name": "All Variants",
+      "component": "Button",
+      "theme": "y2k",
+      "mode": "light",
+      "reasons": [
+        "theme:y2k:button"
+      ]
+    },
+    {
+      "key": "core-button--all-variants__butter-dark",
+      "diffPixels": 21838,
+      "diffRatio": 0.027768,
+      "sizeChanged": false,
+      "storyId": "core-button--all-variants",
+      "title": "Core/Button",
+      "name": "All Variants",
+      "component": "Button",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:button"
+      ]
+    },
+    {
+      "key": "core-multiselector--status__butter-light",
+      "diffPixels": 20130,
+      "diffRatio": 0.025597,
+      "sizeChanged": false,
+      "storyId": "core-multiselector--status",
+      "title": "Core/MultiSelector",
+      "name": "Status",
+      "component": "MultiSelector",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:multi-selector"
+      ]
+    },
+    {
+      "key": "core-multiselector--status__butter-dark",
+      "diffPixels": 20102,
+      "diffRatio": 0.025561,
+      "sizeChanged": false,
+      "storyId": "core-multiselector--status",
+      "title": "Core/MultiSelector",
+      "name": "Status",
+      "component": "MultiSelector",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:multi-selector"
+      ]
+    },
+    {
+      "key": "core-multiselector--status__stone-dark",
+      "diffPixels": 18657,
+      "diffRatio": 0.023724,
+      "sizeChanged": false,
+      "storyId": "core-multiselector--status",
+      "title": "Core/MultiSelector",
+      "name": "Status",
+      "component": "MultiSelector",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:multi-selector"
+      ]
+    },
+    {
+      "key": "core-selector--with-status__butter-light",
+      "diffPixels": 16822,
+      "diffRatio": 0.02139,
+      "sizeChanged": false,
+      "storyId": "core-selector--with-status",
+      "title": "Core/Selector",
+      "name": "With Status",
+      "component": "Selector",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:selector"
+      ]
+    },
+    {
+      "key": "core-selector--with-status__butter-dark",
+      "diffPixels": 16779,
+      "diffRatio": 0.021336,
+      "sizeChanged": false,
+      "storyId": "core-selector--with-status",
+      "title": "Core/Selector",
+      "name": "With Status",
+      "component": "Selector",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:selector"
+      ]
+    },
+    {
+      "key": "core-selector--with-status__stone-dark",
+      "diffPixels": 15610,
+      "diffRatio": 0.019849,
+      "sizeChanged": false,
+      "storyId": "core-selector--with-status",
+      "title": "Core/Selector",
+      "name": "With Status",
+      "component": "Selector",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:selector"
+      ]
+    },
+    {
+      "key": "lab-schedule--monthly__neutral-light",
+      "diffPixels": 15333,
+      "diffRatio": 0.015862,
+      "sizeChanged": false,
+      "storyId": "lab-schedule--monthly",
+      "title": "Lab/Schedule",
+      "name": "Monthly",
+      "component": "Schedule",
+      "theme": "neutral",
+      "mode": "light",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "core-tokenizer--with-success__butter-light",
+      "diffPixels": 13783,
+      "diffRatio": 0.017526,
+      "sizeChanged": false,
+      "storyId": "core-tokenizer--with-success",
+      "title": "Core/Tokenizer",
+      "name": "With Success",
+      "component": "Tokenizer",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:tokenizer"
+      ]
+    },
+    {
+      "key": "core-tokenizer--with-success__butter-dark",
+      "diffPixels": 13704,
+      "diffRatio": 0.017426,
+      "sizeChanged": false,
+      "storyId": "core-tokenizer--with-success",
+      "title": "Core/Tokenizer",
+      "name": "With Success",
+      "component": "Tokenizer",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:tokenizer"
+      ]
+    },
+    {
+      "key": "core-tokenizer--with-error__butter-light",
+      "diffPixels": 13605,
+      "diffRatio": 0.0173,
+      "sizeChanged": false,
+      "storyId": "core-tokenizer--with-error",
+      "title": "Core/Tokenizer",
+      "name": "With Error",
+      "component": "Tokenizer",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:tokenizer"
+      ]
+    },
+    {
+      "key": "core-tokenizer--with-error__butter-dark",
+      "diffPixels": 13573,
+      "diffRatio": 0.017259,
+      "sizeChanged": false,
+      "storyId": "core-tokenizer--with-error",
+      "title": "Core/Tokenizer",
+      "name": "With Error",
+      "component": "Tokenizer",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:tokenizer"
+      ]
+    },
+    {
+      "key": "core-tokenizer--with-warning__butter-light",
+      "diffPixels": 13370,
+      "diffRatio": 0.017001,
+      "sizeChanged": false,
+      "storyId": "core-tokenizer--with-warning",
+      "title": "Core/Tokenizer",
+      "name": "With Warning",
+      "component": "Tokenizer",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:tokenizer"
+      ]
+    },
+    {
+      "key": "core-tokenizer--with-warning__butter-dark",
+      "diffPixels": 13262,
+      "diffRatio": 0.016864,
+      "sizeChanged": false,
+      "storyId": "core-tokenizer--with-warning",
+      "title": "Core/Tokenizer",
+      "name": "With Warning",
+      "component": "Tokenizer",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:tokenizer"
+      ]
+    },
+    {
+      "key": "core-tokenizer--with-success__stone-dark",
+      "diffPixels": 12861,
+      "diffRatio": 0.016354,
+      "sizeChanged": false,
+      "storyId": "core-tokenizer--with-success",
+      "title": "Core/Tokenizer",
+      "name": "With Success",
+      "component": "Tokenizer",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:tokenizer"
+      ]
+    },
+    {
+      "key": "core-tokenizer--with-error__stone-dark",
+      "diffPixels": 12557,
+      "diffRatio": 0.015967,
+      "sizeChanged": false,
+      "storyId": "core-tokenizer--with-error",
+      "title": "Core/Tokenizer",
+      "name": "With Error",
+      "component": "Tokenizer",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:tokenizer"
+      ]
+    },
+    {
+      "key": "core-tokenizer--with-warning__stone-dark",
+      "diffPixels": 12464,
+      "diffRatio": 0.015849,
+      "sizeChanged": false,
+      "storyId": "core-tokenizer--with-warning",
+      "title": "Core/Tokenizer",
+      "name": "With Warning",
+      "component": "Tokenizer",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:tokenizer"
+      ]
+    },
+    {
+      "key": "core-typeahead--with-success__butter-light",
+      "diffPixels": 11000,
+      "diffRatio": 0.013987,
+      "sizeChanged": false,
+      "storyId": "core-typeahead--with-success",
+      "title": "Core/Typeahead",
+      "name": "With Success",
+      "component": "Typeahead",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:typeahead"
+      ]
+    },
+    {
+      "key": "core-typeahead--with-error__butter-light",
+      "diffPixels": 10984,
+      "diffRatio": 0.013967,
+      "sizeChanged": false,
+      "storyId": "core-typeahead--with-error",
+      "title": "Core/Typeahead",
+      "name": "With Error",
+      "component": "Typeahead",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:typeahead"
+      ]
+    },
+    {
+      "key": "core-progressbar--variants__stone-dark",
+      "diffPixels": 10978,
+      "diffRatio": 0.013959,
+      "sizeChanged": false,
+      "storyId": "core-progressbar--variants",
+      "title": "Core/ProgressBar",
+      "name": "Variants",
+      "component": "ProgressBar",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:progressbar-fill"
+      ]
+    },
+    {
+      "key": "core-typeahead--with-error__butter-dark",
+      "diffPixels": 10956,
+      "diffRatio": 0.013931,
+      "sizeChanged": false,
+      "storyId": "core-typeahead--with-error",
+      "title": "Core/Typeahead",
+      "name": "With Error",
+      "component": "Typeahead",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:typeahead"
+      ]
+    },
+    {
+      "key": "core-typeahead--with-success__butter-dark",
+      "diffPixels": 10933,
+      "diffRatio": 0.013902,
+      "sizeChanged": false,
+      "storyId": "core-typeahead--with-success",
+      "title": "Core/Typeahead",
+      "name": "With Success",
+      "component": "Typeahead",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:typeahead"
+      ]
+    },
+    {
+      "key": "core-typeahead--with-warning__butter-light",
+      "diffPixels": 10687,
+      "diffRatio": 0.013589,
+      "sizeChanged": false,
+      "storyId": "core-typeahead--with-warning",
+      "title": "Core/Typeahead",
+      "name": "With Warning",
+      "component": "Typeahead",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:typeahead"
+      ]
+    },
+    {
+      "key": "core-typeahead--with-warning__butter-dark",
+      "diffPixels": 10617,
+      "diffRatio": 0.0135,
+      "sizeChanged": false,
+      "storyId": "core-typeahead--with-warning",
+      "title": "Core/Typeahead",
+      "name": "With Warning",
+      "component": "Typeahead",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:typeahead"
+      ]
+    },
+    {
+      "key": "core-typeahead--with-success__stone-dark",
+      "diffPixels": 10202,
+      "diffRatio": 0.012973,
+      "sizeChanged": false,
+      "storyId": "core-typeahead--with-success",
+      "title": "Core/Typeahead",
+      "name": "With Success",
+      "component": "Typeahead",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:typeahead"
+      ]
+    },
+    {
+      "key": "core-typeahead--with-error__stone-dark",
+      "diffPixels": 10132,
+      "diffRatio": 0.012884,
+      "sizeChanged": false,
+      "storyId": "core-typeahead--with-error",
+      "title": "Core/Typeahead",
+      "name": "With Error",
+      "component": "Typeahead",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:typeahead"
+      ]
+    },
+    {
+      "key": "core-typeahead--with-warning__stone-dark",
+      "diffPixels": 9930,
+      "diffRatio": 0.012627,
+      "sizeChanged": false,
+      "storyId": "core-typeahead--with-warning",
+      "title": "Core/Typeahead",
+      "name": "With Warning",
+      "component": "Typeahead",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:typeahead"
+      ]
+    },
+    {
+      "key": "core-badge--variants__butter-light",
+      "diffPixels": 7908,
+      "diffRatio": 0.010056,
+      "sizeChanged": false,
+      "storyId": "core-badge--variants",
+      "title": "Core/Badge",
+      "name": "Variants",
+      "component": "Badge",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:badge"
+      ]
+    },
+    {
+      "key": "core-progressbar--default__stone-dark",
+      "diffPixels": 7894,
+      "diffRatio": 0.010038,
+      "sizeChanged": false,
+      "storyId": "core-progressbar--default",
+      "title": "Core/ProgressBar",
+      "name": "Default",
+      "component": "ProgressBar",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:progressbar-track"
+      ]
+    },
+    {
+      "key": "core-badge--variants__butter-dark",
+      "diffPixels": 7047,
+      "diffRatio": 0.008961,
+      "sizeChanged": false,
+      "storyId": "core-badge--variants",
+      "title": "Core/Badge",
+      "name": "Variants",
+      "component": "Badge",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:badge"
+      ]
+    },
+    {
+      "key": "core-progressbar--variants__stone-light",
+      "diffPixels": 6656,
+      "diffRatio": 0.008464,
+      "sizeChanged": false,
+      "storyId": "core-progressbar--variants",
+      "title": "Core/ProgressBar",
+      "name": "Variants",
+      "component": "ProgressBar",
+      "theme": "stone",
+      "mode": "light",
+      "reasons": [
+        "theme:stone:progressbar-fill"
+      ]
+    },
+    {
+      "key": "core-progressbar--variants__butter-dark",
+      "diffPixels": 6502,
+      "diffRatio": 0.008268,
+      "sizeChanged": false,
+      "storyId": "core-progressbar--variants",
+      "title": "Core/ProgressBar",
+      "name": "Variants",
+      "component": "ProgressBar",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:progressbar-fill"
+      ]
+    },
+    {
+      "key": "core-progressbar--variants__butter-light",
+      "diffPixels": 5244,
+      "diffRatio": 0.006668,
+      "sizeChanged": false,
+      "storyId": "core-progressbar--variants",
+      "title": "Core/ProgressBar",
+      "name": "Variants",
+      "component": "ProgressBar",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:progressbar-fill"
+      ]
+    },
+    {
+      "key": "core-progressbar--default__stone-light",
+      "diffPixels": 4732,
+      "diffRatio": 0.006017,
+      "sizeChanged": false,
+      "storyId": "core-progressbar--default",
+      "title": "Core/ProgressBar",
+      "name": "Default",
+      "component": "ProgressBar",
+      "theme": "stone",
+      "mode": "light",
+      "reasons": [
+        "theme:stone:progressbar-track"
+      ]
+    },
+    {
+      "key": "core-badge--variants__stone-dark",
+      "diffPixels": 4055,
+      "diffRatio": 0.005156,
+      "sizeChanged": false,
+      "storyId": "core-badge--variants",
+      "title": "Core/Badge",
+      "name": "Variants",
+      "component": "Badge",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:badge"
+      ]
+    },
+    {
+      "key": "core-badge--variants__stone-light",
+      "diffPixels": 3314,
+      "diffRatio": 0.004214,
+      "sizeChanged": false,
+      "storyId": "core-badge--variants",
+      "title": "Core/Badge",
+      "name": "Variants",
+      "component": "Badge",
+      "theme": "stone",
+      "mode": "light",
+      "reasons": [
+        "theme:stone:badge"
+      ]
+    },
+    {
+      "key": "core-progressbar--default__butter-dark",
+      "diffPixels": 3162,
+      "diffRatio": 0.004021,
+      "sizeChanged": false,
+      "storyId": "core-progressbar--default",
+      "title": "Core/ProgressBar",
+      "name": "Default",
+      "component": "ProgressBar",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:progressbar-track"
+      ]
+    },
+    {
+      "key": "core-badge--variants__y2k-dark",
+      "diffPixels": 3031,
+      "diffRatio": 0.003854,
+      "sizeChanged": false,
+      "storyId": "core-badge--variants",
+      "title": "Core/Badge",
+      "name": "Variants",
+      "component": "Badge",
+      "theme": "y2k",
+      "mode": "dark",
+      "reasons": [
+        "theme:y2k:badge"
+      ]
+    },
+    {
+      "key": "core-alertdialog--delete__neutral-light",
+      "diffPixels": 3007,
+      "diffRatio": 0.003824,
+      "sizeChanged": false,
+      "storyId": "core-alertdialog--delete",
+      "title": "Core/AlertDialog",
+      "name": "Delete",
+      "component": "AlertDialog",
+      "theme": "neutral",
+      "mode": "light",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "core-alertdialog--delete__neutral-dark",
+      "diffPixels": 2992,
+      "diffRatio": 0.003805,
+      "sizeChanged": false,
+      "storyId": "core-alertdialog--delete",
+      "title": "Core/AlertDialog",
+      "name": "Delete",
+      "component": "AlertDialog",
+      "theme": "neutral",
+      "mode": "dark",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "core-button--icon-with-text__stone-light",
+      "diffPixels": 2834,
+      "diffRatio": 0.003604,
+      "sizeChanged": false,
+      "storyId": "core-button--icon-with-text",
+      "title": "Core/Button",
+      "name": "Icon With Text",
+      "component": "Button",
+      "theme": "stone",
+      "mode": "light",
+      "reasons": [
+        "theme:stone:button"
+      ]
+    },
+    {
+      "key": "core-button--icon-with-text__stone-dark",
+      "diffPixels": 2831,
+      "diffRatio": 0.0036,
+      "sizeChanged": false,
+      "storyId": "core-button--icon-with-text",
+      "title": "Core/Button",
+      "name": "Icon With Text",
+      "component": "Button",
+      "theme": "stone",
+      "mode": "dark",
+      "reasons": [
+        "theme:stone:button"
+      ]
+    },
+    {
+      "key": "core-badge--variants__neutral-light",
+      "diffPixels": 2230,
+      "diffRatio": 0.002836,
+      "sizeChanged": false,
+      "storyId": "core-badge--variants",
+      "title": "Core/Badge",
+      "name": "Variants",
+      "component": "Badge",
+      "theme": "neutral",
+      "mode": "light",
+      "reasons": [
+        "theme:neutral:badge"
+      ]
+    },
+    {
+      "key": "core-badge--variants__neutral-dark",
+      "diffPixels": 2151,
+      "diffRatio": 0.002735,
+      "sizeChanged": false,
+      "storyId": "core-badge--variants",
+      "title": "Core/Badge",
+      "name": "Variants",
+      "component": "Badge",
+      "theme": "neutral",
+      "mode": "dark",
+      "reasons": [
+        "theme:neutral:badge"
+      ]
+    },
+    {
+      "key": "core-button--destructive__neutral-dark",
+      "diffPixels": 1945,
+      "diffRatio": 0.002473,
+      "sizeChanged": false,
+      "storyId": "core-button--destructive",
+      "title": "Core/Button",
+      "name": "Destructive",
+      "component": "Button",
+      "theme": "neutral",
+      "mode": "dark",
+      "reasons": [
+        "theme:neutral:button"
+      ]
+    },
+    {
+      "key": "core-calendar--default__neutral-dark",
+      "diffPixels": 1944,
+      "diffRatio": 0.002472,
+      "sizeChanged": false,
+      "storyId": "core-calendar--default",
+      "title": "Core/Calendar",
+      "name": "Default",
+      "component": "Calendar",
+      "theme": "neutral",
+      "mode": "dark",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "core-button--destructive__neutral-light",
+      "diffPixels": 1942,
+      "diffRatio": 0.002469,
+      "sizeChanged": false,
+      "storyId": "core-button--destructive",
+      "title": "Core/Button",
+      "name": "Destructive",
+      "component": "Button",
+      "theme": "neutral",
+      "mode": "light",
+      "reasons": [
+        "theme:neutral:button"
+      ]
+    },
+    {
+      "key": "core-calendar--default__neutral-light",
+      "diffPixels": 1924,
+      "diffRatio": 0.002446,
+      "sizeChanged": false,
+      "storyId": "core-calendar--default",
+      "title": "Core/Calendar",
+      "name": "Default",
+      "component": "Calendar",
+      "theme": "neutral",
+      "mode": "light",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "core-badge--variants__y2k-light",
+      "diffPixels": 1904,
+      "diffRatio": 0.002421,
+      "sizeChanged": false,
+      "storyId": "core-badge--variants",
+      "title": "Core/Badge",
+      "name": "Variants",
+      "component": "Badge",
+      "theme": "y2k",
+      "mode": "light",
+      "reasons": [
+        "theme:y2k:badge"
+      ]
+    },
+    {
+      "key": "core-button--all-variants__gothic-dark",
+      "diffPixels": 837,
+      "diffRatio": 0.001064,
+      "sizeChanged": false,
+      "storyId": "core-button--all-variants",
+      "title": "Core/Button",
+      "name": "All Variants",
+      "component": "Button",
+      "theme": "gothic",
+      "mode": "dark",
+      "reasons": [
+        "theme:gothic:button"
+      ]
+    },
+    {
+      "key": "core-button--all-variants__gothic-light",
+      "diffPixels": 837,
+      "diffRatio": 0.001064,
+      "sizeChanged": false,
+      "storyId": "core-button--all-variants",
+      "title": "Core/Button",
+      "name": "All Variants",
+      "component": "Button",
+      "theme": "gothic",
+      "mode": "light",
+      "reasons": [
+        "theme:gothic:button"
+      ]
+    },
+    {
+      "key": "core-tablerowexpansion--detail-panel__neutral-light",
+      "diffPixels": 828,
+      "diffRatio": 0.001053,
+      "sizeChanged": false,
+      "storyId": "core-tablerowexpansion--detail-panel",
+      "title": "Core/TableRowExpansion",
+      "name": "Detail Panel",
+      "component": "TableRowExpansion",
+      "theme": "neutral",
+      "mode": "light",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "core-tablerowexpansion--detail-panel__neutral-dark",
+      "diffPixels": 820,
+      "diffRatio": 0.001043,
+      "sizeChanged": false,
+      "storyId": "core-tablerowexpansion--detail-panel",
+      "title": "Core/TableRowExpansion",
+      "name": "Detail Panel",
+      "component": "TableRowExpansion",
+      "theme": "neutral",
+      "mode": "dark",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "core-badge--variants__gothic-dark",
+      "diffPixels": 771,
+      "diffRatio": 0.00098,
+      "sizeChanged": false,
+      "storyId": "core-badge--variants",
+      "title": "Core/Badge",
+      "name": "Variants",
+      "component": "Badge",
+      "theme": "gothic",
+      "mode": "dark",
+      "reasons": [
+        "theme:gothic:badge"
+      ]
+    },
+    {
+      "key": "core-badge--variants__gothic-light",
+      "diffPixels": 771,
+      "diffRatio": 0.00098,
+      "sizeChanged": false,
+      "storyId": "core-badge--variants",
+      "title": "Core/Badge",
+      "name": "Variants",
+      "component": "Badge",
+      "theme": "gothic",
+      "mode": "light",
+      "reasons": [
+        "theme:gothic:badge"
+      ]
+    },
+    {
+      "key": "core-button--secondary__chocolate-dark",
+      "diffPixels": 737,
+      "diffRatio": 0.000937,
+      "sizeChanged": false,
+      "storyId": "core-button--secondary",
+      "title": "Core/Button",
+      "name": "Secondary",
+      "component": "Button",
+      "theme": "chocolate",
+      "mode": "dark",
+      "reasons": [
+        "theme:chocolate:button"
+      ]
+    },
+    {
+      "key": "core-button--secondary__chocolate-light",
+      "diffPixels": 729,
+      "diffRatio": 0.000927,
+      "sizeChanged": false,
+      "storyId": "core-button--secondary",
+      "title": "Core/Button",
+      "name": "Secondary",
+      "component": "Button",
+      "theme": "chocolate",
+      "mode": "light",
+      "reasons": [
+        "theme:chocolate:button"
+      ]
+    },
+    {
+      "key": "core-topnav--default__butter-light",
+      "diffPixels": 612,
+      "diffRatio": 0.000778,
+      "sizeChanged": false,
+      "storyId": "core-topnav--default",
+      "title": "Core/TopNav",
+      "name": "Default",
+      "component": "TopNav",
+      "theme": "butter",
+      "mode": "light",
+      "reasons": [
+        "theme:butter:top-nav-heading",
+        "theme:butter:top-nav-item"
+      ]
+    },
+    {
+      "key": "core-topnav--default__butter-dark",
+      "diffPixels": 438,
+      "diffRatio": 0.000557,
+      "sizeChanged": false,
+      "storyId": "core-topnav--default",
+      "title": "Core/TopNav",
+      "name": "Default",
+      "component": "TopNav",
+      "theme": "butter",
+      "mode": "dark",
+      "reasons": [
+        "theme:butter:top-nav-heading",
+        "theme:butter:top-nav-item"
+      ]
+    },
+    {
+      "key": "core-chat--default__neutral-dark",
+      "diffPixels": 287,
+      "diffRatio": 0.000244,
+      "sizeChanged": false,
+      "storyId": "core-chat--default",
+      "title": "Core/Chat",
+      "name": "Default",
+      "component": "Chat",
+      "theme": "neutral",
+      "mode": "dark",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "core-chat--default__neutral-light",
+      "diffPixels": 280,
+      "diffRatio": 0.000238,
+      "sizeChanged": false,
+      "storyId": "core-chat--default",
+      "title": "Core/Chat",
+      "name": "Default",
+      "component": "Chat",
+      "theme": "neutral",
+      "mode": "light",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "core-card--default__matcha-dark",
+      "diffPixels": 131,
+      "diffRatio": 0.000167,
+      "sizeChanged": false,
+      "storyId": "core-card--default",
+      "title": "Core/Card",
+      "name": "Default",
+      "component": "Card",
+      "theme": "matcha",
+      "mode": "dark",
+      "reasons": [
+        "theme:matcha:card"
+      ]
+    },
+    {
+      "key": "core-statusdot--variants__neutral-dark",
+      "diffPixels": 108,
+      "diffRatio": 0.000137,
+      "sizeChanged": false,
+      "storyId": "core-statusdot--variants",
+      "title": "Core/StatusDot",
+      "name": "Variants",
+      "component": "StatusDot",
+      "theme": "neutral",
+      "mode": "dark",
+      "reasons": [
+        "theme:neutral:statusdot"
+      ]
+    },
+    {
+      "key": "core-statusdot--variants__neutral-light",
+      "diffPixels": 108,
+      "diffRatio": 0.000137,
+      "sizeChanged": false,
+      "storyId": "core-statusdot--variants",
+      "title": "Core/StatusDot",
+      "name": "Variants",
+      "component": "StatusDot",
+      "theme": "neutral",
+      "mode": "light",
+      "reasons": [
+        "theme:neutral:statusdot"
+      ]
+    },
+    {
+      "key": "core-markdown--default__neutral-dark",
+      "diffPixels": 107,
+      "diffRatio": 0.000097,
+      "sizeChanged": false,
+      "storyId": "core-markdown--default",
+      "title": "Core/Markdown",
+      "name": "Default",
+      "component": "Markdown",
+      "theme": "neutral",
+      "mode": "dark",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "core-markdown--default__neutral-light",
+      "diffPixels": 103,
+      "diffRatio": 0.000093,
+      "sizeChanged": false,
+      "storyId": "core-markdown--default",
+      "title": "Core/Markdown",
+      "name": "Default",
+      "component": "Markdown",
+      "theme": "neutral",
+      "mode": "light",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "lab-codeeditor--default__neutral-dark",
+      "diffPixels": 86,
+      "diffRatio": 0.000109,
+      "sizeChanged": false,
+      "storyId": "lab-codeeditor--default",
+      "title": "Lab/CodeEditor",
+      "name": "Default",
+      "component": "CodeEditor",
+      "theme": "neutral",
+      "mode": "dark",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "lab-codeeditor--default__neutral-light",
+      "diffPixels": 85,
+      "diffRatio": 0.000108,
+      "sizeChanged": false,
+      "storyId": "lab-codeeditor--default",
+      "title": "Lab/CodeEditor",
+      "name": "Default",
+      "component": "CodeEditor",
+      "theme": "neutral",
+      "mode": "light",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "core-card--default__matcha-light",
+      "diffPixels": 62,
+      "diffRatio": 0.000079,
+      "sizeChanged": false,
+      "storyId": "core-card--default",
+      "title": "Core/Card",
+      "name": "Default",
+      "component": "Card",
+      "theme": "matcha",
+      "mode": "light",
+      "reasons": [
+        "theme:matcha:card"
+      ]
+    },
+    {
+      "key": "core-statusdot--default__neutral-dark",
+      "diffPixels": 36,
+      "diffRatio": 0.000046,
+      "sizeChanged": false,
+      "storyId": "core-statusdot--default",
+      "title": "Core/StatusDot",
+      "name": "Default",
+      "component": "StatusDot",
+      "theme": "neutral",
+      "mode": "dark",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "lab-logstream--terminal-build__neutral-dark",
+      "diffPixels": 36,
+      "diffRatio": 0.000046,
+      "sizeChanged": false,
+      "storyId": "lab-logstream--terminal-build",
+      "title": "Lab/LogStream",
+      "name": "Terminal Build",
+      "component": "LogStream",
+      "theme": "neutral",
+      "mode": "dark",
+      "reasons": [
+        "surface"
+      ]
+    }
+  ],
+  "added": [
+    "core-hooks-useclipboard--copy-icon-button__neutral-dark",
+    "core-hooks-useclipboard--copy-icon-button__neutral-light",
+    "core-hooks-usecontainerreveal--reveal__neutral-dark",
+    "core-hooks-usecontainerreveal--reveal__neutral-light",
+    "core-hooks-usekeyboardhint--default__neutral-dark",
+    "core-hooks-usekeyboardhint--default__neutral-light",
+    "core-hooks-uselinkify--ur-ls__neutral-dark",
+    "core-hooks-uselinkify--ur-ls__neutral-light",
+    "core-hooks-useresizable--horizontal__neutral-dark",
+    "core-hooks-useresizable--horizontal__neutral-light",
+    "core-hooks-usestreamingtext--natural__neutral-dark",
+    "core-hooks-usestreamingtext--natural__neutral-light",
+    "core-icon-size-theming--size-scale__neutral-dark",
+    "core-icon-size-theming--size-scale__neutral-light",
+    "core-layer-dismissal--modal-in-modal__neutral-dark",
+    "core-layer-dismissal--modal-in-modal__neutral-light",
+    "core-themes-codetheme--one-dark-pro__neutral-dark",
+    "core-themes-codetheme--one-dark-pro__neutral-light",
+    "core-themes-mediatheme--on-dark__neutral-dark",
+    "core-themes-mediatheme--on-dark__neutral-light",
+    "core-themes-mediatheme-auto--flat-surface-theme__neutral-dark",
+    "core-themes-mediatheme-auto--flat-surface-theme__neutral-light",
+    "core-themes-theme--bar-chart__neutral-dark",
+    "core-themes-theme--bar-chart__neutral-light",
+    "lab-hooks-usechartrange--known-range__neutral-dark",
+    "lab-hooks-usechartrange--known-range__neutral-light",
+    "lab-themes-codeeditortheme--one-dark-pro__neutral-dark",
+    "lab-themes-codeeditortheme--one-dark-pro__neutral-light"
+  ],
+  "removed": [
+    "core-codetheme--one-dark-pro__neutral-dark",
+    "core-codetheme--one-dark-pro__neutral-light",
+    "core-mediatheme--on-dark__neutral-dark",
+    "core-mediatheme--on-dark__neutral-light",
+    "core-mediatheme-auto--flat-surface-theme__neutral-dark",
+    "core-mediatheme-auto--flat-surface-theme__neutral-light",
+    "core-theme--bar-chart__neutral-dark",
+    "core-theme--bar-chart__neutral-light",
+    "core-uselinkify--ur-ls__neutral-dark",
+    "core-uselinkify--ur-ls__neutral-light",
+    "core-useresizable--horizontal__neutral-dark",
+    "core-useresizable--horizontal__neutral-light",
+    "core-usestreamingtext--natural__neutral-dark",
+    "core-usestreamingtext--natural__neutral-light",
+    "hooks-useclipboard--copy-icon-button__neutral-dark",
+    "hooks-useclipboard--copy-icon-button__neutral-light",
+    "hooks-usecontainerreveal--reveal__neutral-dark",
+    "hooks-usecontainerreveal--reveal__neutral-light",
+    "hooks-usekeyboardhint--default__neutral-dark",
+    "hooks-usekeyboardhint--default__neutral-light",
+    "lab-codeeditortheme--one-dark-pro__neutral-dark",
+    "lab-codeeditortheme--one-dark-pro__neutral-light"
+  ],
+  "failures": [],
+  "targeting": {
+    "unexercisedOverrides": [
+      {
+        "theme": "butter",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "butter",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "butter",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "butter",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "butter",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "butter",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "butter",
+        "key": "top-nav-item",
+        "selector": "selected"
+      },
+      {
+        "theme": "butter",
+        "key": "card",
+        "selector": "variant:info"
+      },
+      {
+        "theme": "butter",
+        "key": "card",
+        "selector": "variant:success"
+      },
+      {
+        "theme": "butter",
+        "key": "card",
+        "selector": "variant:warning"
+      },
+      {
+        "theme": "butter",
+        "key": "card",
+        "selector": "variant:error"
+      },
+      {
+        "theme": "chocolate",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "chocolate",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "chocolate",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "chocolate",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "chocolate",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "chocolate",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "gothic",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "gothic",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "gothic",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "gothic",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "gothic",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "gothic",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "matcha",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "matcha",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "matcha",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "matcha",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "matcha",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "matcha",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "neutral",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "neutral",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "neutral",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "neutral",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "neutral",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "neutral",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "neutral",
+        "key": "badge",
+        "selector": "variant:gray"
+      },
+      {
+        "theme": "stone",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "stone",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "stone",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "stone",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "stone",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "stone",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "y2k",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "y2k",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "y2k",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "y2k",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "y2k",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "y2k",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "y2k",
+        "key": "top-nav-item",
+        "selector": "selected"
+      }
+    ],
+    "undeclaredTargets": [
+      "chat-emoji-picker",
+      "chat-reaction-bar",
+      "chat-reasoning",
+      "circular-progress",
+      "circular-progress-fill",
+      "circular-progress-track",
+      "codeeditor",
+      "default-marker",
+      "drawer",
+      "list-input",
+      "log-stream",
+      "rich-text-editor",
+      "schedule",
+      "stat",
+      "svg-icon",
+      "transfer-list",
+      "transfer-list-collection",
+      "transfer-list-item",
+      "transfer-list-panel"
+    ],
+    "uncoveredTargets": [
+      "avatar-group-overflow",
+      "avatar-status-dot",
+      "avatar-status-dot-glyph",
+      "banner-content",
+      "breadcrumb-item-menu-trigger",
+      "breadcrumb-menu",
+      "chat-composer-drawer",
+      "chat-dictation-button",
+      "chat-system-message",
+      "chat-tokenized-text",
+      "chat-tool-calls",
+      "collapsible-group",
+      "command-palette-group",
+      "command-palette-group-heading",
+      "command-palette-item",
+      "date-input-clear-icon",
+      "date-range-input-clear-icon",
+      "date-time-input-time-listbox",
+      "date-time-input-time-option",
+      "dropdown-menu-divider",
+      "dropdown-menu-indicator-icon",
+      "dropdown-menu-radio",
+      "dropdown-menu-section-heading",
+      "hover-card",
+      "hovercard",
+      "input-clear-button",
+      "input-clear-icon",
+      "markdown-image",
+      "multi-selector-clear-icon",
+      "multi-selector-empty-state",
+      "multi-selector-search",
+      "multi-selector-section-heading",
+      "pagination-dot",
+      "pagination-input-label",
+      "pagination-input-total",
+      "progress-bar-mark",
+      "progressbar-mark",
+      "selector-clear-icon",
+      "selector-empty-state",
+      "selector-search",
+      "selector-section-heading",
+      "stack-item",
+      "step-connector",
+      "tab-menu",
+      "tab-menu-dropdown",
+      "tab-menu-item",
+      "tab-scroll-button",
+      "table-footer",
+      "timestamp-copy-button",
+      "toast",
+      "toggle-button-group",
+      "top-nav-mega-menu",
+      "top-nav-mega-menu-featured-card",
+      "top-nav-mega-menu-item",
+      "top-nav-menu",
+      "typeahead-empty-state",
+      "typeahead-item"
+    ]
+  }
+}

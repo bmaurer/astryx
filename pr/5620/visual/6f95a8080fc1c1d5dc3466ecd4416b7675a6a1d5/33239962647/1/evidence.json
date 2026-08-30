@@ -1,0 +1,467 @@
+{
+  "version": 1,
+  "repo": "facebook/astryx",
+  "pr": 5620,
+  "headSha": "6f95a8080fc1c1d5dc3466ecd4416b7675a6a1d5",
+  "testedSha": "6f95a8080fc1c1d5dc3466ecd4416b7675a6a1d5",
+  "baseSha": "c2ae093f4e82c23ae419602cdd2186c464e1e159",
+  "run": {
+    "id": 33239962647,
+    "attempt": 1
+  },
+  "capture": {
+    "platform": "linux-arm64",
+    "browser": "chromium-149.0.7827.0",
+    "viewport": {
+      "width": 1024,
+      "height": 768
+    }
+  },
+  "deltas": [
+    {
+      "key": "core-datetimeinput--native-picker-modes__neutral-light",
+      "kind": "added",
+      "beforeSha256": null,
+      "shot": {
+        "sha256": "1b81f896b22436e6dd29cd51820e7935c1316fc730443249a813dfd152304ea9",
+        "width": 1024,
+        "height": 768,
+        "storyId": "core-datetimeinput--native-picker-modes",
+        "title": "Core/DateTimeInput",
+        "name": "Native Picker Modes",
+        "component": "DateTimeInput",
+        "theme": "neutral",
+        "mode": "light",
+        "reasons": [
+          "trusted:pr-scope"
+        ],
+        "packageName": "@astryxdesign/core",
+        "packageNames": [
+          "@astryxdesign/core"
+        ],
+        "stableVisual": true,
+        "themePackageName": "@astryxdesign/theme-neutral",
+        "stableThemeVisual": true,
+        "membershipSource": "accepted-capture"
+      }
+    },
+    {
+      "key": "core-datetimeinput--native-picker-modes__neutral-dark",
+      "kind": "added",
+      "beforeSha256": null,
+      "shot": {
+        "sha256": "17e035cbae040f039b56c3290eed41d6306608a81038a6ed5bd6fd001abb5c09",
+        "width": 1024,
+        "height": 768,
+        "storyId": "core-datetimeinput--native-picker-modes",
+        "title": "Core/DateTimeInput",
+        "name": "Native Picker Modes",
+        "component": "DateTimeInput",
+        "theme": "neutral",
+        "mode": "dark",
+        "reasons": [
+          "trusted:pr-scope"
+        ],
+        "packageName": "@astryxdesign/core",
+        "packageNames": [
+          "@astryxdesign/core"
+        ],
+        "stableVisual": true,
+        "themePackageName": "@astryxdesign/theme-neutral",
+        "stableThemeVisual": true,
+        "membershipSource": "accepted-capture"
+      }
+    },
+    {
+      "key": "core-datetimeinput--native-picker-modes__butter-light",
+      "kind": "added",
+      "beforeSha256": null,
+      "shot": {
+        "sha256": "a425fa599c550fc1d34c458cbfc05d857c8f1b574429ec43ac00622c759eb0df",
+        "width": 1024,
+        "height": 768,
+        "storyId": "core-datetimeinput--native-picker-modes",
+        "title": "Core/DateTimeInput",
+        "name": "Native Picker Modes",
+        "component": "DateTimeInput",
+        "theme": "butter",
+        "mode": "light",
+        "reasons": [
+          "trusted:pr-scope"
+        ],
+        "packageName": "@astryxdesign/core",
+        "packageNames": [
+          "@astryxdesign/core"
+        ],
+        "stableVisual": true,
+        "themePackageName": "@astryxdesign/theme-butter",
+        "stableThemeVisual": true,
+        "membershipSource": "accepted-capture"
+      }
+    },
+    {
+      "key": "core-datetimeinput--native-picker-modes__butter-dark",
+      "kind": "added",
+      "beforeSha256": null,
+      "shot": {
+        "sha256": "f9379bc9c7d3fab7ee82fdec6c6388471c4bfcde1d77ad31c873a17ad098466f",
+        "width": 1024,
+        "height": 768,
+        "storyId": "core-datetimeinput--native-picker-modes",
+        "title": "Core/DateTimeInput",
+        "name": "Native Picker Modes",
+        "component": "DateTimeInput",
+        "theme": "butter",
+        "mode": "dark",
+        "reasons": [
+          "trusted:pr-scope"
+        ],
+        "packageName": "@astryxdesign/core",
+        "packageNames": [
+          "@astryxdesign/core"
+        ],
+        "stableVisual": true,
+        "themePackageName": "@astryxdesign/theme-butter",
+        "stableThemeVisual": true,
+        "membershipSource": "accepted-capture"
+      }
+    },
+    {
+      "key": "core-datetimeinput--native-picker-modes__gothic-light",
+      "kind": "added",
+      "beforeSha256": null,
+      "shot": {
+        "sha256": "ece5ea6e33679289023b0c9fbec672a1ae04bbee8a8e3d1f0b3ec79d6b4eedd9",
+        "width": 1024,
+        "height": 768,
+        "storyId": "core-datetimeinput--native-picker-modes",
+        "title": "Core/DateTimeInput",
+        "name": "Native Picker Modes",
+        "component": "DateTimeInput",
+        "theme": "gothic",
+        "mode": "light",
+        "reasons": [
+          "trusted:pr-scope"
+        ],
+        "packageName": "@astryxdesign/core",
+        "packageNames": [
+          "@astryxdesign/core"
+        ],
+        "stableVisual": true,
+        "themePackageName": "@astryxdesign/theme-gothic",
+        "stableThemeVisual": true,
+        "membershipSource": "accepted-capture"
+      }
+    },
+    {
+      "key": "core-datetimeinput--native-picker-modes__gothic-dark",
+      "kind": "added",
+      "beforeSha256": null,
+      "shot": {
+        "sha256": "b40073d1eac80252ec3df5840040cb35ad7c5f2a4b36e386b0c6f4d1ee984a79",
+        "width": 1024,
+        "height": 768,
+        "storyId": "core-datetimeinput--native-picker-modes",
+        "title": "Core/DateTimeInput",
+        "name": "Native Picker Modes",
+        "component": "DateTimeInput",
+        "theme": "gothic",
+        "mode": "dark",
+        "reasons": [
+          "trusted:pr-scope"
+        ],
+        "packageName": "@astryxdesign/core",
+        "packageNames": [
+          "@astryxdesign/core"
+        ],
+        "stableVisual": true,
+        "themePackageName": "@astryxdesign/theme-gothic",
+        "stableThemeVisual": true,
+        "membershipSource": "accepted-capture"
+      }
+    },
+    {
+      "key": "core-datetimeinput--native-picker-modes__stone-light",
+      "kind": "added",
+      "beforeSha256": null,
+      "shot": {
+        "sha256": "b0e8680ed3dc69e537ad99a988113ea43934ea7e98ef8fce67040230befd1d95",
+        "width": 1024,
+        "height": 768,
+        "storyId": "core-datetimeinput--native-picker-modes",
+        "title": "Core/DateTimeInput",
+        "name": "Native Picker Modes",
+        "component": "DateTimeInput",
+        "theme": "stone",
+        "mode": "light",
+        "reasons": [
+          "trusted:pr-scope"
+        ],
+        "packageName": "@astryxdesign/core",
+        "packageNames": [
+          "@astryxdesign/core"
+        ],
+        "stableVisual": true,
+        "themePackageName": "@astryxdesign/theme-stone",
+        "stableThemeVisual": true,
+        "membershipSource": "accepted-capture"
+      }
+    },
+    {
+      "key": "core-datetimeinput--native-picker-modes__stone-dark",
+      "kind": "added",
+      "beforeSha256": null,
+      "shot": {
+        "sha256": "5eea7471343f0dbd8d97258719633ae04e8bc54de16b0c65e50afd33666a07b9",
+        "width": 1024,
+        "height": 768,
+        "storyId": "core-datetimeinput--native-picker-modes",
+        "title": "Core/DateTimeInput",
+        "name": "Native Picker Modes",
+        "component": "DateTimeInput",
+        "theme": "stone",
+        "mode": "dark",
+        "reasons": [
+          "trusted:pr-scope"
+        ],
+        "packageName": "@astryxdesign/core",
+        "packageNames": [
+          "@astryxdesign/core"
+        ],
+        "stableVisual": true,
+        "themePackageName": "@astryxdesign/theme-stone",
+        "stableThemeVisual": true,
+        "membershipSource": "accepted-capture"
+      }
+    },
+    {
+      "key": "core-datetimeinput--native-picker-modes__y2k-light",
+      "kind": "added",
+      "beforeSha256": null,
+      "shot": {
+        "sha256": "23fb75b247ad8ff5e04f90f9dc7b2cc52cd880abf90eae5ffbec04e95ea49dce",
+        "width": 1024,
+        "height": 768,
+        "storyId": "core-datetimeinput--native-picker-modes",
+        "title": "Core/DateTimeInput",
+        "name": "Native Picker Modes",
+        "component": "DateTimeInput",
+        "theme": "y2k",
+        "mode": "light",
+        "reasons": [
+          "trusted:pr-scope"
+        ],
+        "packageName": "@astryxdesign/core",
+        "packageNames": [
+          "@astryxdesign/core"
+        ],
+        "stableVisual": true,
+        "themePackageName": "@astryxdesign/theme-y2k",
+        "stableThemeVisual": true,
+        "membershipSource": "accepted-capture"
+      }
+    },
+    {
+      "key": "core-datetimeinput--native-picker-modes__y2k-dark",
+      "kind": "added",
+      "beforeSha256": null,
+      "shot": {
+        "sha256": "8c595384c8aba43f939f3dada02646995bd4b8fc6cd33d86fa1fc576e89a61d9",
+        "width": 1024,
+        "height": 768,
+        "storyId": "core-datetimeinput--native-picker-modes",
+        "title": "Core/DateTimeInput",
+        "name": "Native Picker Modes",
+        "component": "DateTimeInput",
+        "theme": "y2k",
+        "mode": "dark",
+        "reasons": [
+          "trusted:pr-scope"
+        ],
+        "packageName": "@astryxdesign/core",
+        "packageNames": [
+          "@astryxdesign/core"
+        ],
+        "stableVisual": true,
+        "themePackageName": "@astryxdesign/theme-y2k",
+        "stableThemeVisual": true,
+        "membershipSource": "accepted-capture"
+      }
+    },
+    {
+      "key": "core-datetimeinput--native-picker-modes__matcha-light",
+      "kind": "added",
+      "beforeSha256": null,
+      "shot": {
+        "sha256": "d20eb893b93cd7a3fa91bd8a49b6c55b38c11f764f5b0052599d331a201e9152",
+        "width": 1024,
+        "height": 768,
+        "storyId": "core-datetimeinput--native-picker-modes",
+        "title": "Core/DateTimeInput",
+        "name": "Native Picker Modes",
+        "component": "DateTimeInput",
+        "theme": "matcha",
+        "mode": "light",
+        "reasons": [
+          "trusted:pr-scope"
+        ],
+        "packageName": "@astryxdesign/core",
+        "packageNames": [
+          "@astryxdesign/core"
+        ],
+        "stableVisual": true,
+        "themePackageName": "@astryxdesign/theme-matcha",
+        "stableThemeVisual": true,
+        "membershipSource": "accepted-capture"
+      }
+    },
+    {
+      "key": "core-datetimeinput--native-picker-modes__matcha-dark",
+      "kind": "added",
+      "beforeSha256": null,
+      "shot": {
+        "sha256": "8cd4a8b6602db52ba69db1c41007e7df3b8f335ade4649651352c073b9b2721f",
+        "width": 1024,
+        "height": 768,
+        "storyId": "core-datetimeinput--native-picker-modes",
+        "title": "Core/DateTimeInput",
+        "name": "Native Picker Modes",
+        "component": "DateTimeInput",
+        "theme": "matcha",
+        "mode": "dark",
+        "reasons": [
+          "trusted:pr-scope"
+        ],
+        "packageName": "@astryxdesign/core",
+        "packageNames": [
+          "@astryxdesign/core"
+        ],
+        "stableVisual": true,
+        "themePackageName": "@astryxdesign/theme-matcha",
+        "stableThemeVisual": true,
+        "membershipSource": "accepted-capture"
+      }
+    },
+    {
+      "key": "core-datetimeinput--native-picker-modes__chocolate-light",
+      "kind": "added",
+      "beforeSha256": null,
+      "shot": {
+        "sha256": "1f63b9d395237005fa16583e975d0ff54ce4f5541ecf7e89a111c280455712fa",
+        "width": 1024,
+        "height": 768,
+        "storyId": "core-datetimeinput--native-picker-modes",
+        "title": "Core/DateTimeInput",
+        "name": "Native Picker Modes",
+        "component": "DateTimeInput",
+        "theme": "chocolate",
+        "mode": "light",
+        "reasons": [
+          "trusted:pr-scope"
+        ],
+        "packageName": "@astryxdesign/core",
+        "packageNames": [
+          "@astryxdesign/core"
+        ],
+        "stableVisual": true,
+        "themePackageName": "@astryxdesign/theme-chocolate",
+        "stableThemeVisual": true,
+        "membershipSource": "accepted-capture"
+      }
+    },
+    {
+      "key": "core-datetimeinput--native-picker-modes__chocolate-dark",
+      "kind": "added",
+      "beforeSha256": null,
+      "shot": {
+        "sha256": "b770764b71eed0ee6124874d602ab90db62b4d4fbbc4bb8419dba074767768b7",
+        "width": 1024,
+        "height": 768,
+        "storyId": "core-datetimeinput--native-picker-modes",
+        "title": "Core/DateTimeInput",
+        "name": "Native Picker Modes",
+        "component": "DateTimeInput",
+        "theme": "chocolate",
+        "mode": "dark",
+        "reasons": [
+          "trusted:pr-scope"
+        ],
+        "packageName": "@astryxdesign/core",
+        "packageNames": [
+          "@astryxdesign/core"
+        ],
+        "stableVisual": true,
+        "themePackageName": "@astryxdesign/theme-chocolate",
+        "stableThemeVisual": true,
+        "membershipSource": "accepted-capture"
+      }
+    }
+  ],
+  "verdict": {
+    "version": 1,
+    "status": "changed",
+    "generatedAt": "2026-08-29T07:26:06.096Z",
+    "context": {
+      "sha": "6f95a8080fc1c1d5dc3466ecd4416b7675a6a1d5",
+      "runId": "33239962647",
+      "runAttempt": "1",
+      "headSha": "6f95a8080fc1c1d5dc3466ecd4416b7675a6a1d5",
+      "baseSha": "c2ae093f4e82c23ae419602cdd2186c464e1e159",
+      "ref": "refs/heads/main",
+      "trustedScope": {
+        "hasStableVisual": true,
+        "broadStableVisual": false,
+        "stableComponents": [
+          "DateTimeInput"
+        ],
+        "stableCoreFiles": [
+          "packages/core/src/DateTimeInput/DateTimeInput.tsx",
+          "packages/core/src/DateTimeInput/NativeDateSegment.tsx",
+          "packages/core/src/DateTimeInput/NativeTimeSegment.tsx",
+          "packages/core/src/DateTimeInput/index.ts",
+          "packages/core/src/DateTimeInput/nativePickerSegmentStyles.ts"
+        ],
+        "stableThemes": [],
+        "canaryPackages": []
+      }
+    },
+    "platform": "linux-arm64",
+    "baseline": {
+      "capturedAt": "2026-08-28T23:48:22.758Z",
+      "sha": "c6a8b21aeedf3b915dd4a4ef72e127013de2c731",
+      "platform": "linux-arm64"
+    },
+    "counts": {
+      "total": 322,
+      "unchanged": 308,
+      "changed": 0,
+      "added": 14,
+      "removed": 0,
+      "failed": 0
+    },
+    "changes": [],
+    "added": [
+      "core-datetimeinput--native-picker-modes__neutral-light",
+      "core-datetimeinput--native-picker-modes__neutral-dark",
+      "core-datetimeinput--native-picker-modes__butter-light",
+      "core-datetimeinput--native-picker-modes__butter-dark",
+      "core-datetimeinput--native-picker-modes__gothic-light",
+      "core-datetimeinput--native-picker-modes__gothic-dark",
+      "core-datetimeinput--native-picker-modes__stone-light",
+      "core-datetimeinput--native-picker-modes__stone-dark",
+      "core-datetimeinput--native-picker-modes__y2k-light",
+      "core-datetimeinput--native-picker-modes__y2k-dark",
+      "core-datetimeinput--native-picker-modes__matcha-light",
+      "core-datetimeinput--native-picker-modes__matcha-dark",
+      "core-datetimeinput--native-picker-modes__chocolate-light",
+      "core-datetimeinput--native-picker-modes__chocolate-dark"
+    ],
+    "removed": [],
+    "failures": [],
+    "targeting": {
+      "unexercisedOverrides": [],
+      "undeclaredTargets": [],
+      "uncoveredTargets": []
+    }
+  }
+}

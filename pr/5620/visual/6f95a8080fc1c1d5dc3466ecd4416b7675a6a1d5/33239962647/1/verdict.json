@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "status": "changed",
+  "generatedAt": "2026-08-29T07:26:06.096Z",
+  "context": {
+    "sha": "6f95a8080fc1c1d5dc3466ecd4416b7675a6a1d5",
+    "runId": "33239962647",
+    "runAttempt": "1",
+    "headSha": "6f95a8080fc1c1d5dc3466ecd4416b7675a6a1d5",
+    "baseSha": "c2ae093f4e82c23ae419602cdd2186c464e1e159",
+    "ref": "refs/heads/main",
+    "trustedScope": {
+      "hasStableVisual": true,
+      "broadStableVisual": false,
+      "stableComponents": [
+        "DateTimeInput"
+      ],
+      "stableCoreFiles": [
+        "packages/core/src/DateTimeInput/DateTimeInput.tsx",
+        "packages/core/src/DateTimeInput/NativeDateSegment.tsx",
+        "packages/core/src/DateTimeInput/NativeTimeSegment.tsx",
+        "packages/core/src/DateTimeInput/index.ts",
+        "packages/core/src/DateTimeInput/nativePickerSegmentStyles.ts"
+      ],
+      "stableThemes": [],
+      "canaryPackages": []
+    }
+  },
+  "platform": "linux-arm64",
+  "baseline": {
+    "capturedAt": "2026-08-28T23:48:22.758Z",
+    "sha": "c6a8b21aeedf3b915dd4a4ef72e127013de2c731",
+    "platform": "linux-arm64"
+  },
+  "counts": {
+    "total": 322,
+    "unchanged": 308,
+    "changed": 0,
+    "added": 14,
+    "removed": 0,
+    "failed": 0
+  },
+  "changes": [],
+  "added": [
+    "core-datetimeinput--native-picker-modes__neutral-light",
+    "core-datetimeinput--native-picker-modes__neutral-dark",
+    "core-datetimeinput--native-picker-modes__butter-light",
+    "core-datetimeinput--native-picker-modes__butter-dark",
+    "core-datetimeinput--native-picker-modes__gothic-light",
+    "core-datetimeinput--native-picker-modes__gothic-dark",
+    "core-datetimeinput--native-picker-modes__stone-light",
+    "core-datetimeinput--native-picker-modes__stone-dark",
+    "core-datetimeinput--native-picker-modes__y2k-light",
+    "core-datetimeinput--native-picker-modes__y2k-dark",
+    "core-datetimeinput--native-picker-modes__matcha-light",
+    "core-datetimeinput--native-picker-modes__matcha-dark",
+    "core-datetimeinput--native-picker-modes__chocolate-light",
+    "core-datetimeinput--native-picker-modes__chocolate-dark"
+  ],
+  "removed": [],
+  "failures": [],
+  "targeting": {
+    "unexercisedOverrides": [],
+    "undeclaredTargets": [],
+    "uncoveredTargets": []
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "repo": "facebook/astryx",
+  "pr": 5684,
+  "headSha": "a9b743990d7358913dd43ba48fb7dcb0aca7a3c9",
+  "testedSha": "a9b743990d7358913dd43ba48fb7dcb0aca7a3c9",
+  "baseSha": "8359f1a3601766e3a96ae0805e9487ac3dc17754",
+  "run": {
+    "id": 33283403586,
+    "attempt": 1
+  },
+  "capture": null,
+  "deltas": [],
+  "verdict": {
+    "version": 1,
+    "status": "skipped",
+    "generatedAt": "2026-08-30T00:39:37.279Z",
+    "reason": "Broad stable scope is deferred to the daily release gate. It covers 1964 trusted baseline shots instead of recapturing them for this PR.",
+    "context": {
+      "sha": "a9b743990d7358913dd43ba48fb7dcb0aca7a3c9",
+      "headSha": "a9b743990d7358913dd43ba48fb7dcb0aca7a3c9",
+      "baseSha": "8359f1a3601766e3a96ae0805e9487ac3dc17754",
+      "runId": "33283403586",
+      "runAttempt": "1",
+      "trustedScope": {
+        "hasStableVisual": true,
+        "broadStableVisual": true,
+        "stableComponents": [
+          "AlertDialog"
+        ],
+        "stableCoreFiles": [
+          "packages/core/src/AlertDialog/AlertDialog.tsx",
+          "packages/core/src/i18n/InternationalizationContext.ts",
+          "packages/core/src/i18n/InternationalizationProvider.tsx",
+          "packages/core/src/i18n/getLocaleDirection.ts",
+          "packages/core/src/i18n/resolve.ts",
+          "packages/core/src/i18n/translator.ts",
+          "packages/core/src/i18n/types.ts",
+          "packages/core/src/i18n/useCollator.ts",
+          "packages/core/src/i18n/useDirection.ts",
+          "packages/core/src/i18n/useLocale.ts",
+          "packages/core/src/i18n/useTranslator.ts",
+          "packages/core/src/intl/IntlContext.ts",
+          "packages/core/src/intl/IntlProvider.tsx",
+          "packages/core/src/intl/formatter.ts",
+          "packages/core/src/intl/getLocaleDirection.ts",
+          "packages/core/src/intl/index.ts",
+          "packages/core/src/intl/useCollator.ts",
+          "packages/core/src/intl/useIntl.ts"
+        ],
+        "stableThemes": [],
+        "canaryPackages": []
+      }
+    },
+    "counts": {
+      "total": 1964,
+      "unchanged": 0,
+      "changed": 0,
+      "added": 0,
+      "removed": 0,
+      "failed": 0
+    },
+    "components": [
+      "AlertDialog"
+    ],
+    "changes": [],
+    "added": [],
+    "removed": [],
+    "failures": []
+  }
+}

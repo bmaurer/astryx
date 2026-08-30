@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "status": "skipped",
+  "generatedAt": "2026-08-28T00:16:50.716Z",
+  "reason": "Broad stable scope is deferred to the daily release gate. It covers 974 trusted baseline shots instead of recapturing them for this PR.",
+  "context": {
+    "sha": "ea311aae4b1849d62a06119eeae5f2fd911222c0",
+    "headSha": "ea311aae4b1849d62a06119eeae5f2fd911222c0",
+    "baseSha": "c6041cfd58ea832a79b50f98d7e0f64cd513852e",
+    "runId": "33128132936",
+    "runAttempt": "1",
+    "trustedScope": {
+      "hasStableVisual": true,
+      "broadStableVisual": true,
+      "stableComponents": [],
+      "stableCoreFiles": [
+        "packages/core/src/__tests__/stylexDeclarations.ts"
+      ],
+      "stableThemes": [],
+      "canaryPackages": [
+        "@astryxdesign/charts",
+        "@astryxdesign/lab",
+        "@astryxdesign/vega"
+      ]
+    }
+  },
+  "counts": {
+    "total": 974,
+    "unchanged": 0,
+    "changed": 0,
+    "added": 0,
+    "removed": 0,
+    "failed": 0
+  },
+  "components": [],
+  "changes": [],
+  "added": [],
+  "removed": [],
+  "failures": []
+}

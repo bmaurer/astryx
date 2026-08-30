@@ -1,0 +1,425 @@
+{
+  "version": 1,
+  "status": "changed",
+  "generatedAt": "2026-08-26T18:10:13.994Z",
+  "context": {
+    "sha": "43a0839af0c1b9b0ea1ee0312d93841c2e407276",
+    "ref": "refs/heads/main",
+    "runId": "32997304136",
+    "tiers": [
+      "surface",
+      "theme-matrix"
+    ],
+    "baselineExists": true,
+    "scoped": false,
+    "components": []
+  },
+  "platform": "linux-arm64",
+  "baseline": {
+    "capturedAt": "2026-08-26T13:29:42.422Z",
+    "sha": "055e75f65f5aa815d73a215a356ea20f6b324a60",
+    "platform": "linux-arm64"
+  },
+  "counts": {
+    "total": 520,
+    "unchanged": 516,
+    "changed": 4,
+    "added": 0,
+    "removed": 0,
+    "failed": 0
+  },
+  "changes": [
+    {
+      "key": "lab-transferlist--default__neutral-dark",
+      "diffPixels": 4655,
+      "diffRatio": 0.005919,
+      "sizeChanged": false,
+      "storyId": "lab-transferlist--default",
+      "title": "Lab/TransferList",
+      "name": "Default",
+      "component": "TransferList",
+      "theme": "neutral",
+      "mode": "dark",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "lab-transferlist--default__neutral-light",
+      "diffPixels": 4545,
+      "diffRatio": 0.005779,
+      "sizeChanged": false,
+      "storyId": "lab-transferlist--default",
+      "title": "Lab/TransferList",
+      "name": "Default",
+      "component": "TransferList",
+      "theme": "neutral",
+      "mode": "light",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "lab-hooks-usechartrange--known-range__neutral-light",
+      "diffPixels": 1200,
+      "diffRatio": 0.001526,
+      "sizeChanged": false,
+      "storyId": "lab-hooks-usechartrange--known-range",
+      "title": "Lab/Hooks/useChartRange",
+      "name": "Known Range",
+      "component": "useChartRange",
+      "theme": "neutral",
+      "mode": "light",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "lab-hooks-usechartrange--known-range__neutral-dark",
+      "diffPixels": 850,
+      "diffRatio": 0.001081,
+      "sizeChanged": false,
+      "storyId": "lab-hooks-usechartrange--known-range",
+      "title": "Lab/Hooks/useChartRange",
+      "name": "Known Range",
+      "component": "useChartRange",
+      "theme": "neutral",
+      "mode": "dark",
+      "reasons": [
+        "surface"
+      ]
+    }
+  ],
+  "added": [],
+  "removed": [],
+  "failures": [],
+  "targeting": {
+    "unexercisedOverrides": [
+      {
+        "theme": "butter",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "butter",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "butter",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "butter",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "butter",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "butter",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "butter",
+        "key": "top-nav-item",
+        "selector": "selected"
+      },
+      {
+        "theme": "butter",
+        "key": "card",
+        "selector": "variant:info"
+      },
+      {
+        "theme": "butter",
+        "key": "card",
+        "selector": "variant:success"
+      },
+      {
+        "theme": "butter",
+        "key": "card",
+        "selector": "variant:warning"
+      },
+      {
+        "theme": "butter",
+        "key": "card",
+        "selector": "variant:error"
+      },
+      {
+        "theme": "chocolate",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "chocolate",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "chocolate",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "chocolate",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "chocolate",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "chocolate",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "gothic",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "gothic",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "gothic",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "gothic",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "gothic",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "gothic",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "matcha",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "matcha",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "matcha",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "matcha",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "matcha",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "matcha",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "neutral",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "neutral",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "neutral",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "neutral",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "neutral",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "neutral",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "neutral",
+        "key": "badge",
+        "selector": "variant:gray"
+      },
+      {
+        "theme": "stone",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "stone",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "stone",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "stone",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "stone",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "stone",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "y2k",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "y2k",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "y2k",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "y2k",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "y2k",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "y2k",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "y2k",
+        "key": "top-nav-item",
+        "selector": "selected"
+      }
+    ],
+    "undeclaredTargets": [
+      "chat-emoji-picker",
+      "chat-reaction-bar",
+      "chat-reasoning",
+      "circular-progress",
+      "circular-progress-fill",
+      "circular-progress-track",
+      "codeeditor",
+      "default-marker",
+      "drawer",
+      "list-input",
+      "log-stream",
+      "rich-text-editor",
+      "schedule",
+      "stat",
+      "svg-icon",
+      "transfer-list",
+      "transfer-list-collection",
+      "transfer-list-item",
+      "transfer-list-panel"
+    ],
+    "uncoveredTargets": [
+      "avatar-group-overflow",
+      "avatar-status-dot",
+      "avatar-status-dot-glyph",
+      "banner-content",
+      "breadcrumb-item-menu-trigger",
+      "breadcrumb-menu",
+      "chat-composer-drawer",
+      "chat-dictation-button",
+      "chat-system-message",
+      "chat-tokenized-text",
+      "chat-tool-calls",
+      "collapsible-group",
+      "command-palette-group",
+      "command-palette-group-heading",
+      "command-palette-item",
+      "date-input-clear-icon",
+      "date-range-input-clear-icon",
+      "date-time-input-time-listbox",
+      "date-time-input-time-option",
+      "dropdown-menu-divider",
+      "dropdown-menu-indicator-icon",
+      "dropdown-menu-radio",
+      "dropdown-menu-section-heading",
+      "hover-card",
+      "hovercard",
+      "input-clear-button",
+      "input-clear-icon",
+      "markdown-image",
+      "multi-selector-clear-icon",
+      "multi-selector-empty-state",
+      "multi-selector-search",
+      "multi-selector-section-heading",
+      "pagination-dot",
+      "pagination-input-label",
+      "pagination-input-total",
+      "progress-bar-mark",
+      "progressbar-mark",
+      "selector-clear-icon",
+      "selector-empty-state",
+      "selector-search",
+      "selector-section-heading",
+      "stack-item",
+      "step-connector",
+      "tab-menu",
+      "tab-menu-dropdown",
+      "tab-menu-item",
+      "tab-scroll-button",
+      "table-footer",
+      "timestamp-copy-button",
+      "toast",
+      "toggle-button-group",
+      "top-nav-mega-menu",
+      "top-nav-mega-menu-featured-card",
+      "top-nav-mega-menu-item",
+      "top-nav-menu",
+      "typeahead-empty-state",
+      "typeahead-item"
+    ]
+  }
+}

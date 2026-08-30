@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "repo": "facebook/astryx",
+  "pr": 5684,
+  "headSha": "be195acfa587c14b7544567896ec4aa1140be6c6",
+  "testedSha": "be195acfa587c14b7544567896ec4aa1140be6c6",
+  "baseSha": "8359f1a3601766e3a96ae0805e9487ac3dc17754",
+  "run": {
+    "id": 33281705442,
+    "attempt": 1
+  },
+  "capture": null,
+  "deltas": [],
+  "verdict": {
+    "version": 1,
+    "status": "skipped",
+    "generatedAt": "2026-08-30T00:07:06.748Z",
+    "reason": "Broad stable scope is deferred to the daily release gate. It covers 1964 trusted baseline shots instead of recapturing them for this PR.",
+    "context": {
+      "sha": "be195acfa587c14b7544567896ec4aa1140be6c6",
+      "headSha": "be195acfa587c14b7544567896ec4aa1140be6c6",
+      "baseSha": "8359f1a3601766e3a96ae0805e9487ac3dc17754",
+      "runId": "33281705442",
+      "runAttempt": "1",
+      "trustedScope": {
+        "hasStableVisual": true,
+        "broadStableVisual": true,
+        "stableComponents": [
+          "AlertDialog"
+        ],
+        "stableCoreFiles": [
+          "packages/core/src/AlertDialog/AlertDialog.tsx",
+          "packages/core/src/i18n/InternationalizationContext.ts",
+          "packages/core/src/i18n/InternationalizationProvider.tsx",
+          "packages/core/src/i18n/IntlContext.ts",
+          "packages/core/src/i18n/IntlProvider.tsx",
+          "packages/core/src/i18n/index.ts",
+          "packages/core/src/i18n/resolve.ts",
+          "packages/core/src/i18n/translator.ts",
+          "packages/core/src/i18n/types.ts",
+          "packages/core/src/i18n/useCollator.ts",
+          "packages/core/src/i18n/useDirection.ts",
+          "packages/core/src/i18n/useIntl.ts",
+          "packages/core/src/i18n/useLocale.ts",
+          "packages/core/src/i18n/useTranslator.ts"
+        ],
+        "stableThemes": [],
+        "canaryPackages": []
+      }
+    },
+    "counts": {
+      "total": 1964,
+      "unchanged": 0,
+      "changed": 0,
+      "added": 0,
+      "removed": 0,
+      "failed": 0
+    },
+    "components": [
+      "AlertDialog"
+    ],
+    "changes": [],
+    "added": [],
+    "removed": [],
+    "failures": []
+  }
+}

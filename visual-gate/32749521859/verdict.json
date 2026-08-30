@@ -1,0 +1,394 @@
+{
+  "version": 1,
+  "status": "changed",
+  "generatedAt": "2026-08-24T16:21:48.650Z",
+  "context": {
+    "sha": "44d464d6368b397e69eae1baa0422152edbe6fab",
+    "ref": "refs/heads/main",
+    "runId": "32749521859",
+    "tiers": [
+      "surface",
+      "theme-matrix"
+    ],
+    "baselineExists": true
+  },
+  "platform": "linux-arm64",
+  "baseline": {
+    "capturedAt": "2026-08-24T15:13:47.802Z",
+    "sha": "8a055dfb3fe3b64210308acac242f27b89c41969",
+    "platform": "linux-arm64"
+  },
+  "counts": {
+    "total": 516,
+    "unchanged": 512,
+    "changed": 2,
+    "added": 2,
+    "removed": 0,
+    "failed": 0
+  },
+  "changes": [
+    {
+      "key": "lab-schedule--monthly__neutral-dark",
+      "diffPixels": 1775,
+      "diffRatio": 0.001836,
+      "sizeChanged": false,
+      "storyId": "lab-schedule--monthly",
+      "title": "Lab/Schedule",
+      "name": "Monthly",
+      "component": "Schedule",
+      "theme": "neutral",
+      "mode": "dark",
+      "reasons": [
+        "surface"
+      ]
+    },
+    {
+      "key": "lab-schedule--monthly__neutral-light",
+      "diffPixels": 940,
+      "diffRatio": 0.000972,
+      "sizeChanged": false,
+      "storyId": "lab-schedule--monthly",
+      "title": "Lab/Schedule",
+      "name": "Monthly",
+      "component": "Schedule",
+      "theme": "neutral",
+      "mode": "light",
+      "reasons": [
+        "surface"
+      ]
+    }
+  ],
+  "added": [
+    "core-layer-dismissal--modal-in-modal__neutral-dark",
+    "core-layer-dismissal--modal-in-modal__neutral-light"
+  ],
+  "removed": [],
+  "failures": [],
+  "targeting": {
+    "unexercisedOverrides": [
+      {
+        "theme": "butter",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "butter",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "butter",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "butter",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "butter",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "butter",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "butter",
+        "key": "top-nav-item",
+        "selector": "selected"
+      },
+      {
+        "theme": "butter",
+        "key": "card",
+        "selector": "variant:info"
+      },
+      {
+        "theme": "butter",
+        "key": "card",
+        "selector": "variant:success"
+      },
+      {
+        "theme": "butter",
+        "key": "card",
+        "selector": "variant:warning"
+      },
+      {
+        "theme": "butter",
+        "key": "card",
+        "selector": "variant:error"
+      },
+      {
+        "theme": "chocolate",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "chocolate",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "chocolate",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "chocolate",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "chocolate",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "chocolate",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "gothic",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "gothic",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "gothic",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "gothic",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "gothic",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "gothic",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "matcha",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "matcha",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "matcha",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "matcha",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "matcha",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "matcha",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "neutral",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "neutral",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "neutral",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "neutral",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "neutral",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "neutral",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "neutral",
+        "key": "badge",
+        "selector": "variant:gray"
+      },
+      {
+        "theme": "stone",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "stone",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "stone",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "stone",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "stone",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "stone",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "y2k",
+        "key": "heading",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "y2k",
+        "key": "heading",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "y2k",
+        "key": "heading",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "y2k",
+        "key": "text",
+        "selector": "type:display-1"
+      },
+      {
+        "theme": "y2k",
+        "key": "text",
+        "selector": "type:display-2"
+      },
+      {
+        "theme": "y2k",
+        "key": "text",
+        "selector": "type:display-3"
+      },
+      {
+        "theme": "y2k",
+        "key": "top-nav-item",
+        "selector": "selected"
+      }
+    ],
+    "undeclaredTargets": [
+      "chat-emoji-picker",
+      "chat-reaction-bar",
+      "chat-reasoning",
+      "circular-progress",
+      "circular-progress-fill",
+      "circular-progress-track",
+      "codeeditor",
+      "default-marker",
+      "drawer",
+      "list-input",
+      "log-stream",
+      "rich-text-editor",
+      "schedule",
+      "stat",
+      "svg-icon",
+      "transfer-list",
+      "transfer-list-collection",
+      "transfer-list-item",
+      "transfer-list-panel"
+    ],
+    "uncoveredTargets": [
+      "avatar-group-overflow",
+      "avatar-status-dot",
+      "avatar-status-dot-glyph",
+      "banner-content",
+      "breadcrumb-item-menu-trigger",
+      "breadcrumb-menu",
+      "chat-composer-drawer",
+      "chat-dictation-button",
+      "chat-system-message",
+      "chat-tokenized-text",
+      "chat-tool-calls",
+      "collapsible-group",
+      "command-palette-group",
+      "command-palette-group-heading",
+      "command-palette-item",
+      "date-input-clear-icon",
+      "date-range-input-clear-icon",
+      "date-time-input-time-listbox",
+      "date-time-input-time-option",
+      "dropdown-menu-divider",
+      "dropdown-menu-indicator-icon",
+      "dropdown-menu-radio",
+      "dropdown-menu-section-heading",
+      "hovercard",
+      "input-clear-button",
+      "input-clear-icon",
+      "markdown-image",
+      "multi-selector-clear-icon",
+      "multi-selector-empty-state",
+      "multi-selector-search",
+      "multi-selector-section-heading",
+      "pagination-dot",
+      "pagination-input-label",
+      "pagination-input-total",
+      "progressbar-mark",
+      "selector-clear-icon",
+      "selector-empty-state",
+      "selector-search",
+      "selector-section-heading",
+      "stack-item",
+      "step-connector",
+      "tab-menu",
+      "tab-menu-dropdown",
+      "tab-menu-item",
+      "tab-scroll-button",
+      "table-footer",
+      "timestamp-copy-button",
+      "toast",
+      "toggle-button-group",
+      "top-nav-mega-menu",
+      "top-nav-mega-menu-featured-card",
+      "top-nav-mega-menu-item",
+      "top-nav-menu",
+      "typeahead-empty-state",
+      "typeahead-item"
+    ]
+  }
+}

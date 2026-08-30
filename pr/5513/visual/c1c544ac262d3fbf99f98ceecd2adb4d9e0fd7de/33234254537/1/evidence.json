@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "repo": "facebook/astryx",
+  "pr": 5513,
+  "headSha": "c1c544ac262d3fbf99f98ceecd2adb4d9e0fd7de",
+  "testedSha": "c1c544ac262d3fbf99f98ceecd2adb4d9e0fd7de",
+  "baseSha": "41494fcd41310c819f0501df2e798235c4b41135",
+  "run": {
+    "id": 33234254537,
+    "attempt": 1
+  },
+  "capture": null,
+  "deltas": [],
+  "verdict": {
+    "version": 1,
+    "status": "skipped",
+    "generatedAt": "2026-08-29T04:56:56.964Z",
+    "reason": "Broad stable scope is deferred to the daily release gate. It covers 1964 trusted baseline shots instead of recapturing them for this PR.",
+    "context": {
+      "sha": "c1c544ac262d3fbf99f98ceecd2adb4d9e0fd7de",
+      "headSha": "c1c544ac262d3fbf99f98ceecd2adb4d9e0fd7de",
+      "baseSha": "41494fcd41310c819f0501df2e798235c4b41135",
+      "runId": "33234254537",
+      "runAttempt": "1",
+      "trustedScope": {
+        "hasStableVisual": true,
+        "broadStableVisual": true,
+        "stableComponents": [
+          "BottomSheet"
+        ],
+        "stableCoreFiles": [
+          "packages/core/src/BottomSheet/BottomSheetPanel.tsx",
+          "packages/core/src/hooks/focusableSelector.ts",
+          "packages/core/src/hooks/useFocusTrap.ts"
+        ],
+        "stableThemes": [],
+        "canaryPackages": []
+      }
+    },
+    "counts": {
+      "total": 1964,
+      "unchanged": 0,
+      "changed": 0,
+      "added": 0,
+      "removed": 0,
+      "failed": 0
+    },
+    "components": [
+      "BottomSheet"
+    ],
+    "changes": [],
+    "added": [],
+    "removed": [],
+    "failures": []
+  }
+}
